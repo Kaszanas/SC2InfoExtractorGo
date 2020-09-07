@@ -1,29 +1,16 @@
-package main
+package sc2processing
 
 import (
 	"fmt"
 	// "github.com/icza/mpq"
 	// "github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
-	"io/ioutil"
-	"log"
-	"os"
+	// "log"
 )
-
-func listFiles() []os.FileInfo {
-
-	files, err := ioutil.ReadDir("./Demos/Input")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return files
-
-}
 
 func main() {
 
-	testListFiles := listFiles()
+	testListFiles := listFiles("./DEMOS/Input")
 
 	fmt.Println(testListFiles)
 
