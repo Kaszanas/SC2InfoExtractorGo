@@ -18,21 +18,22 @@ func main() {
 		fmt.Println(file.Name())
 	}
 
-	r, err := rep.NewFromFile("./DEMOS/Input/11506446_1566325366_8429955.SC2Replay")
+	replayFile, err := rep.NewFromFile("./DEMOS/Input/11506446_1566325366_8429955.SC2Replay")
 	if err != nil {
 		fmt.Printf("Failed to open file: %v\n", err)
 		return
 	}
-	defer r.Close()
+	defer replayFile.Close()
 
 	gameEventNames := map[string]bool{}
 
-	for _, myString := range r.GameEvts {
-		gameEventNames[myString.EvtType.Name] = true
+	gameEvents := replayFile.GameEvts
+	for _, gameEventObject := range gameEvents {
+		gameEventNames[gameEventObject.EvtType.Name] = true
 		// fmt.Println(myString)
 	}
 
-	trackerEvents := r.TrackerEvts
+	trackerEvents := replayFile.TrackerEvts
 	fmt.Printf("Tracker events: %d\n", len(trackerEvents.Evts))
 	// trackerEventNames := map[string]bool{}
 	// for _, myString := range r.TrackerEvts {
