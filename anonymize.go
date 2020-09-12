@@ -1,4 +1,4 @@
-package sc2processing
+package main
 
 import (
 	"fmt"
