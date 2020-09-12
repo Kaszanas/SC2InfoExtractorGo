@@ -1,3 +1,4 @@
 *.SC2Replay
 *.pickle
 *.json
+*.exe
