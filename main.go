@@ -74,25 +74,6 @@ func main() {
 	fmt.Fprintf(&strBuilder, "  \"")
 	fmt.Fprintf(&strBuilder, "}")
 
-	// stringifiedReplayData2 := "{\n" + "\"header\": " + header + "}"
-
-	// jsonFile, _ := json.Marshal(stringifiedReplayData2)
-
 	_ = ioutil.WriteFile("./DEMOS/Output/11506446_1566325366_8429955.json", []byte(strBuilder.String()), 0644)
-
-	// fmt.Printf("Version:        %v\n", r.Header.VersionString())
-	// fmt.Printf("Loops:          %d\n", r.Header.Loops())
-	// fmt.Printf("Length:         %v\n", r.Header.Duration())
-	// fmt.Printf("Map:            %s\n", r.Details.Title())
-	// fmt.Printf("Game events:    %d\n", len(r.GameEvts))
-	// fmt.Printf("Message events: %d\n", len(r.MessageEvts))
-	//
-
-	// fmt.Println("Players:")
-	// for _, p := range r.Details.Players() {
-	// 	fmt.Printf("\tName: %-20s, Race: %c, Team: %d, Result: %v\n",
-	// 		p.Name, p.Race().Letter, p.TeamID()+1, p.Result())
-	// }
-	// fmt.Printf("Full Header:\n%v\n", r.Header)
 
 }
