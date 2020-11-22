@@ -36,6 +36,10 @@ func main() {
 	attrEvts := replayFile.AttrEvts.String()
 	metadata := replayFile.Metadata.String()
 
+	PIDDescMap := replayFile.TrackerEvts.PIDPlayerDescMap
+	ToonDescMap := replayFile.TrackerEvts.ToonPlayerDescMap
+
+	// Creating lists of strings for later use in generating JSON out of the replay data:
 	var gameEventStrings []string
 	for _, gameEvent := range replayFile.GameEvts {
 		gameEventStrings = append(gameEventStrings, gameEvent.String())
@@ -51,13 +55,18 @@ func main() {
 		trackerEventStrings = append(trackerEventStrings, trackerEvent.String())
 	}
 
-	// PIDDescMap := replayFile.TrackerEvts.PIDPlayerDescMap
-	// ToonDescMap := replayFile.TrackerEvts.ToonPlayerDescMap
+	// This structure is handled differently as it is a Map without .String() method:
+	var PIDDescMapStrings []string
+	for PIDDescKey, PIDDescValue := range PIDDescMap {
+		PIDDescMapStrings = append(PIDDescMapStrings, "\""+PIDDescKey.String()+"\":"+PIDDescValue.String())
+	}
 
+	// TODO: Check what are those events and how to get them to JSON format:
 	gameEvtsErr := replayFile.GameEvtsErr
 	messageEvtsErr := replayFile.MessageEvtsErr
 	trackerEvtsErr := replayFile.TrackerEvtsErr
 
+	// Crezting JSON structure by hand:
 	var strBuilder strings.Builder
 	fmt.Fprintf(&strBuilder, "{\n")
 	fmt.Fprintf(&strBuilder, "  \"header\" : %s,\n", header)
@@ -71,9 +80,11 @@ func main() {
 	fmt.Fprintf(&strBuilder, "  \"messageEventsStrings\" : [%s]\n", strings.Join(messageEventStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"gameEventStrings\" : [%s]\n", strings.Join(gameEventStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"trackerEventStrings\" : [%s]\n", strings.Join(trackerEventStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"PIDDescMap\" : {%s}\n", strings.Join(PIDDescMapStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"")
 	fmt.Fprintf(&strBuilder, "}")
 
+	// Writing JSON file:
 	_ = ioutil.WriteFile("./DEMOS/Output/11506446_1566325366_8429955.json", []byte(strBuilder.String()), 0644)
 
 }
