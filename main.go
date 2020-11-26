@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	// "github.com/icza/mpq"
-	// "encoding/json"
+	"encoding/json"
 	// "github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	"io/ioutil"
+	"strconv"
 	"strings"
 	// "log"
 )
@@ -36,8 +37,8 @@ func main() {
 	attrEvts := replayFile.AttrEvts.String()
 	metadata := replayFile.Metadata.String()
 
-	PIDDescMap := replayFile.TrackerEvts.PIDPlayerDescMap
-	ToonDescMap := replayFile.TrackerEvts.ToonPlayerDescMap
+	PIDPlayerDescMap := replayFile.TrackerEvts.PIDPlayerDescMap
+	// ToonPlayerDescMap := replayFile.TrackerEvts.ToonPlayerDescMap
 
 	// Creating lists of strings for later use in generating JSON out of the replay data:
 	var gameEventStrings []string
@@ -56,10 +57,25 @@ func main() {
 	}
 
 	// This structure is handled differently as it is a Map without .String() method:
-	var PIDDescMapStrings []string
-	for PIDDescKey, PIDDescValue := range PIDDescMap {
-		PIDDescMapStrings = append(PIDDescMapStrings, "\""+PIDDescKey.String()+"\":"+PIDDescValue.String())
+	var PIDPlayerDescMapStrings []string
+	for PIDPlayerDescKey, PIDPlayerDescValue := range PIDPlayerDescMap {
+
+		// Converting ID to string:
+		playerNumber := strconv.FormatInt(PIDPlayerDescKey, 10)
+
+		// Converting struct to JSON:
+		playerDescInformation, err := json.Marshal(PIDPlayerDescValue)
+
+		if err != nil {
+			panic(err)
+		}
+
+		// Putting everything together:
+		PIDPlayerDescMapStrings = append(PIDPlayerDescMapStrings, "\""+playerNumber+"\":"+string(playerDescInformation))
 	}
+
+	// var ToonPlayerDescMapStrings []string
+	// for ToonPlayerDescKey, TonPlayerDescValue := range PIDPlayerDescMap {
 
 	// TODO: Check what are those events and how to get them to JSON format:
 	gameEvtsErr := replayFile.GameEvtsErr
@@ -80,7 +96,7 @@ func main() {
 	fmt.Fprintf(&strBuilder, "  \"messageEventsStrings\" : [%s]\n", strings.Join(messageEventStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"gameEventStrings\" : [%s]\n", strings.Join(gameEventStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"trackerEventStrings\" : [%s]\n", strings.Join(trackerEventStrings, ",\n"))
-	fmt.Fprintf(&strBuilder, "  \"PIDDescMap\" : {%s}\n", strings.Join(PIDDescMapStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"PIDPlayerDescMap\" : {%s}\n", strings.Join(PIDPlayerDescMapStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"")
 	fmt.Fprintf(&strBuilder, "}")
 
