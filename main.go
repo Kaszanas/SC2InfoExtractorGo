@@ -14,6 +14,7 @@ import (
 
 func main() {
 
+	// TODO: This needs to be automatically passed to replayFilepath
 	// Function defined in path_utils
 	// Getting list of files within a directory:
 	testListFiles := listFiles("./DEMOS/Input")
@@ -38,7 +39,7 @@ func main() {
 	metadata := replayFile.Metadata.String()
 
 	PIDPlayerDescMap := replayFile.TrackerEvts.PIDPlayerDescMap
-	// ToonPlayerDescMap := replayFile.TrackerEvts.ToonPlayerDescMap
+	ToonPlayerDescMap := replayFile.TrackerEvts.ToonPlayerDescMap
 
 	// Creating lists of strings for later use in generating JSON out of the replay data:
 	var gameEventStrings []string
@@ -56,7 +57,7 @@ func main() {
 		trackerEventStrings = append(trackerEventStrings, trackerEvent.String())
 	}
 
-	// This structure is handled differently as it is a Map without .String() method:
+	// These structures are handled differently as it is a Map without .String() method:
 	var PIDPlayerDescMapStrings []string
 	for PIDPlayerDescKey, PIDPlayerDescValue := range PIDPlayerDescMap {
 
@@ -71,33 +72,51 @@ func main() {
 		}
 
 		// Putting everything together:
-		PIDPlayerDescMapStrings = append(PIDPlayerDescMapStrings, "\""+playerNumber+"\":"+string(playerDescInformation))
+		PIDPlayerDescMapStrings = append(PIDPlayerDescMapStrings, "\""+playerNumber+"\": "+string(playerDescInformation))
 	}
 
-	// var ToonPlayerDescMapStrings []string
-	// for ToonPlayerDescKey, TonPlayerDescValue := range PIDPlayerDescMap {
+	var ToonPlayerDescMapStrings []string
+	for ToonPlayerDescKey, ToonPlayerDescValue := range ToonPlayerDescMap {
 
-	// TODO: Check what are those events and how to get them to JSON format:
-	gameEvtsErr := replayFile.GameEvtsErr
-	messageEvtsErr := replayFile.MessageEvtsErr
-	trackerEvtsErr := replayFile.TrackerEvtsErr
+		// Converting ID to string:
+		playerToon := ToonPlayerDescKey
+
+		// Converting struct to JSON:
+		playerDescInformation, err := json.Marshal(ToonPlayerDescValue)
+
+		if err != nil {
+			panic(err)
+		}
+
+		// Putting everything together:
+		ToonPlayerDescMapStrings = append(ToonPlayerDescMapStrings, "\""+playerToon+"\": "+string(playerDescInformation))
+	}
+
+	// Booleans saying if processing had any errors
+	gameEvtsErr := strconv.FormatBool(replayFile.GameEvtsErr)
+	messageEvtsErr := strconv.FormatBool(replayFile.MessageEvtsErr)
+	trackerEvtsErr := strconv.FormatBool(replayFile.TrackerEvtsErr)
 
 	// Crezting JSON structure by hand:
 	var strBuilder strings.Builder
 	fmt.Fprintf(&strBuilder, "{\n")
-	fmt.Fprintf(&strBuilder, "  \"header\" : %s,\n", header)
-	fmt.Fprintf(&strBuilder, "  \"initData\" : %s,\n", initData)
-	fmt.Fprintf(&strBuilder, "  \"details\" : %s,\n", details)
-	fmt.Fprintf(&strBuilder, "  \"attrEvts\" : %s,\n", attrEvts)
-	fmt.Fprintf(&strBuilder, "  \"metadata\" : %s,\n", metadata)
-	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\" : %s\n", gameEvtsErr)
-	fmt.Fprintf(&strBuilder, "  \"messageEvtsErr\" : %s\n", messageEvtsErr)
-	fmt.Fprintf(&strBuilder, "  \"trackerEvtsErr\" : %s\n", trackerEvtsErr)
-	fmt.Fprintf(&strBuilder, "  \"messageEventsStrings\" : [%s]\n", strings.Join(messageEventStrings, ",\n"))
-	fmt.Fprintf(&strBuilder, "  \"gameEventStrings\" : [%s]\n", strings.Join(gameEventStrings, ",\n"))
-	fmt.Fprintf(&strBuilder, "  \"trackerEventStrings\" : [%s]\n", strings.Join(trackerEventStrings, ",\n"))
-	fmt.Fprintf(&strBuilder, "  \"PIDPlayerDescMap\" : {%s}\n", strings.Join(PIDPlayerDescMapStrings, ",\n"))
-	fmt.Fprintf(&strBuilder, "  \"")
+	fmt.Fprintf(&strBuilder, "  \"header\": %s,\n", header)
+	fmt.Fprintf(&strBuilder, "  \"initData\": %s,\n", initData)
+	fmt.Fprintf(&strBuilder, "  \"details\": %s,\n", details)
+	fmt.Fprintf(&strBuilder, "  \"attrEvts\": %s,\n", attrEvts)
+	fmt.Fprintf(&strBuilder, "  \"metadata\": %s,\n", metadata)
+	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s,\n", gameEvtsErr)
+	fmt.Fprintf(&strBuilder, "  \"messageEvtsErr\": %s,\n", messageEvtsErr)
+	fmt.Fprintf(&strBuilder, "  \"trackerEvtsErr\": %s,\n", trackerEvtsErr)
+	fmt.Fprintf(&strBuilder, "  \"messageEventsStrings\": [%s],\n", strings.Join(messageEventStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"gameEventStrings\": [%s],\n", strings.Join(gameEventStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"trackerEventStrings\": [%s],\n", strings.Join(trackerEventStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"PIDPlayerDescMap\": {%s},\n", strings.Join(PIDPlayerDescMapStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"ToonPlayerDescMap\": {%s},\n", strings.Join(ToonPlayerDescMapStrings, ",\n"))
+	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", gameEvtsErr+",\n")
+	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", messageEvtsErr+",\n")
+	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", trackerEvtsErr+"\n")
+	fmt.Fprintf(&strBuilder, "  ")
 	fmt.Fprintf(&strBuilder, "}")
 
 	// Writing JSON file:
