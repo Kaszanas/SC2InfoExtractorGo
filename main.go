@@ -114,12 +114,15 @@ func main() {
 	fmt.Fprintf(&strBuilder, "  \"PIDPlayerDescMap\": {%s},\n", strings.Join(PIDPlayerDescMapStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"ToonPlayerDescMap\": {%s},\n", strings.Join(ToonPlayerDescMapStrings, ",\n"))
 	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", gameEvtsErr+",\n")
-	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", messageEvtsErr+",\n")
-	fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", trackerEvtsErr+"\n")
+	fmt.Fprintf(&strBuilder, "  \"messageEvtsErr\": %s", messageEvtsErr+",\n")
+	fmt.Fprintf(&strBuilder, "  \"trackerEvtsErr\": %s", trackerEvtsErr+"\n")
 	fmt.Fprintf(&strBuilder, "  ")
 	fmt.Fprintf(&strBuilder, "}")
 
 	// Writing JSON file:
 	_ = ioutil.WriteFile("./DEMOS/Output/11506446_1566325366_8429955.json", []byte(strBuilder.String()), 0644)
+
+
+	// TODO: every event 
 
 }
