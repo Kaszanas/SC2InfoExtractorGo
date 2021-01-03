@@ -34,7 +34,7 @@ func main() {
 		// fmt.Println(absoluteReplayFilepath)
 		// replayFilepath := "./DEMOS/Input/11506446_1566325366_8429955.SC2Replay"
 
-		fmt.Println(replayFile)
+		// fmt.Println(replayFile)
 
 		replayData, err := rep.NewFromFile(replayFile)
 
