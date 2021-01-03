@@ -32,7 +32,7 @@ func main() {
 	for _, replayFile := range listOfInputFiles {
 
 		// fmt.Println(absoluteReplayFilepath)
-		// replayFilepath := "./DEMOS/Input/11506446_1566325366_8429955.SC2Replay"
+		// replayFilepath := "./DEMOS/Input/11506437_1566325283_230842.SC2Replay"
 
 		// fmt.Println(replayFile)
 
