@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	// "log"
+	"github.com/schollz/progressbar/v3"
 )
 
 func main() {
@@ -24,6 +25,8 @@ func main() {
 	absolutePathOutputDirectory, _ := filepath.Abs(outputDirectory)
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := listReplayFiles(absolutePathInputDirectory)
+
+	myProgressBar := progressbar.Default(int64(len(listOfInputFiles)))
 
 	for _, replayFile := range listOfInputFiles {
 
@@ -131,5 +134,6 @@ func main() {
 		// Writing JSON file:
 		_ = ioutil.WriteFile(filepath.Join(absolutePathOutputDirectory, finalFilename), []byte(strBuilder.String()), 0644)
 
+		myProgressBar.Add(1)
 	}
 }
