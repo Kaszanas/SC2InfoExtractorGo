@@ -28,6 +28,7 @@ func main() {
 
 	myProgressBar := progressbar.Default(int64(len(listOfInputFiles)))
 
+	errorCounter := 0
 	for _, replayFile := range listOfInputFiles {
 
 		// fmt.Println(absoluteReplayFilepath)
@@ -36,9 +37,11 @@ func main() {
 		fmt.Println(replayFile)
 
 		replayData, err := rep.NewFromFile(replayFile)
+
 		if err != nil {
 			fmt.Printf("Failed to open file: %v\n", err)
-			return
+			errorCounter++
+			continue
 		}
 		defer replayData.Close()
 
@@ -136,4 +139,5 @@ func main() {
 
 		myProgressBar.Add(1)
 	}
+	fmt.Println(errorCounter)
 }
