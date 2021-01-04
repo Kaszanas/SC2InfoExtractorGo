@@ -6,19 +6,21 @@ import (
 	"encoding/json"
 	// "github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
 	"strings"
 	// "log"
+	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
 )
 
 func main() {
 
 	// Settings:
-	inputDirectory := "./DEMOS/Input"
-	outputDirectory := "./DEMOS/Output"
+	inputDirectory := "G:/sc2replaystats_replays/TEST_DEMOS/Input"
+	outputDirectory := "G:/sc2replaystats_replays/TEST_DEMOS/Output"
 
 	// Getting absolute path to input directory:
 	absolutePathInputDirectory, _ := filepath.Abs(inputDirectory)
@@ -29,6 +31,8 @@ func main() {
 	myProgressBar := progressbar.Default(int64(len(listOfInputFiles)))
 
 	errorCounter := 0
+	processedCounter := 0
+	var listToCompress []string
 	for _, replayFile := range listOfInputFiles {
 
 		// fmt.Println(absoluteReplayFilepath)
@@ -134,10 +138,20 @@ func main() {
 
 		_, replayFilename := filepath.Split(replayFile)
 		finalFilename := strings.TrimSuffix(replayFilename, filepath.Ext(replayFilename)) + ".json"
+
+		// TODO: Everything below needs to be checked:
+		listToCompress = append(listToCompress, strBuilder.String())
 		// Writing JSON file:
 		_ = ioutil.WriteFile(filepath.Join(absolutePathOutputDirectory, finalFilename), []byte(strBuilder.String()), 0644)
-
 		myProgressBar.Add(1)
+		processedCounter++
+		if processedCounter%10000 == 0 {
+			for _, stringData := range listToCompress {
+
+			}
+			bzip2.NewWriterLevel(io.Writer(), 9)
+		}
+
 	}
 	fmt.Println(errorCounter)
 }

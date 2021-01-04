@@ -8,6 +8,8 @@ github.com/icza/s2prot v1.4.0/go.mod h1:+KA56x5KbegBW5T7DJNBdk1JbzOzNd4V26UoH3LR
 github.com/icza/s2prot v1.4.1-0.20201207183138-07cda4ef3d81 h1:pqQtUhlFxXBYIu/YH4XFmrGvK5NEamTvmmuK6r3FW9Y=
 github.com/icza/s2prot v1.4.1-0.20201207183138-07cda4ef3d81/go.mod h1:Aw3BgGOZ83Qkxmz90i22WFCMiDU4oOFT5D3hoDLBl3E=
 github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213/go.mod h1:vNUNkEQ1e29fT/6vq2aBdFsgNPmy8qMdSay1npru+Sw=
+github.com/larzconwell/bzip2 v0.0.0-20160405040150-ecf7a0ddeda1 h1:V1CKKq9+klx5qgClRNrr9btXaZoyWfhY8INwCbrqpV4=
+github.com/larzconwell/bzip2 v0.0.0-20160405040150-ecf7a0ddeda1/go.mod h1:Zq5BehdDAeg6PtAOzBvVComb8iNktGVia+oYqUoJrAk=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mattn/go-runewidth v0.0.9 h1:Lm995f3rfxdpd6TSmuVCHVb/QhupuXlYr8sCI/QdE+0=
 github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
