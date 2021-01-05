@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func listReplayFiles(inputPath string) []string {
+func listFiles(inputPath string, fileExtension string) []string {
 
 	files, err := ioutil.ReadDir(inputPath)
 	if err != nil {
@@ -17,7 +17,7 @@ func listReplayFiles(inputPath string) []string {
 	for _, file := range files {
 		filename := file.Name()
 		fileExtension := filepath.Ext(filename)
-		if fileExtension != ".SC2Replay" {
+		if fileExtension != fileExtension {
 		} else {
 			absoluteReplayPath := filepath.Join(inputPath, filename)
 			listOfReplayFiles = append(listOfReplayFiles, absoluteReplayPath)

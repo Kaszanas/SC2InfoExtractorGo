@@ -5,24 +5,22 @@ import (
 	// "github.com/icza/mpq"
 	"encoding/json"
 	// "github.com/icza/s2prot"
+	"flag"
 	"github.com/icza/s2prot/rep"
-	"io"
+	"github.com/larzconwell/bzip2"
+	"github.com/schollz/progressbar/v3"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	// "log"
-	"flag"
-	"github.com/larzconwell/bzip2"
-	"github.com/schollz/progressbar/v3"
-	"os"
 )
 
 func main() {
 
 	// Command line arguments:
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
-	interDirectory := flag.String("inter", "", "Intermediate directory where .json files will be stored before bzip2 compression.")
+	interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
 	filesInPackage := flag.Int("files_in_package", 10000, "Provide a number of files to be compressed into a bzip2 archive.")
 
@@ -33,7 +31,7 @@ func main() {
 	absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 	// Getting list of absolute paths for files from input directory:
-	listOfInputFiles := listReplayFiles(absolutePathInputDirectory)
+	listOfInputFiles := listFiles(absolutePathInputDirectory, ".SC2Replay")
 
 	myProgressBar := progressbar.Default(int64(len(listOfInputFiles)))
 
@@ -151,8 +149,6 @@ func main() {
 		processedCounter++
 
 		filesLeftToProcess := len(listOfInputFiles) - processedCounter
-		var zeroValue int
-		zeroValue = 0
 
 		// Stop after reaching the limit and compress into a bzip2
 		if processedCounter%*filesInPackage == 0 || filesLeftToProcess-*filesInPackage < 0 {
@@ -164,7 +160,7 @@ func main() {
 			}
 
 			// Get list of .json filenames to be packaged:
-
+			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
 			//
 
 			bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 9)
@@ -174,12 +170,31 @@ func main() {
 			defer bzipWriter.Close()
 
 			// Add listed files to the archive
+			for _, file := range listOfProcessedJSON {
+				// Read byte array from json file:
+				JSONContents, err := ioutil.ReadFile(file)
+				if err != nil {
+					fmt.Printf("Failed to open %s: %s", file, err)
+				}
+
+				// Write a single JSON to .zip:
+				_, err = bzipWriter.Write(JSONContents)
+				if err != nil {
+					fmt.Printf("Failed to write %s to zip: %s", file, err)
+					compressionErrorCounter++
+				}
+
+			}
 
 			// Delete intermediate .json files
+			dir, err := ioutil.ReadDir(absolutePathInterDirectory)
+			for _, d := range dir {
+				os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
+			}
 
 			packageCounter++
 		}
 
 	}
-	fmt.Println(errorCounter)
+	fmt.Println(readErrorCounter)
 }
