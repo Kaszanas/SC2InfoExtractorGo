@@ -12,39 +12,43 @@ import (
 	"strconv"
 	"strings"
 	// "log"
+	"flag"
 	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
+	"os"
 )
 
 func main() {
 
-	// Settings:
-	inputDirectory := "G:/sc2replaystats_replays/TEST_DEMOS/Input"
-	outputDirectory := "G:/sc2replaystats_replays/TEST_DEMOS/Output"
+	// Command line arguments:
+	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
+	interDirectory := flag.String("inter", "", "Intermediate directory where .json files will be stored before bzip2 compression.")
+	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
+	filesInPackage := flag.Int("files_in_package", 10000, "Provide a number of files to be compressed into a bzip2 archive.")
+
+	flag.Parse()
 
 	// Getting absolute path to input directory:
-	absolutePathInputDirectory, _ := filepath.Abs(inputDirectory)
-	absolutePathOutputDirectory, _ := filepath.Abs(outputDirectory)
+	absolutePathInputDirectory, _ := filepath.Abs(*inputDirectory)
+	absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
+	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := listReplayFiles(absolutePathInputDirectory)
 
 	myProgressBar := progressbar.Default(int64(len(listOfInputFiles)))
 
-	errorCounter := 0
+	readErrorCounter := 0
+	compressionErrorCounter := 0
 	processedCounter := 0
+	packageCounter := 0
 	var listToCompress []string
 	for _, replayFile := range listOfInputFiles {
-
-		// fmt.Println(absoluteReplayFilepath)
-		// replayFilepath := "./DEMOS/Input/11506437_1566325283_230842.SC2Replay"
-
-		// fmt.Println(replayFile)
 
 		replayData, err := rep.NewFromFile(replayFile)
 
 		if err != nil {
 			fmt.Printf("Failed to open file: %v\n", err)
-			errorCounter++
+			readErrorCounter++
 			continue
 		}
 		defer replayData.Close()
@@ -139,17 +143,41 @@ func main() {
 		_, replayFilename := filepath.Split(replayFile)
 		finalFilename := strings.TrimSuffix(replayFilename, filepath.Ext(replayFilename)) + ".json"
 
-		// TODO: Everything below needs to be checked:
 		listToCompress = append(listToCompress, strBuilder.String())
 		// Writing JSON file:
-		_ = ioutil.WriteFile(filepath.Join(absolutePathOutputDirectory, finalFilename), []byte(strBuilder.String()), 0644)
+		_ = ioutil.WriteFile(filepath.Join(absolutePathInterDirectory, finalFilename), []byte(strBuilder.String()), 0644)
+		// Remembering how much files were processed and created as .json:
 		myProgressBar.Add(1)
 		processedCounter++
-		if processedCounter%10000 == 0 {
-			for _, stringData := range listToCompress {
 
+		filesLeftToProcess := len(listOfInputFiles) - processedCounter
+		var zeroValue int
+		zeroValue = 0
+
+		// Stop after reaching the limit and compress into a bzip2
+		if processedCounter%*filesInPackage == 0 || filesLeftToProcess-*filesInPackage < 0 {
+
+			// Create empty zip file with numbered filename.
+			emptyZip, err := os.Create(filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip"))
+			if err != nil {
+				panic(err)
 			}
-			bzip2.NewWriterLevel(io.Writer(), 9)
+
+			// Get list of .json filenames to be packaged:
+
+			//
+
+			bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 9)
+			if err != nil {
+				panic(err)
+			}
+			defer bzipWriter.Close()
+
+			// Add listed files to the archive
+
+			// Delete intermediate .json files
+
+			packageCounter++
 		}
 
 	}
