@@ -2,5 +2,6 @@
 *.pickle
 *.json
 *.exe
+*.zip
 
 __debug_bin

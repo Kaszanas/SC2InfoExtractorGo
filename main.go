@@ -151,7 +151,7 @@ func main() {
 		filesLeftToProcess := len(listOfInputFiles) - processedCounter
 
 		// Stop after reaching the limit and compress into a bzip2
-		if processedCounter%*filesInPackage == 0 || filesLeftToProcess-*filesInPackage < 0 {
+		if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
 
 			// Create empty zip file with numbered filename.
 			emptyZip, err := os.Create(filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip"))
@@ -178,6 +178,7 @@ func main() {
 				}
 
 				// Write a single JSON to .zip:
+				// TODO: Process hangs here!
 				_, err = bzipWriter.Write(JSONContents)
 				if err != nil {
 					fmt.Printf("Failed to write %s to zip: %s", file, err)
