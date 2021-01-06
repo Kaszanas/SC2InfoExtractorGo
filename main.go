@@ -161,9 +161,8 @@ func main() {
 
 			// Get list of .json filenames to be packaged:
 			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
-			//
 
-			bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 9)
+			bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 1)
 			if err != nil {
 				panic(err)
 			}
@@ -179,12 +178,19 @@ func main() {
 
 				// Write a single JSON to .zip:
 				// TODO: Process hangs here!
-				_, err = bzipWriter.Write(JSONContents)
-				if err != nil {
+				_, compressionError := bzipWriter.Write(JSONContents)
+				if compressionError != nil {
 					fmt.Printf("Failed to write %s to zip: %s", file, err)
 					compressionErrorCounter++
 				}
-
+				err = bzipWriter.Flush()
+				if err != nil {
+					fmt.Printf("Failed to Flush bzipWriter")
+				}
+				err = bzipWriter.Close()
+				if err != nil {
+					fmt.Printf("Failed to Close bzipWriter")
+				}
 			}
 
 			// Delete intermediate .json files
