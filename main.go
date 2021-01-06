@@ -162,14 +162,15 @@ func main() {
 			// Get list of .json filenames to be packaged:
 			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
 
-			bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 1)
-			if err != nil {
-				panic(err)
-			}
-			defer bzipWriter.Close()
-
 			// Add listed files to the archive
 			for _, file := range listOfProcessedJSON {
+
+				bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 1)
+				if err != nil {
+					panic(err)
+				}
+				defer bzipWriter.Close()
+
 				// Read byte array from json file:
 				JSONContents, err := ioutil.ReadFile(file)
 				if err != nil {
@@ -187,21 +188,15 @@ func main() {
 				if err != nil {
 					fmt.Printf("Failed to Flush bzipWriter")
 				}
-				err = bzipWriter.Close()
-				if err != nil {
-					fmt.Printf("Failed to Close bzipWriter")
+
+				// Delete intermediate .json files
+				dir, err := ioutil.ReadDir(absolutePathInterDirectory)
+				for _, d := range dir {
+					os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
 				}
+				packageCounter++
 			}
-
-			// Delete intermediate .json files
-			dir, err := ioutil.ReadDir(absolutePathInterDirectory)
-			for _, d := range dir {
-				os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
-			}
-
-			packageCounter++
 		}
-
 	}
 	fmt.Println(readErrorCounter)
 }
