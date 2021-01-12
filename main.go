@@ -164,9 +164,6 @@ func main() {
 				panic(err)
 			}
 
-			// Get list of .json filenames to be packaged:
-			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
-
 			// Register a custom compressor.
 			zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
 				return bzip2.NewWriterLevel(out, 9)
@@ -178,6 +175,9 @@ func main() {
 			// Create a new zip archive:
 			w := zip.NewWriter(buf)
 
+			// TODO: If there will be enough memory the for loop which is defined below is unescessary:
+			// Get list of .json filenames to be packaged:
+			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
 			// Add listed files to the archive
 			for _, file := range listOfProcessedJSON {
 
