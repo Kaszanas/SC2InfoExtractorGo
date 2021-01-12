@@ -5,15 +5,20 @@ import (
 	// "github.com/icza/mpq"
 	"encoding/json"
 	// "github.com/icza/s2prot"
+	"archive/zip"
+	"bytes"
 	"flag"
+	"fmt"
 	"github.com/icza/s2prot/rep"
 	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -162,40 +167,65 @@ func main() {
 			// Get list of .json filenames to be packaged:
 			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
 
+			// Register a custom compressor.
+			zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
+				return bzip2.NewWriterLevel(out, 9)
+			})
+
+			// Create a buffer to write our archive to:
+			buf := new(bytes.Buffer)
+
+			// Create a new zip archive:
+			w := zip.NewWriter(buf)
+
 			// Add listed files to the archive
 			for _, file := range listOfProcessedJSON {
-
-				bzipWriter, err := bzip2.NewWriterLevel(emptyZip, 1)
-				if err != nil {
-					panic(err)
-				}
-				defer bzipWriter.Close()
 
 				// Read byte array from json file:
 				JSONContents, err := ioutil.ReadFile(file)
 				if err != nil {
 					fmt.Printf("Failed to open %s: %s", file, err)
+					panic("Error")
 				}
 
-				// Write a single JSON to .zip:
-				// TODO: Process hangs here!
-				_, compressionError := bzipWriter.Write(JSONContents)
-				if compressionError != nil {
-					fmt.Printf("Failed to write %s to zip: %s", file, err)
-					compressionErrorCounter++
+				// TODO: This might be needed if string will be read from memory:
+				// Converting from string to bytes:
+				// someStringBytes := []byte(someString)
+
+				// TODO: Automatically adjust header for file that was read from the drive or memory:
+				fh := &zip.FileHeader{
+					Name:               "test.txt",
+					UncompressedSize64: uint64(len(JSONContents)),
+					Method:             12,
+					Modified:           time.Now(),
 				}
-				err = bzipWriter.Flush()
+				fh.SetMode(0777)
+				fw, err := w.CreateHeader(fh)
+
 				if err != nil {
-					fmt.Printf("Failed to Flush bzipWriter")
+					fmt.Printf("Error: %s", err)
+					panic("Error")
 				}
+
+				fw.Write(JSONContents)
+
+				// _, compressionError := bzipWriter.Write(JSONContents)
+				// if compressionError != nil {
+				// 	fmt.Printf("Failed to write %s to zip: %s", file, err)
+				// 	compressionErrorCounter++
+				// }
 
 				// Delete intermediate .json files
 				dir, err := ioutil.ReadDir(absolutePathInterDirectory)
 				for _, d := range dir {
 					os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
 				}
-				packageCounter++
 			}
+			w.Close()
+
+			// TODO: Automatically adjust filename for the package number:
+			_ = ioutil.WriteFile("test_zip.zip", buf.Bytes(), 0777)
+			packageCounter++
 		}
 	}
 	fmt.Println(readErrorCounter)
