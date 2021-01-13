@@ -8,7 +8,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"flag"
-	"fmt"
 	"github.com/icza/s2prot/rep"
 	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
@@ -28,6 +27,8 @@ func main() {
 	interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
 	filesInPackage := flag.Int("files_in_package", 10000, "Provide a number of files to be compressed into a bzip2 archive.")
+	// Other compression methods than Deflate need to be registered further down in the code:
+	compressionMethod := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
 
 	flag.Parse()
 
@@ -148,7 +149,7 @@ func main() {
 
 		listToCompress = append(listToCompress, strBuilder.String())
 		// Writing JSON file:
-		_ = ioutil.WriteFile(filepath.Join(absolutePathInterDirectory, finalFilename), []byte(strBuilder.String()), 0644)
+		// _ = ioutil.WriteFile(filepath.Join(absolutePathInterDirectory, finalFilename), []byte(strBuilder.String()), 0644)
 		// Remembering how much files were processed and created as .json:
 		myProgressBar.Add(1)
 		processedCounter++
@@ -159,10 +160,10 @@ func main() {
 		if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
 
 			// Create empty zip file with numbered filename.
-			emptyZip, err := os.Create(filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip"))
-			if err != nil {
-				panic(err)
-			}
+			// emptyZip, err := os.Create(filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip"))
+			// if err != nil {
+			// 	panic(err)
+			// }
 
 			// Register a custom compressor.
 			zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
@@ -175,58 +176,56 @@ func main() {
 			// Create a new zip archive:
 			w := zip.NewWriter(buf)
 
-			// TODO: If there will be enough memory the for loop which is defined below is unescessary:
-			// Get list of .json filenames to be packaged:
-			listOfProcessedJSON := listFiles(absolutePathInterDirectory, ".json")
-			// Add listed files to the archive
-			for _, file := range listOfProcessedJSON {
+			// Read byte array from json file:
+			// JSONContents, err := ioutil.ReadFile(file)
+			// if err != nil {
+			// 	fmt.Printf("Failed to open %s: %s", file, err)
+			// 	panic("Error")
+			// }
 
-				// Read byte array from json file:
-				JSONContents, err := ioutil.ReadFile(file)
-				if err != nil {
-					fmt.Printf("Failed to open %s: %s", file, err)
-					panic("Error")
-				}
+			// TODO: This might be needed if string will be read from memory:
+			// Converting from string to bytes:
+			// someStringBytes := []byte(someString)
 
-				// TODO: This might be needed if string will be read from memory:
-				// Converting from string to bytes:
-				// someStringBytes := []byte(someString)
+			jsonBytes := []byte(strBuilder.String())
+			_, fileHeaderFilename := filepath.Split(replayFile)
 
-				// TODO: Automatically adjust header for file that was read from the drive or memory:
-				fh := &zip.FileHeader{
-					Name:               "test.txt",
-					UncompressedSize64: uint64(len(JSONContents)),
-					Method:             12,
-					Modified:           time.Now(),
-				}
-				fh.SetMode(0777)
-				fw, err := w.CreateHeader(fh)
-
-				if err != nil {
-					fmt.Printf("Error: %s", err)
-					panic("Error")
-				}
-
-				fw.Write(JSONContents)
-
-				// _, compressionError := bzipWriter.Write(JSONContents)
-				// if compressionError != nil {
-				// 	fmt.Printf("Failed to write %s to zip: %s", file, err)
-				// 	compressionErrorCounter++
-				// }
-
-				// Delete intermediate .json files
-				dir, err := ioutil.ReadDir(absolutePathInterDirectory)
-				for _, d := range dir {
-					os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
-				}
+			// TODO: Automatically adjust header for file that was read from the drive or memory:
+			fh := &zip.FileHeader{
+				Name:               fileHeaderFilename,
+				UncompressedSize64: uint64(len(jsonBytes)),
+				Method:             uint16(*compressionMethod),
+				Modified:           time.Now(),
 			}
-			w.Close()
+			fh.SetMode(0777)
+			fw, err := w.CreateHeader(fh)
 
+			if err != nil {
+				fmt.Printf("Error: %s", err)
+				panic("Error")
+			}
+
+			fw.Write(jsonBytes)
+
+			// _, compressionError := bzipWriter.Write(JSONContents)
+			// if compressionError != nil {
+			// 	fmt.Printf("Failed to write %s to zip: %s", file, err)
+			// 	compressionErrorCounter++
+			// }
+
+			// Delete intermediate .json files
+			// dir, err := ioutil.ReadDir(absolutePathInterDirectory)
+			// for _, d := range dir {
+			// 	os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
+			// }
+
+			w.Close()
 			// TODO: Automatically adjust filename for the package number:
-			_ = ioutil.WriteFile("test_zip.zip", buf.Bytes(), 0777)
+			_ = ioutil.WriteFile("package_"+strconv.Itoa(packageCounter)+".zip", buf.Bytes(), 0777)
 			packageCounter++
+
 		}
+
 	}
 	fmt.Println(readErrorCounter)
 }
