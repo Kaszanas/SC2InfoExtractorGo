@@ -3,19 +3,16 @@ package main
 import (
 	"fmt"
 	// "github.com/icza/mpq"
-	"encoding/json"
 	// "github.com/icza/s2prot"
 	"archive/zip"
 	"bytes"
 	"flag"
-	"github.com/icza/s2prot/rep"
 	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -49,134 +46,25 @@ func main() {
 	compressionErrorCounter := 0
 	processedCounter := 0
 	packageCounter := 0
-	var listToCompress []string
+
+	// TODO: Helper function returning buffer and zip writer:
+	// Create a buffer to write our archive to:
+	buf := new(bytes.Buffer)
+	// Create a new zip archive:
+	w := zip.NewWriter(buf)
+
 	for _, replayFile := range listOfInputFiles {
 
-		replayData, err := rep.NewFromFile(replayFile)
-
-		if err != nil {
-			fmt.Printf("Failed to open file: %v\n", err)
+		didWork, replayString := stringifyReplay(replayFile)
+		if !didWork {
 			readErrorCounter++
 			continue
 		}
-		defer replayData.Close()
 
-		header := replayData.Header.String()
-		details := replayData.Details.String()
-		initData := replayData.InitData.String()
-		attrEvts := replayData.AttrEvts.String()
-		metadata := replayData.Metadata.String()
+		// TODO: Write summary to CSV or JSON or sqlite
 
-		PIDPlayerDescMap := replayData.TrackerEvts.PIDPlayerDescMap
-		ToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
-
-		// Creating lists of strings for later use in generating JSON out of the replay data:
-		var gameEventStrings []string
-		for _, gameEvent := range replayData.GameEvts {
-			gameEventStrings = append(gameEventStrings, gameEvent.String())
-		}
-
-		var messageEventStrings []string
-		for _, messageEvent := range replayData.MessageEvts {
-			messageEventStrings = append(messageEventStrings, messageEvent.String())
-		}
-
-		var trackerEventStrings []string
-		for _, trackerEvent := range replayData.TrackerEvts.Evts {
-			trackerEventStrings = append(trackerEventStrings, trackerEvent.String())
-		}
-
-		// These structures are handled differently as it is a Map without .String() method:
-		var PIDPlayerDescMapStrings []string
-		for PIDPlayerDescKey, PIDPlayerDescValue := range PIDPlayerDescMap {
-
-			// Converting ID to string:
-			playerNumber := strconv.FormatInt(PIDPlayerDescKey, 10)
-
-			// Converting struct to JSON:
-			playerDescInformation, err := json.Marshal(PIDPlayerDescValue)
-
-			if err != nil {
-				panic(err)
-			}
-
-			// Putting everything together:
-			PIDPlayerDescMapStrings = append(PIDPlayerDescMapStrings, "\""+playerNumber+"\": "+string(playerDescInformation))
-		}
-
-		var ToonPlayerDescMapStrings []string
-		for ToonPlayerDescKey, ToonPlayerDescValue := range ToonPlayerDescMap {
-
-			// Converting ID to string:
-			playerToon := ToonPlayerDescKey
-
-			// Converting struct to JSON:
-			playerDescInformation, err := json.Marshal(ToonPlayerDescValue)
-
-			if err != nil {
-				panic(err)
-			}
-
-			// Putting everything together:
-			ToonPlayerDescMapStrings = append(ToonPlayerDescMapStrings, "\""+playerToon+"\": "+string(playerDescInformation))
-		}
-
-		// Booleans saying if processing had any errors
-		gameEvtsErr := strconv.FormatBool(replayData.GameEvtsErr)
-		messageEvtsErr := strconv.FormatBool(replayData.MessageEvtsErr)
-		trackerEvtsErr := strconv.FormatBool(replayData.TrackerEvtsErr)
-
-		// Crezting JSON structure by hand:
-		var strBuilder strings.Builder
-		fmt.Fprintf(&strBuilder, "{\n")
-		fmt.Fprintf(&strBuilder, "  \"header\": %s,\n", header)
-		fmt.Fprintf(&strBuilder, "  \"initData\": %s,\n", initData)
-		fmt.Fprintf(&strBuilder, "  \"details\": %s,\n", details)
-		fmt.Fprintf(&strBuilder, "  \"attrEvts\": %s,\n", attrEvts)
-		fmt.Fprintf(&strBuilder, "  \"metadata\": %s,\n", metadata)
-		fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s,\n", gameEvtsErr)
-		fmt.Fprintf(&strBuilder, "  \"messageEvtsErr\": %s,\n", messageEvtsErr)
-		fmt.Fprintf(&strBuilder, "  \"trackerEvtsErr\": %s,\n", trackerEvtsErr)
-		fmt.Fprintf(&strBuilder, "  \"messageEventsStrings\": [%s],\n", strings.Join(messageEventStrings, ",\n"))
-		fmt.Fprintf(&strBuilder, "  \"gameEventStrings\": [%s],\n", strings.Join(gameEventStrings, ",\n"))
-		fmt.Fprintf(&strBuilder, "  \"trackerEventStrings\": [%s],\n", strings.Join(trackerEventStrings, ",\n"))
-		fmt.Fprintf(&strBuilder, "  \"PIDPlayerDescMap\": {%s},\n", strings.Join(PIDPlayerDescMapStrings, ",\n"))
-		fmt.Fprintf(&strBuilder, "  \"ToonPlayerDescMap\": {%s},\n", strings.Join(ToonPlayerDescMapStrings, ",\n"))
-		fmt.Fprintf(&strBuilder, "  \"gameEvtsErr\": %s", gameEvtsErr+",\n")
-		fmt.Fprintf(&strBuilder, "  \"messageEvtsErr\": %s", messageEvtsErr+",\n")
-		fmt.Fprintf(&strBuilder, "  \"trackerEvtsErr\": %s", trackerEvtsErr+"\n")
-		fmt.Fprintf(&strBuilder, "  ")
-		fmt.Fprintf(&strBuilder, "}")
-
-		// _, replayFilename := filepath.Split(replayFile)
-		// finalFilename := strings.TrimSuffix(replayFilename, filepath.Ext(replayFilename)) + ".json"
-
-		listToCompress = append(listToCompress, strBuilder.String())
-		// Writing JSON file:
-		// _ = ioutil.WriteFile(filepath.Join(absolutePathInterDirectory, finalFilename), []byte(strBuilder.String()), 0644)
-		// Remembering how much files were processed and created as .json:
-		myProgressBar.Add(1)
-
-		filesLeftToProcess := len(listOfInputFiles) - processedCounter
-
-		// Create a buffer to write our archive to:
-		buf := new(bytes.Buffer)
-
-		// Create a new zip archive:
-		w := zip.NewWriter(buf)
-
-		// Read byte array from json file:
-		// JSONContents, err := ioutil.ReadFile(file)
-		// if err != nil {
-		// 	fmt.Printf("Failed to open %s: %s", file, err)
-		// 	panic("Error")
-		// }
-
-		// TODO: This might be needed if string will be read from memory:
-		// Converting from string to bytes:
-		// someStringBytes := []byte(someString)
-
-		jsonBytes := []byte(strBuilder.String())
+		// TODO: Helper that takes string, filename, zip file, and saves to zip archive under filename
+		jsonBytes := []byte(replayString)
 		_, fileHeaderFilename := filepath.Split(replayFile)
 
 		fh := &zip.FileHeader{
@@ -194,33 +82,26 @@ func main() {
 		}
 
 		fw.Write(jsonBytes)
-		w.Close()
-		processedCounter++
+		// Up to here
 
+		processedCounter++
+		filesLeftToProcess := len(listOfInputFiles) - processedCounter
+		// Remembering how much files were processed and created as .json:
+		myProgressBar.Add(1)
 		// Stop after reaching the limit and compress into a bzip2
 		if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
-
-			// Create empty zip file with numbered filename.
-			// emptyZip, err := os.Create(filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip"))
-			// if err != nil {
-			// 	panic(err)
-			// }
-
-			// _, compressionError := bzipWriter.Write(JSONContents)
-			// if compressionError != nil {
-			// 	fmt.Printf("Failed to write %s to zip: %s", file, err)
-			// 	compressionErrorCounter++
-			// }
-
-			// Delete intermediate .json files
-			// dir, err := ioutil.ReadDir(absolutePathInterDirectory)
-			// for _, d := range dir {
-			// 	os.RemoveAll(filepath.Join([]string{"tmp", d.Name()}...))
-			// }
-
+			//  TODO: Helper taking buffer and writing to drive
+			w.Close()
 			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
 			_ = ioutil.WriteFile(packageAbsPath, buf.Bytes(), 0777)
 			packageCounter++
+
+			// TODO: use previous helper:
+			// Create a buffer to write our archive to:
+			buf = new(bytes.Buffer)
+
+			// Create a new zip archive:
+			w = zip.NewWriter(buf)
 		}
 
 	}
