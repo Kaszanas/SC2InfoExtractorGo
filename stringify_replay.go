@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+// TODO: Prepare anonymization using native golang structures
+// Anonymization is needed in chat events and in Toon of the player.
+// Players should receive persistent anonymized ID for every toon that was observed in the replay to be able to perform more advanced analysis.
+
 func stringifyReplay(replayFile string) (bool, string) {
 
 	replayData, err := rep.NewFromFile(replayFile)
