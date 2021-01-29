@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/icza/s2prot/rep"
+	"log"
 	"strconv"
 	"strings"
+
+	"github.com/icza/s2prot/rep"
 )
 
 // TODO: Prepare anonymization using native golang structures
@@ -14,10 +16,11 @@ import (
 
 func stringifyReplay(replayFile string) (bool, string) {
 
-	replayData, err := rep.NewFromFile(replayFile)
+	log.Println("Entered stringifyReplay()")
 
+	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		fmt.Printf("Failed to open file: %v\n", err)
+		log.Println("Failed to open file: %v\n", err)
 
 		return false, ""
 	}
@@ -84,6 +87,7 @@ func stringifyReplay(replayFile string) (bool, string) {
 		ToonPlayerDescMapStrings = append(ToonPlayerDescMapStrings, "\""+playerToon+"\": "+string(playerDescInformation))
 	}
 
+	// TODO: There needs to be a separate file that handles and records these errors.
 	// Booleans saying if processing had any errors
 	gameEvtsErr := strconv.FormatBool(replayData.GameEvtsErr)
 	messageEvtsErr := strconv.FormatBool(replayData.MessageEvtsErr)
@@ -110,6 +114,8 @@ func stringifyReplay(replayFile string) (bool, string) {
 	fmt.Fprintf(&strBuilder, "  \"trackerEvtsErr\": %s", trackerEvtsErr+"\n")
 	fmt.Fprintf(&strBuilder, "  ")
 	fmt.Fprintf(&strBuilder, "}")
+
+	log.Println("Finished building the string.")
 
 	// TODO: Return a summary in a custom Golang struct.
 	return true, strBuilder.String()
