@@ -1,20 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"os"
+
 	// "github.com/icza/mpq"
 	// "github.com/icza/s2prot"
 	"archive/zip"
 	"flag"
-	"github.com/larzconwell/bzip2"
-	"github.com/schollz/progressbar/v3"
 	"io"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"strconv"
+
+	"github.com/larzconwell/bzip2"
+	"github.com/schollz/progressbar/v3"
 )
 
 func main() {
+
+	// If the file doesn't exist, create it or append to the file
+	logFile, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(logFile)
+
+	log.Println("Entered main().")
 
 	// Command line arguments:
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
@@ -33,6 +45,9 @@ func main() {
 	absolutePathInputDirectory, _ := filepath.Abs(*inputDirectory)
 	// absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
+
+	log.Println("Parsed command line flags. inputDirectory(%s), outputDirectory(%s), filesInPackage(%s), compressionMethodFlag(%s)", absolutePathInputDirectory, absolutePathOutputDirectory, *filesInPackage, compressionMethod)
+
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := listFiles(absolutePathInputDirectory, ".SC2Replay")
 
@@ -50,12 +65,14 @@ func main() {
 
 	// Helper method returning bytes buffer and zip writer:
 	buffer, writer := initBufferWriter()
+	log.Println("Initialized buffer and writer.")
 
 	for _, replayFile := range listOfInputFiles {
 
 		didWork, replayString := stringifyReplay(replayFile)
 		if !didWork {
 			readErrorCounter++
+			log.Println("Got error when attempting to open replayFile = %s", replayFile)
 			continue
 		}
 
@@ -63,6 +80,7 @@ func main() {
 
 		// Helper saving to zip archive:
 		saveFileToArchive(replayString, replayFile, compressionMethod, writer)
+		log.Println("Added file to zip archive.")
 
 		processedCounter++
 		filesLeftToProcess := len(listOfInputFiles) - processedCounter
@@ -70,16 +88,19 @@ func main() {
 		myProgressBar.Add(1)
 		// Stop after reaching the limit and compress into a bzip2
 		if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
+			log.Println("Detected processed counter to be within filesInPackage threshold.")
 			writer.Close()
 			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
 			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+			log.Println("Saved package: %s to path: %s", packageCounter, packageAbsPath)
 			packageCounter++
 
 			// Helper method returning bytes buffer and zip writer:
 			buffer, writer = initBufferWriter()
+			log.Println("Initialized buffer and writer.")
 		}
 
 	}
-	fmt.Println(readErrorCounter)
-	fmt.Println(compressionErrorCounter)
+	log.Println("Finished processing found: %s - readErrors", readErrorCounter)
+	log.Println("Finished processing found: %s - compressionErrors", compressionErrorCounter)
 }
