@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
 	"github.com/icza/s2prot/rep"
+	log "github.com/sirupsen/logrus"
 )
 
 // TODO: Prepare anonymization using native golang structures
@@ -20,7 +20,7 @@ func stringifyReplay(replayFile string) (bool, string) {
 
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		log.Println("Failed to open file: %v\n", err)
+		log.Error("Failed to open file: %v\n", err)
 
 		return false, ""
 	}
@@ -115,7 +115,7 @@ func stringifyReplay(replayFile string) (bool, string) {
 	fmt.Fprintf(&strBuilder, "  ")
 	fmt.Fprintf(&strBuilder, "}")
 
-	log.Println("Finished building the string.")
+	log.Info("Finished building the string.")
 
 	// TODO: Return a summary in a custom Golang struct.
 	return true, strBuilder.String()
