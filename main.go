@@ -19,6 +19,8 @@ import (
 
 func main() {
 
+	log.SetFormatter(&log.JSONFormatter{})
+
 	// If the file doesn't exist, create it or append to the file
 	logFile, err := os.OpenFile("logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -46,7 +48,11 @@ func main() {
 	// absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 
-	log.Info("Parsed command line flags. inputDirectory(%s), outputDirectory(%s), filesInPackage(%s), compressionMethodFlag(%s)", absolutePathInputDirectory, absolutePathOutputDirectory, *filesInPackage, compressionMethod)
+	log.WithFields(log.Fields{
+		"inputDirectory":    absolutePathInputDirectory,
+		"outputDirectory":   absolutePathOutputDirectory,
+		"filesInPackage":    *filesInPackage,
+		"compressionMethod": compressionMethod}).Info("Parsed command line flags")
 
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := listFiles(absolutePathInputDirectory, ".SC2Replay")
@@ -72,7 +78,7 @@ func main() {
 		didWork, replayString := stringifyReplay(replayFile)
 		if !didWork {
 			readErrorCounter++
-			log.Error("Got error when attempting to open replayFile = %s", replayFile)
+			log.Warn("Got error when attempting to open replayFile = %s", replayFile)
 			continue
 		}
 
@@ -92,7 +98,7 @@ func main() {
 			writer.Close()
 			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
 			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
-			log.Println("Saved package: %s to path: %s", packageCounter, packageAbsPath)
+			log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
 			packageCounter++
 
 			// Helper method returning bytes buffer and zip writer:

@@ -16,13 +16,14 @@ import (
 
 func stringifyReplay(replayFile string) (bool, string) {
 
-	log.Println("Entered stringifyReplay()")
+	log.Info("Entered stringifyReplay()")
+
+	successFlag := true
 
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		log.Error("Failed to open file: %v\n", err)
-
-		return false, ""
+		log.WithFields(log.Fields{"file": replayFile, "error": err}).Warn("Failed to open file.")
+		return !successFlag, ""
 	}
 	defer replayData.Close()
 
@@ -62,7 +63,8 @@ func stringifyReplay(replayFile string) (bool, string) {
 		playerDescInformation, err := json.Marshal(PIDPlayerDescValue)
 
 		if err != nil {
-			panic(err)
+			log.WithFields(log.Fields{"file": replayFile, "error": err}).Warn("Failed to read PIDPlayerDescValue.")
+			return !successFlag, ""
 		}
 
 		// Putting everything together:
@@ -79,16 +81,29 @@ func stringifyReplay(replayFile string) (bool, string) {
 		playerDescInformation, err := json.Marshal(ToonPlayerDescValue)
 
 		if err != nil {
-			// Return false
-			panic(err)
+			log.WithFields(log.Fields{"file": replayFile, "error": err}).Warn("Failed to read ToonPlayerDescValue.")
+			return !successFlag, ""
 		}
 
 		// Putting everything together:
 		ToonPlayerDescMapStrings = append(ToonPlayerDescMapStrings, "\""+playerToon+"\": "+string(playerDescInformation))
 	}
 
-	// TODO: There needs to be a separate file that handles and records these errors.
 	// Booleans saying if processing had any errors
+
+	if replayData.GameEvtsErr {
+		log.WithField("file": replayFile).Warn("Detected error in GameEvts")
+		return !successFlag, ""
+	}
+	if replayData.MessageEvtsErr {
+		log.WithField("file": replayFile).Warn("Detected error in MessageEvts")
+		return !successFlag, ""
+	}
+	if replayData.TrackerEvtsErr {
+		log.WithField("file": replayFile).Warn("Detected error in TrackerEvts")
+		return !successFlag, ""
+	}
+
 	gameEvtsErr := strconv.FormatBool(replayData.GameEvtsErr)
 	messageEvtsErr := strconv.FormatBool(replayData.MessageEvtsErr)
 	trackerEvtsErr := strconv.FormatBool(replayData.TrackerEvtsErr)
@@ -118,5 +133,5 @@ func stringifyReplay(replayFile string) (bool, string) {
 	log.Info("Finished building the string.")
 
 	// TODO: Return a summary in a custom Golang struct.
-	return true, strBuilder.String()
+	return successFlag, strBuilder.String()
 }

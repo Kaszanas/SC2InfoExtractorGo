@@ -4,14 +4,15 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"log"
 	"path/filepath"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func initBufferWriter() (*bytes.Buffer, *zip.Writer) {
 
-	log.Println("Entered initBufferWriter()")
+	log.Info("Entered initBufferWriter()")
 	// Create a buffer to write our archive to:
 	buf := new(bytes.Buffer)
 	// Create a new zip archive:
@@ -22,7 +23,7 @@ func initBufferWriter() (*bytes.Buffer, *zip.Writer) {
 
 func saveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) {
 
-	log.Println("Entered saveFileToArchive()")
+	log.Info("Entered saveFileToArchive()")
 
 	jsonBytes := []byte(replayString)
 	_, fileHeaderFilename := filepath.Split(replayFile)
