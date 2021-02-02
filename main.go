@@ -78,14 +78,18 @@ func main() {
 		didWork, replayString := stringifyReplay(replayFile)
 		if !didWork {
 			readErrorCounter++
-			log.Warn("Got error when attempting to open replayFile = %s", replayFile)
+			log.WithFields(log.Fields{"file": replayFile, "readError": true}).Warn("Got error when attempting to read replayFile")
 			continue
 		}
 
-		// TODO: Write summary to CSV or JSON or sqlite
+		// TODO: Write summary to JSON
 
 		// Helper saving to zip archive:
-		saveFileToArchive(replayString, replayFile, compressionMethod, writer)
+		savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
+		if !savedSuccess {
+			compressionErrorCounter++
+			log.WithFields(log.Fields{"file": replayFile, "compressionError": true}).Warn("Got error when attempting to save a file to the archive.")
+		}
 		log.Info("Added file to zip archive.")
 
 		processedCounter++
@@ -105,8 +109,11 @@ func main() {
 			buffer, writer = initBufferWriter()
 			log.Info("Initialized buffer and writer.")
 		}
-
 	}
-	log.Info("Finished processing found: %s - readErrors", readErrorCounter)
-	log.Info("Finished processing found: %s - compressionErrors", compressionErrorCounter)
+	if readErrorCounter > 0 {
+		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
+	}
+	if compressionErrorCounter > 0 {
+		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing found: %s - compressionErrors", compressionErrorCounter)
+	}
 }

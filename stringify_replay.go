@@ -92,15 +92,15 @@ func stringifyReplay(replayFile string) (bool, string) {
 	// Booleans saying if processing had any errors
 
 	if replayData.GameEvtsErr {
-		log.WithField("file": replayFile).Warn("Detected error in GameEvts")
+		log.WithField("file", replayFile).Warn("Detected error in GameEvts")
 		return !successFlag, ""
 	}
 	if replayData.MessageEvtsErr {
-		log.WithField("file": replayFile).Warn("Detected error in MessageEvts")
+		log.WithField("file", replayFile).Warn("Detected error in MessageEvts")
 		return !successFlag, ""
 	}
 	if replayData.TrackerEvtsErr {
-		log.WithField("file": replayFile).Warn("Detected error in TrackerEvts")
+		log.WithField("file", replayFile).Warn("Detected error in TrackerEvts")
 		return !successFlag, ""
 	}
 

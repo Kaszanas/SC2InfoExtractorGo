@@ -3,7 +3,6 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"path/filepath"
 	"time"
 
@@ -21,7 +20,7 @@ func initBufferWriter() (*bytes.Buffer, *zip.Writer) {
 	return buf, w
 }
 
-func saveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) {
+func saveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) bool {
 
 	log.Info("Entered saveFileToArchive()")
 
@@ -35,12 +34,21 @@ func saveFileToArchive(replayString string, replayFile string, compressionMethod
 		Modified:           time.Now(),
 	}
 	fh.SetMode(0777)
-	fw, err := writer.CreateHeader(fh)
+	log.WithFields(log.Fields{
+		"name":              fh.Name,
+		"uncompressedSize":  fh.UncompressedSize64,
+		"compressionMethod": fh.Method,
+		"modified":          fh.Modified}).Debug("Created file header.")
 
+	fw, err := writer.CreateHeader(fh)
 	if err != nil {
-		fmt.Printf("Error: %s", err)
-		panic("Error")
+		log.WithFields(log.Fields{
+			"file":  replayFile,
+			"error": err}).Warn("Got error when adding a file header to the archive.")
+		return false
 	}
 
 	fw.Write(jsonBytes)
+
+	return true
 }
