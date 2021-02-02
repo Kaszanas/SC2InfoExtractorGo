@@ -44,11 +44,18 @@ func saveFileToArchive(replayString string, replayFile string, compressionMethod
 	if err != nil {
 		log.WithFields(log.Fields{
 			"file":  replayFile,
-			"error": err}).Warn("Got error when adding a file header to the archive.")
+			"error": err}).Error("Got error when adding a file header to the archive.")
 		return false
 	}
 
-	fw.Write(jsonBytes)
+	_, err = fw.Write(jsonBytes)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"file":             replayFile,
+			"error":            err,
+			"compressionError": true}).Error("Got error when adding a file header to the archive.")
+		return false
+	}
 
 	return true
 }

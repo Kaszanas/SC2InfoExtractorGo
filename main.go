@@ -81,7 +81,6 @@ func main() {
 		didWork, replayString := stringifyReplay(replayFile)
 		if !didWork {
 			readErrorCounter++
-			log.WithFields(log.Fields{"file": replayFile, "readError": true}).Warn("Got error when attempting to read replayFile")
 			continue
 		}
 
@@ -91,7 +90,7 @@ func main() {
 		savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
 		if !savedSuccess {
 			compressionErrorCounter++
-			log.WithFields(log.Fields{"file": replayFile, "compressionError": true}).Warn("Got error when attempting to save a file to the archive.")
+			continue
 		}
 		log.Info("Added file to zip archive.")
 

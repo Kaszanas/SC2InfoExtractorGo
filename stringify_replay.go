@@ -21,7 +21,7 @@ func stringifyReplay(replayFile string) (bool, string) {
 
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		log.WithFields(log.Fields{"file": replayFile, "error": err}).Warn("Failed to read file.")
+		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).Error("Failed to read file.")
 		return !successFlag, ""
 	}
 	defer replayData.Close()
@@ -68,7 +68,7 @@ func stringifyReplay(replayFile string) (bool, string) {
 		playerDescInformation, err := json.Marshal(PIDPlayerDescValue)
 
 		if err != nil {
-			log.WithFields(log.Fields{"file": replayFile, "error": err}).Warn("Failed to read PIDPlayerDescValue.")
+			log.WithFields(log.Fields{"file": replayFile, "error": err}).Error("Failed to read PIDPlayerDescValue.")
 			return !successFlag, ""
 		}
 
@@ -87,7 +87,7 @@ func stringifyReplay(replayFile string) (bool, string) {
 		playerDescInformation, err := json.Marshal(ToonPlayerDescValue)
 
 		if err != nil {
-			log.WithFields(log.Fields{"file": replayFile, "error": err}).Warn("Failed to read ToonPlayerDescValue.")
+			log.WithFields(log.Fields{"file": replayFile, "error": err}).Error("Failed to read ToonPlayerDescValue.")
 			return !successFlag, ""
 		}
 
@@ -99,15 +99,15 @@ func stringifyReplay(replayFile string) (bool, string) {
 	// Booleans saying if processing had any errors
 
 	if replayData.GameEvtsErr {
-		log.WithField("file", replayFile).Warn("Detected error in GameEvts")
+		log.WithField("file", replayFile).Error("Detected error in GameEvts")
 		return !successFlag, ""
 	}
 	if replayData.MessageEvtsErr {
-		log.WithField("file", replayFile).Warn("Detected error in MessageEvts")
+		log.WithField("file", replayFile).Error("Detected error in MessageEvts")
 		return !successFlag, ""
 	}
 	if replayData.TrackerEvtsErr {
-		log.WithField("file", replayFile).Warn("Detected error in TrackerEvts")
+		log.WithField("file", replayFile).Error("Detected error in TrackerEvts")
 		return !successFlag, ""
 	}
 	gameEvtsErr := strconv.FormatBool(replayData.GameEvtsErr)
