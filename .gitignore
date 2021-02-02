@@ -4,4 +4,6 @@
 *.exe
 *.zip
 
-__debug_bin
+*__debug_bin
+
+*.log
