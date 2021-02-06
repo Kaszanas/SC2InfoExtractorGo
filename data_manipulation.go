@@ -8,16 +8,20 @@ import "github.com/icza/s2prot/rep"
 
 func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 
-	// TODO: Copy types from icza package and create custom marshal that will not include fields which are not relevant to the dataset.
+	// TODO: Initialize structs defined in custom_types directory
 
-	// TODO: Clear the objects that will not be used in the final JSON
+	// TODO: Define for loops that will be checking different event types and not creating instances if the event type is unwanted
+	// Good example of that will be some of the chat events that are in messageEvents.
+
+	// TODO: Initialize my own type of CleanedReplay only with the fields that are needed.
 
 	return replayData
 }
 
 func anonymizeReplayData(replayData *rep.Rep) *rep.Rep {
 
-	// TODO: Anonymize the information about players and chat events
+	// TODO: Anonymize the information about players.
+	// This needs to be done by calling some external file and / or memory which will be holding persistent information about all of the players.
 
 	return replayData
 }
