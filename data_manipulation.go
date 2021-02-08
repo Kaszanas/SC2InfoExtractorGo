@@ -2,6 +2,7 @@ package main
 
 import (
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 )
 
@@ -11,10 +12,48 @@ import (
 
 func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 
-	elapsedGameLoops := replayData.Header
+	// Constructing a clean replay header without unescessary fields:
+	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
+	duration := replayData.Header.Duration()
+	useScaledTime := replayData.Header.Struct["useScaledTime"].(bool)
+	version := replayData.Header.Struct["version"].(s2prot.Struct)
 
-	cleanHeader := data.CleanedHeader{}
-	cleanInitData := data.CleanedInitData{}
+	cleanHeader := data.CleanedHeader{
+		ElapsedGameLoops: uint64(elapsedGameLoops),
+		Duration:         duration,
+		UseScaledTime:    useScaledTime,
+		Version:          version,
+	}
+
+	// Constructing a clean GameDescription without unescessary fields:
+	gameDescription := replayData.InitData.GameDescription
+	gameOptions := gameDescription.GameOptions.Struct
+	gameSpeed := uint8(gameDescription.Struct["gameSpeed"].(int64))
+	isBlizzardMap := gameDescription.Struct["isBlizzardMap"].(bool)
+	mapAuthorName := gameDescription.Struct["mapAuthorName"].(string)
+	mapFileSyncChecksum := gameDescription.Struct["mapFileSyncChecksum"].(int)
+	mapSizeX := uint32(gameDescription.Struct["mapSizeX"].(int))
+	mapSizeY := uint32(gameDescription.Struct["mapSizeY"].(int))
+	maxPlayers := uint8(gameDescription.Struct["maxPlayers"].(int))
+
+	cleanedGameDescription := data.CleanedGameDescription{
+		GameOptions:         gameOptions,
+		GameSpeed:           gameSpeed,
+		IsBlizzardMap:       isBlizzardMap,
+		MapAuthorName:       mapAuthorName,
+		MapFileSyncChecksum: mapFileSyncChecksum,
+		MapSizeX:            mapSizeX,
+		MapSizeY:            mapSizeY,
+		MaxPlayers:          maxPlayers,
+	}
+
+	// Constructing a clean UserInitData without unescessary fields:
+	// TODO: Iterate over user initial datas using a loop and construct my own types:
+	combinedRaceLevels := replayData.InitData.UserInitDatas
+
+	cleanUserInitData := data.CleanedUserInitData{}
+
+	cleanInitData := data.CleanedInitData{GameDescription: cleanedGameDescription}
 	cleanDetails := data.CleanedDetails{}
 	cleanMetadata := data.CleanedMetadata{}
 

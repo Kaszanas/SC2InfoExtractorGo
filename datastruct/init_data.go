@@ -14,7 +14,7 @@ type CleanedGameDescription struct {
 	GameSpeed           uint8
 	IsBlizzardMap       bool
 	MapAuthorName       string
-	MapFileSyncChecksum string
+	MapFileSyncChecksum int
 	MapSizeX            uint32
 	MapSizeY            uint32
 	MaxPlayers          uint8
