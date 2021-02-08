@@ -70,6 +70,33 @@ func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 		UserInitData:    cleanedUserInitDataList,
 	}
 
+	// Constructing a clean CleanedDetails without unescessary fields
+	details := replayData.Details
+	detailsGameSpeed := uint8(details.Struct["gameSpeed"].(int))
+	detailsIsBlizzardMap := details.IsBlizzardMap()
+
+	var detailsPlayerList []data.CleanedPlayerListStruct
+	for _, player := range details.Players() {
+		colorA := uint8(player.Struct["a"].(int))
+		colorB := uint8(player.Struct["b"].(int))
+		colorG := uint8(player.Struct["g"].(int))
+		colorR := uint8(player.Struct["r"].(int))
+		playerColor := data.PlayerListColor{
+			A: colorA,
+			B: colorB,
+			G: colorG,
+			R: colorR,
+		}
+
+		handicap := uint8(player.Handicap())
+		name := player.Name
+		race := player.Struct["race"].(string)
+		result := player.Struct["result"].(int)
+		teamID := uint8(player.TeamID())
+		// TODO: How to get into a member of a nested struct?
+		realm := player.Struct["toon"]["realm"].(string)
+	}
+
 	cleanDetails := data.CleanedDetails{}
 	cleanMetadata := data.CleanedMetadata{}
 

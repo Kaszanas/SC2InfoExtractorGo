@@ -23,8 +23,8 @@ type CleanedPlayerListStruct struct {
 }
 
 type PlayerListColor struct {
-	A uint16
-	B uint16
-	G uint16
-	R uint16
+	A uint8
+	B uint8
+	G uint8
+	R uint8
 }
