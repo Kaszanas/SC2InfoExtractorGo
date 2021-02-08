@@ -48,12 +48,28 @@ func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 	}
 
 	// Constructing a clean UserInitData without unescessary fields:
-	// TODO: Iterate over user initial datas using a loop and construct my own types:
-	combinedRaceLevels := replayData.InitData.UserInitDatas
+	var cleanedUserInitDataList []data.CleanedUserInitData
+	for _, userInitData := range replayData.InitData.UserInitDatas {
+		combinedRaceLevels := uint64(userInitData.CombinedRaceLevels())
+		highestLeague := uint32(userInitData.Struct["highestLeague"].(int))
+		name := userInitData.Name()
+		isInClan := userInitData.Struct["isInClan"].(bool)
 
-	cleanUserInitData := data.CleanedUserInitData{}
+		userInitDataStruct := data.CleanedUserInitData{
+			CombinedRaceLevels: combinedRaceLevels,
+			HighestLeague:      highestLeague,
+			Name:               name,
+			IsInClan:           isInClan,
+		}
 
-	cleanInitData := data.CleanedInitData{GameDescription: cleanedGameDescription}
+		cleanedUserInitDataList = append(cleanedUserInitDataList, userInitDataStruct)
+	}
+
+	cleanInitData := data.CleanedInitData{
+		GameDescription: cleanedGameDescription,
+		UserInitData:    cleanedUserInitDataList,
+	}
+
 	cleanDetails := data.CleanedDetails{}
 	cleanMetadata := data.CleanedMetadata{}
 
