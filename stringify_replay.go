@@ -27,9 +27,6 @@ func stringifyReplay(replayFile string) (bool, string) {
 	defer replayData.Close()
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
-	testHeader := replayData.InitData
-	fmt.Println(testHeader)
-
 	header := replayData.Header.String()
 	details := replayData.Details.String()
 	initData := replayData.InitData.String()

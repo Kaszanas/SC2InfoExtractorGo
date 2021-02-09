@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
@@ -10,7 +12,7 @@ import (
 // 	header rep.Header
 // }
 
-func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
+func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
@@ -75,7 +77,7 @@ func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 	detailsGameSpeed := uint8(details.Struct["gameSpeed"].(int))
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
-	var detailsPlayerList []data.CleanedPlayerListStruct
+	var detailsPlayerList [data.CleanedPlayerListStruct]
 	for _, player := range details.Players() {
 		colorA := uint8(player.Struct["a"].(int))
 		colorB := uint8(player.Struct["b"].(int))
@@ -91,10 +93,37 @@ func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 		handicap := uint8(player.Handicap())
 		name := player.Name
 		race := player.Struct["race"].(string)
-		result := player.Struct["result"].(int)
+		result := uint8(player.Struct["result"].(int))
 		teamID := uint8(player.TeamID())
-		// TODO: How to get into a member of a nested struct?
-		realm := player.Struct["toon"]["realm"].(string)
+
+		// Accessing toon data by Golang magic:
+		toon := player.Struct["toon"]
+		intermediateJSON, err := json.Marshal(&toon)
+		if err != nil {
+			return data.CleanedReplay{}, false
+		}
+		var unmarshalledData interface{}
+		err = json.Unmarshal(intermediateJSON, &unmarshalledData)
+		if err != nil {
+			return data.CleanedReplay{}, false
+		}
+		toonMap := unmarshalledData.(map[string]interface{})
+
+		realm := uint8(toonMap["realm"].(int))
+		region := uint8(toonMap["region"].(int))
+
+		cleanedPlayerStruct := data.CleanedPlayerListStruct{
+			Color:    playerColor,
+			Handicap: handicap,
+			Name:     name,
+			Race:     race,
+			Result:   result,
+			TeamID:   teamID,
+			Realm:    realm,
+			Region:   region,
+		}
+
+		append(detailsPlayerList, cleanedPlayerStruct)
 	}
 
 	cleanDetails := data.CleanedDetails{}
@@ -132,7 +161,7 @@ func deleteUnusedObjects(replayData *rep.Rep) *rep.Rep {
 
 	// TODO: Initialize my own type of CleanedReplay only with the fields that are needed.
 
-	return replayData
+	return cleanedReplay, true
 }
 
 func anonymizeReplayData(replayData *rep.Rep) *rep.Rep {
