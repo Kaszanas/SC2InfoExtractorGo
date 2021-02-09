@@ -1,4 +1,4 @@
-package main
+package dataproc
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 // Anonymization is needed in chat events and in Toon of the player.
 // Players should receive persistent anonymized ID for every toon that was observed in the replay to be able to perform more advanced analysis.
 
-func stringifyReplay(replayFile string) (bool, string) {
+func StringifyReplay(replayFile string) (bool, string) {
 
 	log.Info("Entered stringifyReplay()")
 	successFlag := true

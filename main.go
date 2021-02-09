@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/Kaszanas/GoSC2Science/dataproc"
 	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
@@ -79,7 +80,7 @@ func main() {
 
 	for _, replayFile := range listOfInputFiles {
 
-		didWork, replayString := stringifyReplay(replayFile)
+		didWork, replayString := dataproc.StringifyReplay(replayFile)
 		if !didWork {
 			readErrorCounter++
 			continue
