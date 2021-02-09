@@ -1,4 +1,4 @@
-package main
+package dataproc
 
 import (
 	"encoding/json"
@@ -9,9 +9,7 @@ import (
 	"github.com/icza/s2prot/rep"
 )
 
-// type CleanedReplay struct {
-// 	header rep.Header
-// }
+// TODO: Introduce logging.
 
 func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
@@ -100,11 +98,15 @@ func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		// Accessing toon data by Golang magic:
 		toon := player.Struct["toon"]
 		intermediateJSON, err := json.Marshal(&toon)
+
+		// TODO: Error logging and handling
 		if err != nil {
 			return data.CleanedReplay{}, false
 		}
 		var unmarshalledData interface{}
 		err = json.Unmarshal(intermediateJSON, &unmarshalledData)
+
+		// TODO: Error logging and handling
 		if err != nil {
 			return data.CleanedReplay{}, false
 		}
@@ -204,20 +206,5 @@ func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		TrackerEvtsErr:    justTrackerEvtsErr,
 	}
 
-	// TODO: Initialize structs defined in custom_types directory
-
-	// TODO: Define for loops that will be checking different event types and not creating instances if the event type is unwanted
-	// Good example of that will be some of the chat events that are in messageEvents.
-
-	// TODO: Initialize my own type of CleanedReplay only with the fields that are needed.
-
 	return cleanedReplay, true
-}
-
-func anonymizeReplayData(replayData *rep.Rep) *rep.Rep {
-
-	// TODO: Anonymize the information about players.
-	// This needs to be done by calling some external file and / or memory which will be holding persistent information about all of the players.
-
-	return replayData
 }
