@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot"
@@ -77,7 +78,7 @@ func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	detailsGameSpeed := uint8(details.Struct["gameSpeed"].(int))
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
-	var detailsPlayerList [data.CleanedPlayerListStruct]
+	var detailsPlayerList []data.CleanedPlayerListStruct
 	for _, player := range details.Players() {
 		colorA := uint8(player.Struct["a"].(int))
 		colorB := uint8(player.Struct["b"].(int))
@@ -123,11 +124,60 @@ func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 			Region:   region,
 		}
 
-		append(detailsPlayerList, cleanedPlayerStruct)
+		detailsPlayerList = append(detailsPlayerList, cleanedPlayerStruct)
 	}
 
-	cleanDetails := data.CleanedDetails{}
-	cleanMetadata := data.CleanedMetadata{}
+	timeLocalOffset := details.TimeLocalOffset()
+	timeUTC := details.TimeUTC()
+	mapName := details.Struct["title"].(string)
+
+	cleanDetails := data.CleanedDetails{
+		GameSpeed:       detailsGameSpeed,
+		IsBlizzardMap:   detailsIsBlizzardMap,
+		PlayerList:      detailsPlayerList,
+		TimeLocalOffset: timeLocalOffset,
+		TimeUTC:         timeUTC,
+		MapName:         mapName,
+	}
+
+	// Constructing a clean CleanedMetadata without unescessary fields:
+	metadata := replayData.Metadata
+	metadataBaseBuild := metadata.BaseBuild()
+	metadataDataBuild := metadata.DataBuild()
+	metadataDuration := metadata.Struct["Duration"].(time.Duration)
+	metadataGameVersion := metadata.GameVersion()
+
+	var metadataCleanedPlayersList []data.CleanedPlayer
+	for _, player := range metadata.Players() {
+
+		playerID := uint8(player.PlayerID())
+		apm := uint16(player.APM())
+		mmr := uint16(player.MMR())
+		result := player.Result()
+		assignedRace := player.AssignedRace()
+		selectedRace := player.SelectedRace()
+
+		cleanedPlayerStruct := data.CleanedPlayer{
+			PlayerID:     playerID,
+			APM:          apm,
+			MMR:          mmr,
+			Result:       result,
+			AssignedRace: assignedRace,
+			SelectedRace: selectedRace,
+		}
+		metadataCleanedPlayersList = append(metadataCleanedPlayersList, cleanedPlayerStruct)
+	}
+
+	metadataMapName := metadata.Title()
+
+	cleanMetadata := data.CleanedMetadata{
+		BaseBuild:   metadataBaseBuild,
+		DataBuild:   metadataDataBuild,
+		Duration:    metadataDuration,
+		GameVersion: metadataGameVersion,
+		Players:     metadataCleanedPlayersList,
+		MapName:     metadataMapName,
+	}
 
 	dirtyMessageEvents := replayData.MessageEvts
 	dirtyGameEvents := replayData.GameEvts

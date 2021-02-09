@@ -7,11 +7,11 @@ type CleanedMetadata struct {
 	DataBuild   string
 	Duration    time.Duration
 	GameVersion string
-	Players     []CleanedPlayers
+	Players     []CleanedPlayer
 	MapName     string // Originally Title
 }
 
-type CleanedPlayers struct {
+type CleanedPlayer struct {
 	PlayerID     uint8
 	APM          uint16
 	MMR          uint16
