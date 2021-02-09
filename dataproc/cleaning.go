@@ -11,7 +11,7 @@ import (
 
 // TODO: Introduce logging.
 
-func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
+func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
@@ -207,4 +207,17 @@ func deleteUnusedObjects(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	}
 
 	return cleanedReplay, true
+}
+
+func cleanReplayStructure(replayData *data.CleanedReplay) {
+
+	// TODO: Clean message events:
+	// Delete ChatMessage event
+	// Delete LoadingProgressMessage
+	// Delete ServerPingMessage
+
+	// TODO: Clean game events:
+
+	// TODO: Clean tracker events
+
 }
