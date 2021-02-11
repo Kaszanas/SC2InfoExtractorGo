@@ -3,8 +3,8 @@ package settings
 func UnusedGameEvents() []string {
 
 	var unusedEvents []string = [
-		"TriggerSoundLengthSync",
-		"SetSyncPlayingTime", ]
+		"LoadingProgress",
+		"Chat"]
 
 	return unusedEvents
 }
