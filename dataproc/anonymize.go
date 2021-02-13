@@ -18,17 +18,27 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func anonymizePlayers() {
+func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
-	// TODO: Anonymize the information about players.
-
+	// Nickname anonymization
+	var persistPlayerNicknames map[string]int
+	playerCounter := 0
 	// Access the information that needs to be anonymized
+	for _, player := range replayData.Details.PlayerList {
+		// Check if it exists in some kind of persistent source that is used for the sake of anonymization
+		anonymizedID, ok := persistPlayerNicknames[player.Name]
+		if ok {
+			// Replace the information within the original data structure with the persistent version from a variable or the file.
+			player.Name = string(anonymizedID)
+		} else {
+			persistPlayerNicknames[player.Name] = playerCounter
+			playerCounter++
+		}
+	}
 
-	// Check if it exists in some kind of persistent source that is used for the sake of anonymization
-	// This should be both performant and safe (can be a variable in memmory and a file on the drive that is written once every package)
+	// Toon anonymization
 
-	// Replace the information within the original data structure with the persistent version from a variable or the file.
-
+	return true
 }
 
 // Anonymizes the replay and returns an error boolean
