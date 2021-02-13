@@ -16,7 +16,7 @@ type CleanedGameDescription struct {
 	GameSpeed           uint8         `json:"gameSpeed"`
 	IsBlizzardMap       bool          `json:"isBlizzardMap"`
 	MapAuthorName       string        `json:"mapAuthorName"`
-	MapFileSyncChecksum int           `json:"mapFileSyncChecksum"`
+	MapFileSyncChecksum int64         `json:"mapFileSyncChecksum"`
 	MapSizeX            uint32        `json:"mapSizeX"`
 	MapSizeY            uint32        `json:"mapSizeY"`
 	MaxPlayers          uint8         `json:"maxPlayers"`

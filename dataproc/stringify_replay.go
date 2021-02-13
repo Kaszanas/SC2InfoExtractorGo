@@ -7,10 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Prepare anonymization using native golang structures
-// Anonymization is needed in chat events and in Toon of the player.
-// Players should receive persistent anonymized ID for every toon that was observed in the replay to be able to perform more advanced analysis.
-
 // StringifyReplay allows the replayFile to be turned into a JSON data while cleaning the structure and anonymizing it.
 func StringifyReplay(replayFile string) (bool, string) {
 
@@ -25,14 +21,22 @@ func StringifyReplay(replayFile string) (bool, string) {
 	defer replayData.Close()
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
-	cleanReplayData, redefError := redifineReplayStructure(replayData)
-	if !redefError {
+	structuredReplayData, redefOk := redifineReplayStructure(replayData)
+	if !redefOk {
 		log.WithField("file", replayFile).Error("Error in redefining replay structure.")
+		return !successFlag, ""
 	}
 
-	replayDataString, marshalErr := json.MarshalIndent(cleanReplayData, "", " ")
+	cleaningOk := cleanReplayStructure(&structuredReplayData)
+	if !cleaningOk {
+		log.WithField("file", replayFile).Error("Error in cleaning the replay structure.")
+		return !successFlag, ""
+	}
+
+	replayDataString, marshalErr := json.MarshalIndent(structuredReplayData, "", "  ")
 	if marshalErr != nil {
 		log.WithField("file", replayFile).Error("Error while marshaling the string representation of cleanReplayData.")
+		return !successFlag, ""
 	}
 
 	// TODO: Return a summary in a custom Golang struct.

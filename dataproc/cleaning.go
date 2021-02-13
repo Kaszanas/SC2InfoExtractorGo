@@ -5,11 +5,21 @@ import (
 	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 )
 
+// TODO: Rename this file to restructuring.go because this is not cleaning the data it is just ommiting fields which for sure will not be used.
+
 // TODO: Introduce logging.
+func checkClan(clanTag string) bool {
+	if clanTag != "" {
+		return true
+	} else {
+		return false
+	}
+}
 
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
@@ -32,10 +42,10 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	gameSpeed := uint8(gameDescription.Struct["gameSpeed"].(int64))
 	isBlizzardMap := gameDescription.Struct["isBlizzardMap"].(bool)
 	mapAuthorName := gameDescription.Struct["mapAuthorName"].(string)
-	mapFileSyncChecksum := gameDescription.Struct["mapFileSyncChecksum"].(int)
-	mapSizeX := uint32(gameDescription.Struct["mapSizeX"].(int))
-	mapSizeY := uint32(gameDescription.Struct["mapSizeY"].(int))
-	maxPlayers := uint8(gameDescription.Struct["maxPlayers"].(int))
+	mapFileSyncChecksum := gameDescription.Struct["mapFileSyncChecksum"].(int64)
+	mapSizeX := uint32(gameDescription.Struct["mapSizeX"].(int64))
+	mapSizeY := uint32(gameDescription.Struct["mapSizeY"].(int64))
+	maxPlayers := uint8(gameDescription.Struct["maxPlayers"].(int64))
 
 	cleanedGameDescription := data.CleanedGameDescription{
 		GameOptions:         gameOptions,
@@ -52,9 +62,10 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	var cleanedUserInitDataList []data.CleanedUserInitData
 	for _, userInitData := range replayData.InitData.UserInitDatas {
 		combinedRaceLevels := uint64(userInitData.CombinedRaceLevels())
-		highestLeague := uint32(userInitData.Struct["highestLeague"].(int))
+		highestLeague := uint32(userInitData.Struct["highestLeague"].(int64))
 		name := userInitData.Name()
-		isInClan := userInitData.Struct["isInClan"].(bool)
+		clanTag := userInitData.Struct["clanTag"].(string)
+		isInClan := checkClan(clanTag)
 
 		userInitDataStruct := data.CleanedUserInitData{
 			CombinedRaceLevels: combinedRaceLevels,
@@ -73,15 +84,15 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// Constructing a clean CleanedDetails without unescessary fields
 	details := replayData.Details
-	detailsGameSpeed := uint8(details.Struct["gameSpeed"].(int))
+	detailsGameSpeed := uint8(details.Struct["gameSpeed"].(int64))
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
 	var detailsPlayerList []data.CleanedPlayerListStruct
 	for _, player := range details.Players() {
-		colorA := uint8(player.Struct["a"].(int))
-		colorB := uint8(player.Struct["b"].(int))
-		colorG := uint8(player.Struct["g"].(int))
-		colorR := uint8(player.Struct["r"].(int))
+		colorA := uint8(player.Color[0])
+		colorB := uint8(player.Color[1])
+		colorG := uint8(player.Color[2])
+		colorR := uint8(player.Color[3])
 		playerColor := data.PlayerListColor{
 			A: colorA,
 			B: colorB,
@@ -92,7 +103,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		handicap := uint8(player.Handicap())
 		name := player.Name
 		race := player.Struct["race"].(string)
-		result := uint8(player.Struct["result"].(int))
+		result := uint8(player.Struct["result"].(int64))
 		teamID := uint8(player.TeamID())
 
 		// Accessing toon data by Golang magic:
@@ -112,8 +123,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		}
 		toonMap := unmarshalledData.(map[string]interface{})
 
-		realm := uint8(toonMap["realm"].(int))
-		region := uint8(toonMap["region"].(int))
+		realm := uint8(toonMap["realm"].(float64))
+		region := uint8(toonMap["region"].(float64))
 
 		cleanedPlayerStruct := data.CleanedPlayerListStruct{
 			Color:    playerColor,
@@ -146,7 +157,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	metadata := replayData.Metadata
 	metadataBaseBuild := metadata.BaseBuild()
 	metadataDataBuild := metadata.DataBuild()
-	metadataDuration := metadata.Struct["Duration"].(time.Duration)
+	metadataDuration := time.Duration(metadata.Struct["Duration"].(float64))
 	metadataGameVersion := metadata.GameVersion()
 
 	var metadataCleanedPlayersList []data.CleanedPlayer
@@ -188,6 +199,21 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 	justGameEvtsErr := replayData.GameEvtsErr
 
+	var messageEventsStructs []s2prot.Struct
+	for _, messageEvent := range dirtyMessageEvents {
+		messageEventsStructs = append(messageEventsStructs, messageEvent.Struct)
+	}
+
+	var gameEventsStructs []s2prot.Struct
+	for _, gameEvent := range dirtyGameEvents {
+		gameEventsStructs = append(gameEventsStructs, gameEvent.Struct)
+	}
+
+	var trackerEventsStructs []s2prot.Struct
+	for _, trackerEvent := range dirtyTrackerEvents {
+		trackerEventsStructs = append(trackerEventsStructs, trackerEvent.Struct)
+	}
+
 	justMessageEvtsErr := replayData.MessageEvtsErr
 	justTrackerEvtsErr := replayData.TrackerEvtsErr
 
@@ -196,9 +222,9 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		InitData:          cleanInitData,
 		Details:           cleanDetails,
 		Metadata:          cleanMetadata,
-		MessageEvents:     dirtyMessageEvents,
-		GameEvents:        dirtyGameEvents,
-		TrackerEvents:     dirtyTrackerEvents,
+		MessageEvents:     messageEventsStructs,
+		GameEvents:        gameEventsStructs,
+		TrackerEvents:     trackerEventsStructs,
 		PIDPlayerDescMap:  dirtyPIDPlayerDescMap,
 		ToonPlayerDescMap: dirtyToonPlayerDescMap,
 		GameEvtsErr:       justGameEvtsErr,
@@ -209,15 +235,37 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	return cleanedReplay, true
 }
 
-func cleanReplayStructure(replayData *data.CleanedReplay) {
+// Helper function checking if a slice contains a string.
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
 
-	// TODO: Clean message events:
-	// Delete ChatMessage event
-	// Delete LoadingProgressMessage
-	// Delete ServerPingMessage
+	return false
+}
 
-	// TODO: Clean game events:
+func cleanReplayStructure(replayData *data.CleanedReplay) bool {
 
-	// TODO: Clean tracker events
+	var anonymizedMessageEvents []s2prot.Event
+	for _, event := range replayData.MessageEvents {
+		eventType := event.Struct["evtTypeName"].(string)
+		if !contains(settings.UnusedMessageEvents(), eventType) {
+			anonymizedMessageEvents = append(anonymizedMessageEvents, event)
+		}
+	}
+
+	var anonymizedGameEvents []s2prot.Event
+	for _, event := range replayData.GameEvents {
+		if !contains(settings.UnusedGameEvents(), event.Struct["evtTypeName"].(string)) {
+			anonymizedGameEvents = append(anonymizedGameEvents, event)
+		}
+	}
+
+	replayData.MessageEvents = anonymizedMessageEvents
+	replayData.GameEvents = anonymizedGameEvents
+
+	return true
 
 }

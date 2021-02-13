@@ -1,10 +1,12 @@
 package settings
 
+// UnusedGameEvents returns a slice of event names that are to be excluded when obtaining final replay data.
 func UnusedGameEvents() []string {
 
-	var unusedEvents []string = [
+	unusedEvents := []string{
 		"TriggerSoundLengthSync",
-		"SetSyncPlayingTime", ]
+		"SetSyncPlayingTime",
+	}
 
 	return unusedEvents
 }
