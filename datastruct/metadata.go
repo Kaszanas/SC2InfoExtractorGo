@@ -2,20 +2,22 @@ package datastruct
 
 import "time"
 
+// CleanedMetadata is cleaned replay metadata derived from s2prot.Rep
 type CleanedMetadata struct {
-	BaseBuild   string
-	DataBuild   string
-	Duration    time.Duration
-	GameVersion string
-	Players     []CleanedPlayer
-	MapName     string // Originally Title
+	BaseBuild   string          `json:"baseBuild"`
+	DataBuild   string          `json:"dataBuild"`
+	Duration    time.Duration   `json:"duration"`
+	GameVersion string          `json:"gameVersion"`
+	Players     []CleanedPlayer `json:"players"`
+	MapName     string          `json:"mapName"` // Originally Title
 }
 
+// CleanedPlayer is cleaned player information derived from s2prot.Rep
 type CleanedPlayer struct {
-	PlayerID     uint8
-	APM          uint16
-	MMR          uint16
-	Result       string
-	AssignedRace string
-	SelectedRace string
+	PlayerID     uint8  `json:"playerID"`
+	APM          uint16 `json:"APM"`
+	MMR          uint16 `json:"MMR"`
+	Result       string `json:"result"`
+	AssignedRace string `json:"assignedRace"`
+	SelectedRace string `json:"selectedRace"`
 }
