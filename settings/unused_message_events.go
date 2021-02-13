@@ -1,6 +1,6 @@
 package settings
 
-func UnusedGameEvents() []string {
+func UnusedMessageEvents() []string {
 
 	var unusedEvents []string = [
 		"LoadingProgress",

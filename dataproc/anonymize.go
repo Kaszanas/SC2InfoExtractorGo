@@ -2,15 +2,50 @@ package dataproc
 
 import (
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	settings "github.com/Kaszanas/GoSC2Science/settings"
+	"github.com/icza/s2prot"
 )
 
 // TODO: Introduce logging.
 
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
+func anonymizePlayers() {
+
+	// TODO: Anonymize the information about players.
+
+}
+
 // Anonymizes the replay and returns an error boolean
 func anonymizeReplayData(replayData *data.CleanedReplay) bool {
 
-	// TODO: Anonymize the information about players.
-	// This needs to be done by calling some external file and / or memory which will be holding persistent information about all of the players.
+	unusedMessageEvents := settings.UnusedMessageEvents()
+	unusedGameEvents := settings.UnusedGameEvents()
+
+	var anonymizedMessageEvents []s2prot.Event
+	for _, event := range replayData.MessageEvents {
+		if !contains(settings.UnusedMessageEvents(), event.Struct["evtTypeName"].(string)) {
+			anonymizedMessageEvents = append(anonymizedMessageEvents, event)
+		}
+	}
+
+	var anonymizedGameEvents []s2prot.Event
+	for _, event := range replayData.GameEvents {
+		if !contains(settings.UnusedGameEvents(), event.Struct["evtTypeName"].(string)) {
+			anonymizedGameEvents = append(anonymizedGameEvents, event)
+		}
+	}
+
+	replayData.MessageEvents = anonymizedMessageEvents
+	replayData.GameEvents = anonymizedGameEvents
 
 	return true
 }
