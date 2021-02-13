@@ -7,7 +7,7 @@ import (
 )
 
 // TODO: Introduce logging.
-
+// Helper function checking if a slice contains a string.
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -21,6 +21,13 @@ func contains(s []string, str string) bool {
 func anonymizePlayers() {
 
 	// TODO: Anonymize the information about players.
+
+	// Access the information that needs to be anonymized
+
+	// Check if it exists in some kind of persistent source that is used for the sake of anonymization
+	// This should be both performant and safe (can be a variable in memmory and a file on the drive that is written once every package)
+
+	// Replace the information within the original data structure with the persistent version from a variable or the file.
 
 }
 
