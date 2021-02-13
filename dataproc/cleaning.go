@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/Kaszanas/GoSC2Science/datastruct"
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
@@ -246,19 +247,19 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func cleanReplayStructure(replayData *data.CleanedReplay) bool {
+func cleanReplayStructure(replayData *datastruct.CleanedReplay) bool {
 
-	var anonymizedMessageEvents []s2prot.Event
+	var anonymizedMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
-		eventType := event.Struct["evtTypeName"].(string)
+		eventType := event["evtTypeName"].(string)
 		if !contains(settings.UnusedMessageEvents(), eventType) {
 			anonymizedMessageEvents = append(anonymizedMessageEvents, event)
 		}
 	}
 
-	var anonymizedGameEvents []s2prot.Event
+	var anonymizedGameEvents []s2prot.Struct
 	for _, event := range replayData.GameEvents {
-		if !contains(settings.UnusedGameEvents(), event.Struct["evtTypeName"].(string)) {
+		if !contains(settings.UnusedGameEvents(), event["evtTypeName"].(string)) {
 			anonymizedGameEvents = append(anonymizedGameEvents, event)
 		}
 	}
