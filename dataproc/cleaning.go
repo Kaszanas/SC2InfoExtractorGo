@@ -11,7 +11,7 @@ import (
 	"github.com/icza/s2prot/rep"
 )
 
-// TODO: Rename this file to restructuring.go because this is not cleaning the data it is just ommiting fields which for sure will not be used.
+// TODO: Check for every doubled information if it is the same with existing s2prot.Rep structures for data integrity validation.
 
 // TODO: Introduce logging.
 func checkClan(clanTag string) bool {
@@ -36,6 +36,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		UseScaledTime:    useScaledTime,
 		Version:          version,
 	}
+
+	// TODO: Write a helper function that checks if the type is correct and returns a casted type to the variable. For safety and data checking reasons.
 
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
@@ -68,6 +70,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		clanTag := userInitData.Struct["clanTag"].(string)
 		isInClan := checkClan(clanTag)
 
+		// TODO: Check if name is empty if it is empty do not include the struct in the append.
 		userInitDataStruct := data.CleanedUserInitData{
 			CombinedRaceLevels: combinedRaceLevels,
 			HighestLeague:      highestLeague,
@@ -248,6 +251,8 @@ func contains(s []string, str string) bool {
 }
 
 func cleanReplayStructure(replayData *datastruct.CleanedReplay) bool {
+
+	// TODO: change unused game events and message events to const value to be imported.
 
 	var anonymizedMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {

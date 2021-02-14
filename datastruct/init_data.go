@@ -24,7 +24,7 @@ type CleanedGameDescription struct {
 
 // CleanedUserInitData is cleaned user initial data of a replay derived from s2prot.Rep
 type CleanedUserInitData struct {
-	CombinedRaceLevels uint64 `json:"combinedRaceLevels`
+	CombinedRaceLevels uint64 `json:"combinedRaceLevels"`
 	HighestLeague      uint32 `json:"highestLeague"`
 	Name               string `json:"name"`
 	IsInClan           bool   `json:"isInClan"`
