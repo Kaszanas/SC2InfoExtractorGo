@@ -13,15 +13,6 @@ import (
 
 // TODO: Check for every doubled information if it is the same with existing s2prot.Rep structures for data integrity validation.
 
-// TODO: Introduce logging.
-func checkClan(clanTag string) bool {
-	if clanTag != "" {
-		return true
-	} else {
-		return false
-	}
-}
-
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// Constructing a clean replay header without unescessary fields:
