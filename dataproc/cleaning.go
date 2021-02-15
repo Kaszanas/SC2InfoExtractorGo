@@ -9,6 +9,7 @@ import (
 	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
+	log "github.com/sirupsen/logrus"
 )
 
 // TODO: Check for every doubled information if it is the same with existing s2prot.Rep structures for data integrity validation.
@@ -33,38 +34,88 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions.Struct
-	gameSpeed := uint8(gameDescription.Struct["gameSpeed"].(int64))
+
+	gameSpeed := gameDescription.Struct["gameSpeed"].(int64)
+	okGameSpeed := checkUint8(gameSpeed)
+	if !okGameSpeed {
+		log.Error("Found that the value of gameSpeed exceeds uint8")
+		return data.CleanedReplay{}, false
+	}
+	gameSpeedChecked := uint8(gameSpeed)
+
 	isBlizzardMap := gameDescription.Struct["isBlizzardMap"].(bool)
 	mapAuthorName := gameDescription.Struct["mapAuthorName"].(string)
+
 	mapFileSyncChecksum := gameDescription.Struct["mapFileSyncChecksum"].(int64)
-	mapSizeX := uint32(gameDescription.Struct["mapSizeX"].(int64))
-	mapSizeY := uint32(gameDescription.Struct["mapSizeY"].(int64))
-	maxPlayers := uint8(gameDescription.Struct["maxPlayers"].(int64))
+
+	mapSizeX := gameDescription.Struct["mapSizeX"].(int64)
+	okMapSizeX := checkUint32(mapSizeX)
+	if !okMapSizeX {
+		log.WithField("mapSizeX", mapSizeX).Error("Found that value of mapSizeX exceeds uint32")
+		return data.CleanedReplay{}, false
+	}
+	mapSizeXChecked := uint32(mapSizeX)
+
+	mapSizeY := gameDescription.Struct["mapSizeY"].(int64)
+	okMapSizeY := checkUint32(mapSizeY)
+	if !okMapSizeY {
+		log.WithField("mapSizeY", mapSizeY).Error("Found that value of mapSizeY exceeds uint32")
+		return data.CleanedReplay{}, false
+	}
+	mapSizeYChecked := uint32(mapSizeY)
+
+	maxPlayers := gameDescription.Struct["maxPlayers"].(int64)
+	okMaxPlayers := checkUint8(maxPlayers)
+	if !okMaxPlayers {
+		log.WithField("maxPlayers", maxPlayers).Error("Found that value of maxPlayers exceeds uint8")
+		return data.CleanedReplay{}, false
+	}
+	maxPlayersChecked := uint8(maxPlayers)
 
 	cleanedGameDescription := data.CleanedGameDescription{
 		GameOptions:         gameOptions,
-		GameSpeed:           gameSpeed,
+		GameSpeed:           gameSpeedChecked,
 		IsBlizzardMap:       isBlizzardMap,
 		MapAuthorName:       mapAuthorName,
 		MapFileSyncChecksum: mapFileSyncChecksum,
-		MapSizeX:            mapSizeX,
-		MapSizeY:            mapSizeY,
-		MaxPlayers:          maxPlayers,
+		MapSizeX:            mapSizeXChecked,
+		MapSizeY:            mapSizeYChecked,
+		MaxPlayers:          maxPlayersChecked,
 	}
 
 	// Constructing a clean UserInitData without unescessary fields:
 	var cleanedUserInitDataList []data.CleanedUserInitData
 	for _, userInitData := range replayData.InitData.UserInitDatas {
-		combinedRaceLevels := uint64(userInitData.CombinedRaceLevels())
-		highestLeague := uint32(userInitData.Struct["highestLeague"].(int64))
+		// If the name is an empty string ommit the struct and enter next iteration:
 		name := userInitData.Name()
+		if len(name) > 0 {
+			continue
+		}
+
+		combinedRaceLevels := userInitData.CombinedRaceLevels()
+		okCombinedRaceLevels := checkUint64(combinedRaceLevels)
+		if !okCombinedRaceLevels {
+			log.WithField("combinedRaceLevels", combinedRaceLevels).Error("Found that value of combinedRaceLevels exceeds uint64")
+			return data.CleanedReplay{}, false
+		}
+
+		combinedRaceLevelsChecked := uint64(combinedRaceLevels)
+
+		highestLeague := userInitData.Struct["highestLeague"].(int64)
+		okHighestLeague := checkUint32(highestLeague)
+		if !okHighestLeague {
+			log.WithField("highestLeague", highestLeague).Error("Found that value of highestLeague exceeds uint32")
+			return data.CleanedReplay{}, false
+		}
+		highestLeagueChecked := uint32(highestLeague)
+
 		clanTag := userInitData.Struct["clanTag"].(string)
 		isInClan := checkClan(clanTag)
 
 		// TODO: Check if name is empty if it is empty do not include the struct in the append.
 		userInitDataStruct := data.CleanedUserInitData{
-			CombinedRaceLevels: combinedRaceLevels,
-			HighestLeague:      highestLeague,
+			CombinedRaceLevels: combinedRaceLevelsChecked,
+			HighestLeague:      highestLeagueChecked,
 			Name:               name,
 			IsInClan:           isInClan,
 		}
@@ -84,6 +135,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	var detailsPlayerList []data.CleanedPlayerListStruct
 	for _, player := range details.Players() {
+		// Not checking the correctness of color values as it seems to be irrelevant.
 		colorA := uint8(player.Color[0])
 		colorB := uint8(player.Color[1])
 		colorG := uint8(player.Color[2])
@@ -98,15 +150,29 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		handicap := uint8(player.Handicap())
 		name := player.Name
 		race := player.Struct["race"].(string)
-		result := uint8(player.Struct["result"].(int64))
-		teamID := uint8(player.TeamID())
 
+		result := player.Struct["result"].(int64)
+		okResult := checkUint8(result)
+		if !okResult {
+			log.WithField("result", result).Error("Found that value of result exceeds uint8")
+			return data.CleanedReplay{}, false
+		}
+		resultChecked := uint8(result)
+
+		teamID := player.TeamID()
+		okTeamID := checkUint8(teamID)
+		if !okTeamID {
+			log.WithField("teamID", teamID).Error("Found that value of result exceeds uint8")
+			return data.CleanedReplay{}, false
+		}
+		teamIDChecked := uint8(teamID)
+
+		// TODO: Check if this cannot be done easier?
 		// Accessing toon data by Golang magic:
 		toon := player.Struct["toon"]
 		intermediateJSON, err := json.Marshal(&toon)
-
-		// TODO: Error logging and handling
 		if err != nil {
+			log.WithField("error", err).Error("Encountered error while json marshaling")
 			return data.CleanedReplay{}, false
 		}
 		var unmarshalledData interface{}
@@ -114,10 +180,12 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 		// TODO: Error logging and handling
 		if err != nil {
+			log.WithField("error", err).Error("Encountered error while json unmarshaling")
 			return data.CleanedReplay{}, false
 		}
 		toonMap := unmarshalledData.(map[string]interface{})
 
+		// TODO: Introduce checks here!
 		realm := uint8(toonMap["realm"].(float64))
 		region := uint8(toonMap["region"].(float64))
 
@@ -126,8 +194,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 			Handicap: handicap,
 			Name:     name,
 			Race:     race,
-			Result:   result,
-			TeamID:   teamID,
+			Result:   resultChecked,
+			TeamID:   teamIDChecked,
 			Realm:    realm,
 			Region:   region,
 		}
@@ -230,21 +298,9 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	return cleanedReplay, true
 }
 
-// Helper function checking if a slice contains a string.
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
-}
-
 func cleanReplayStructure(replayData *datastruct.CleanedReplay) bool {
 
 	// TODO: change unused game events and message events to const value to be imported.
-
 	var anonymizedMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
 		eventType := event["evtTypeName"].(string)
