@@ -294,7 +294,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 func cleanReplayStructure(replayData *datastruct.CleanedReplay) bool {
 
-	// TODO: change unused game events and message events to const value to be imported.
 	var anonymizedMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
 		eventType := event["evtTypeName"].(string)
