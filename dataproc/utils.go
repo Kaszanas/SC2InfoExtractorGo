@@ -9,36 +9,36 @@ func checkClan(clanTag string) bool {
 	}
 }
 
-func checkUint8(intToCheck int64) (bool, uint8) {
+func checkUint8(intToCheck int64) (uint8, bool) {
 
 	if intToCheck < 0 || intToCheck > 255 {
-		return false, uint8(0)
+		return uint8(0), false
 	} else {
-		return true, uint8(intToCheck)
+		return uint8(intToCheck), true
 	}
 }
 
-func checkUint16(intToCheck int64) (bool, uint16) {
+func checkUint16(intToCheck int64) (uint16, bool) {
 	if intToCheck < 0 || intToCheck > 65535 {
-		return false, uint16(0)
+		return uint16(0), false
 	} else {
-		return true, uint16(intToCheck)
+		return uint16(intToCheck), true
 	}
 }
 
-func checkUint32(intToCheck int64) (bool, uint32) {
+func checkUint32(intToCheck int64) (uint32, bool) {
 	if intToCheck < 0 || intToCheck > 4294967295 {
-		return false, uint32(0)
+		return uint32(0), false
 	} else {
-		return true, uint32(intToCheck)
+		return uint32(intToCheck), true
 	}
 }
 
-func checkUint64(intToCheck int64) (bool, uint64) {
+func checkUint64(intToCheck int64) (uint64, bool) {
 	if intToCheck < 0 {
-		return false, uint64(0)
+		return uint64(0), false
 	} else {
-		return true, uint64(intToCheck)
+		return uint64(intToCheck), true
 	}
 }
 

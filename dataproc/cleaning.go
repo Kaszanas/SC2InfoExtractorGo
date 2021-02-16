@@ -36,7 +36,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	gameOptions := gameDescription.GameOptions.Struct
 
 	gameSpeed := gameDescription.Struct["gameSpeed"].(int64)
-	okGameSpeed, gameSpeedChecked := checkUint8(gameSpeed)
+	gameSpeedChecked, okGameSpeed := checkUint8(gameSpeed)
 	if !okGameSpeed {
 		log.Error("Found that the value of gameSpeed exceeds uint8")
 		return data.CleanedReplay{}, false
@@ -48,21 +48,21 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	mapFileSyncChecksum := gameDescription.Struct["mapFileSyncChecksum"].(int64)
 
 	mapSizeX := gameDescription.Struct["mapSizeX"].(int64)
-	okMapSizeX, mapSizeXChecked := checkUint32(mapSizeX)
+	mapSizeXChecked, okMapSizeX := checkUint32(mapSizeX)
 	if !okMapSizeX {
 		log.WithField("mapSizeX", mapSizeX).Error("Found that value of mapSizeX exceeds uint32")
 		return data.CleanedReplay{}, false
 	}
 
 	mapSizeY := gameDescription.Struct["mapSizeY"].(int64)
-	okMapSizeY, mapSizeYChecked := checkUint32(mapSizeY)
+	mapSizeYChecked, okMapSizeY := checkUint32(mapSizeY)
 	if !okMapSizeY {
 		log.WithField("mapSizeY", mapSizeY).Error("Found that value of mapSizeY exceeds uint32")
 		return data.CleanedReplay{}, false
 	}
 
 	maxPlayers := gameDescription.Struct["maxPlayers"].(int64)
-	okMaxPlayers, maxPlayersChecked := checkUint8(maxPlayers)
+	maxPlayersChecked, okMaxPlayers := checkUint8(maxPlayers)
 	if !okMaxPlayers {
 		log.WithField("maxPlayers", maxPlayers).Error("Found that value of maxPlayers exceeds uint8")
 		return data.CleanedReplay{}, false
@@ -89,14 +89,14 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		}
 
 		combinedRaceLevels := userInitData.CombinedRaceLevels()
-		okCombinedRaceLevels, combinedRaceLevelsChecked := checkUint64(combinedRaceLevels)
+		combinedRaceLevelsChecked, okCombinedRaceLevels := checkUint64(combinedRaceLevels)
 		if !okCombinedRaceLevels {
 			log.WithField("combinedRaceLevels", combinedRaceLevels).Error("Found that value of combinedRaceLevels exceeds uint64")
 			return data.CleanedReplay{}, false
 		}
 
 		highestLeague := userInitData.Struct["highestLeague"].(int64)
-		okHighestLeague, highestLeagueChecked := checkUint32(highestLeague)
+		highestLeagueChecked, okHighestLeague := checkUint32(highestLeague)
 		if !okHighestLeague {
 			log.WithField("highestLeague", highestLeague).Error("Found that value of highestLeague exceeds uint32")
 			return data.CleanedReplay{}, false
@@ -145,14 +145,14 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		race := player.Struct["race"].(string)
 
 		result := player.Struct["result"].(int64)
-		okResult, resultChecked := checkUint8(result)
+		resultChecked, okResult := checkUint8(result)
 		if !okResult {
 			log.WithField("result", result).Error("Found that value of result exceeds uint8")
 			return data.CleanedReplay{}, false
 		}
 
 		teamID := player.TeamID()
-		okTeamID, teamIDChecked := checkUint8(teamID)
+		teamIDChecked, okTeamID := checkUint8(teamID)
 		if !okTeamID {
 			log.WithField("teamID", teamID).Error("Found that value of result exceeds uint8")
 			return data.CleanedReplay{}, false
