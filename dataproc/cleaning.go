@@ -29,8 +29,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		Version:          version,
 	}
 
-	// TODO: Write a helper function that checks if the type is correct and returns a casted type to the variable. For safety and data checking reasons.
-
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions.Struct
@@ -105,7 +103,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		clanTag := userInitData.Struct["clanTag"].(string)
 		isInClan := checkClan(clanTag)
 
-		// TODO: Check if name is empty if it is empty do not include the struct in the append.
 		userInitDataStruct := data.CleanedUserInitData{
 			CombinedRaceLevels: combinedRaceLevelsChecked,
 			HighestLeague:      highestLeagueChecked,
@@ -169,16 +166,22 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		var unmarshalledData interface{}
 		err = json.Unmarshal(intermediateJSON, &unmarshalledData)
 
-		// TODO: Error logging and handling
 		if err != nil {
 			log.WithField("error", err).Error("Encountered error while json unmarshaling")
 			return data.CleanedReplay{}, false
 		}
 		toonMap := unmarshalledData.(map[string]interface{})
 
-		// TODO: Introduce checks here!
-		realm := uint8(toonMap["realm"].(float64))
-		region := uint8(toonMap["region"].(float64))
+		realmChecked, realmOk := checkUint8Float(toonMap["realm"].(float64))
+		if !realmOk {
+			log.Error("Found that value of realm exceeds uint8")
+			return data.CleanedReplay{}, false
+		}
+		regionChecked, regionOk := checkUint8Float(toonMap["region"].(float64))
+		if !regionOk {
+			log.Error("Found that value of region exceeds uint8")
+			return data.CleanedReplay{}, false
+		}
 
 		cleanedPlayerStruct := data.CleanedPlayerListStruct{
 			Color:    playerColor,
@@ -187,8 +190,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 			Race:     race,
 			Result:   resultChecked,
 			TeamID:   teamIDChecked,
-			Realm:    realm,
-			Region:   region,
+			Realm:    realmChecked,
+			Region:   regionChecked,
 		}
 
 		detailsPlayerList = append(detailsPlayerList, cleanedPlayerStruct)

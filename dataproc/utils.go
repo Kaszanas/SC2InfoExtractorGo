@@ -42,6 +42,15 @@ func checkUint64(intToCheck int64) (uint64, bool) {
 	}
 }
 
+func checkUint8Float(floatToCheck float64) (uint8, bool) {
+
+	if floatToCheck < 0 || floatToCheck > 255 {
+		return uint8(0), false
+	} else {
+		return uint8(floatToCheck), true
+	}
+}
+
 // Helper function checking if a slice contains a string.
 func contains(s []string, str string) bool {
 	for _, v := range s {
