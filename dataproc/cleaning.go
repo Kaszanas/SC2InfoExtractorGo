@@ -12,8 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Check for every doubled information if it is the same with existing s2prot.Rep structures for data integrity validation.
-
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// Constructing a clean replay header without unescessary fields:
