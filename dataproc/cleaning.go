@@ -80,7 +80,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	for _, userInitData := range replayData.InitData.UserInitDatas {
 		// If the name is an empty string ommit the struct and enter next iteration:
 		name := userInitData.Name()
-		if len(name) > 0 {
+		if !(len(name) > 0) {
 			continue
 		}
 

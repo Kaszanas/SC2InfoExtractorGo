@@ -8,6 +8,9 @@ import (
 
 func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
+	// TODO: Name of the players should be anonymized to the same persistent value that the Toon will be anonymized.
+	// Rhis means that the code should access the Toon information first and then replace respective information everywhere.
+
 	// Nickname anonymization
 	var persistPlayerNicknames map[string]int
 	playerCounter := 0
@@ -23,8 +26,6 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 			playerCounter++
 		}
 	}
-
-	// Toon anonymization
 
 	return true
 }

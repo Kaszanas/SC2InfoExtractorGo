@@ -1,46 +1,4 @@
-## Uncertain event types:
-### GameEvents:
+## Anonymize TODOs:
 
-#### Uncertain:
-- BankFile
-- BankSection
-- BankKey
-- BankValue
-- BankSignature
-- CommandManagerReset
-- GameCheat
-- SelectionSyncCheck
-- ResourceTrade
-- TriggerChatMessage
-- AICommunicate
-- SetAbsoluteGameSpeed
-- AddAbsoluteGameSpeed
-- TriggerPing
-- BroadcastCheat
-- Alliance
-- UnitClick
-- UnitHighlight
-- TriggerReplySelected
-- HijackReplayGame
-- TriggerSkipped
-- TriggerSoundLengthQuery
-- TriggerSoundOffset
-- TriggerTransmissionOffset
-- TriggerTransmissionComplete
-- TriggerAbortMission
-- TriggerPurchaseMade
-- TriggerPurchaseExit
-- TriggerPlanetMissionLaunched
-- TriggerPlanetPanelCanceled
-
-#### Certain:
-- SaveGame
-- SaveGameDone
-- LoadGameDone
-
-#### Probably campain
-
-
-#### Interpretation needed:
-- CmdEvent
-- SelectionDelta
+- initData.GameDescription.gameOptions delete advancedSharedControl, buildCoachEnabled, cooperative
+- gameEvents from "evtTypeName" "UserOptions" delete debugPauseEnabled, isMapToMapTransition, multiplayerCheatsEnabled, syncChecksummingEnabled, testCheatsEnabled, useGalaxyAsserts

@@ -13,11 +13,7 @@ func checkIntegrity(replayData *rep.Rep) bool {
 		checkSlice = append(checkSlice, true)
 	}
 
-	// // Checking if the unique toons are the same for both players:
-	// toonDescMap := replayData.TrackerEvts.ToonPlayerDescMap
-	// for _, toon := range toonDescMap {
-
-	// }
+	// Check gameEvents "userOptions" "buildNum" and "baseBuildNum" against "header" information:
 
 	return true
 }

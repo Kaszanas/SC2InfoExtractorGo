@@ -4,4 +4,5 @@ package settings
 var UnusedGameEvents = []string{
 	"TriggerSoundLengthSync",
 	"SetSyncPlayingTime",
+	"SetSyncLoadingTime",
 }
