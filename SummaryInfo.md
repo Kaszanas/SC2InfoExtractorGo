@@ -13,7 +13,6 @@
 - Server from which the replay was uploaded
 - Histograms of maximum game time and the MU (e.g. Zerg games last this much on average) PvP, ZvP, TvP, ZvT, TvT, ZvZ
 
-
 - How many unique accounts were found (odwołanie do pliku, w którym jest informacja na temat graczy)
 
 
