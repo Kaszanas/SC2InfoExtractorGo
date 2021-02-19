@@ -1,11 +1,24 @@
 package dataproc
 
-import "github.com/icza/s2prot/rep"
+import (
+	"strconv"
 
-func generateSummary(replayData *rep.Rep) {
-	// TODO: Prepare a summary for the replay that was processed
+	data "github.com/Kaszanas/GoSC2Science/datastruct"
+)
 
-	// Game version histogram (This needs to be created on a file by file basis)
+func generateSummary(replayData data.CleanedReplay, summaryInfo *data.PackageSummary) {
+
+	// Game version histogram:
+	var gameVersionFields = []string{"baseBuild", "build", "flags", "major", "minor", "revision"}
+
+	// Getting the needed information out of the replay:
+	replayHeader := replayData.Header
+
+	// Check the map for every defined field and increment its value:
+	for _, keyField := range gameVersionFields {
+		key := strconv.FormatInt(replayHeader.Version[keyField].(int64), 10)
+		summaryInfo.GameVersions = keyExistsIncrementValue(key, summaryInfo.GameVersions)
+	}
 
 	// Game time histogram (This should take game duration into consideration in seconds or possibly every 5 seconds to decrease the number of datapoints)
 
@@ -24,4 +37,13 @@ func generateSummary(replayData *rep.Rep) {
 
 	// How many unique accounts were found
 
+}
+
+func keyExistsIncrementValue(key string, mapToCheck map[string]int64) map[string]int64 {
+	if val, ok := mapToCheck[key]; ok {
+		mapToCheck[key] = val + 1
+	} else {
+		mapToCheck[key] = 1
+	}
+	return mapToCheck
 }
