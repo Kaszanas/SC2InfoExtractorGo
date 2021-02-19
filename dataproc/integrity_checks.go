@@ -17,3 +17,8 @@ func checkIntegrity(replayData *rep.Rep) bool {
 
 	return true
 }
+
+func checkCompetitiveRanked1v1(replayData *rep.Rep) bool {
+	// TODO: Check if the replay is competitive 1v1
+	// Within the dataset that is being prepared that should be the case but otherwise this software should be universal.
+}
