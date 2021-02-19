@@ -27,6 +27,7 @@ func StringifyReplay(replayFile string) (bool, string) {
 		return !successFlag, ""
 	}
 
+	// TODO: This needs to be controlled from outside of stringify_replay in case other users don't want to receive clean data.
 	cleaningOk := cleanReplayStructure(&structuredReplayData)
 	if !cleaningOk {
 		log.WithField("file", replayFile).Error("Error in cleaning the replay structure.")
