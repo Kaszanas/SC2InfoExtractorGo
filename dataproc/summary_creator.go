@@ -20,7 +20,12 @@ func generateSummary(replayData data.CleanedReplay, summaryInfo *data.PackageSum
 		summaryInfo.GameVersions = keyExistsIncrementValue(key, summaryInfo.GameVersions)
 	}
 
-	// Game time histogram (This should take game duration into consideration in seconds or possibly every 5 seconds to decrease the number of datapoints)
+	// GameDuration histogram:
+	replayDuration := replayData.Metadata.Duration.String()
+	summaryInfo.GameTimes = keyExistsIncrementValue(replayDuration, summaryInfo.GameTimes)
+
+	// Game time histogram
+	// Access the game duration
 
 	// Maps used histogram (This needs to take into consideration that the maps might be named differently depending on what language version of the game was used?)
 	// This might require using the map checksums or some other additional information to synchronize.
