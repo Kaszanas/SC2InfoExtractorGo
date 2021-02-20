@@ -33,6 +33,8 @@ func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
 		return !successFlag, "", data.ReplaySummary{}
 	}
 
+	// TODO: Anonimize:
+
 	// Create final replay string:
 	stringifyOk, finalReplayString := stringifyReplay(&cleanReplayStructure)
 	if !stringifyOk {
