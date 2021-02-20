@@ -20,23 +20,31 @@ func generateSummary(replayData data.CleanedReplay, summaryInfo *data.PackageSum
 		summaryInfo.GameVersions = keyExistsIncrementValue(key, summaryInfo.GameVersions)
 	}
 
+	replayMetadata := replayData.Metadata
 	// GameDuration histogram:
-	replayDuration := replayData.Metadata.Duration.String()
+	replayDuration := replayMetadata.Duration.String()
 	summaryInfo.GameTimes = keyExistsIncrementValue(replayDuration, summaryInfo.GameTimes)
 
-	// Game time histogram
-	// Access the game duration
-
-	// Maps used histogram (This needs to take into consideration that the maps might be named differently depending on what language version of the game was used?)
+	// TODO: This needs to be checked for different language versions of the SC2 game.
 	// This might require using the map checksums or some other additional information to synchronize.
+	// MapsUsed histogram:
+	replayMap := replayMetadata.MapName
+	summaryInfo.Maps = keyExistsIncrementValue(replayMap, summaryInfo.Maps)
 
-	// Race summary (This will be calculated on a replay by replay basis)
+	// Races used histogram:
+	for _, player := range replayMetadata.Players {
+		playerRace := player.AssignedRace
+		summaryInfo.Races = keyExistsIncrementValue(playerRace, summaryInfo.Races)
+	}
 
-	// Amount of different units used (histogram of units used). Is this needed?
-
-	// Dates of the replay when was the first recorded replay in the package when was the last recorded replay in the package.
+	// Dates of replays histogram:
+	replayYear, replayMonth, replayDay := replayData.Details.TimeUTC.Date()
+	dateString := strconv.Itoa(replayYear) + "-" + strconv.Itoa(int(replayMonth)) + "-" + strconv.Itoa(replayDay)
+	summaryInfo.Dates = keyExistsIncrementValue(dateString, summaryInfo.Dates)
 
 	// Server information histogram. Region etc.
+
+	// Amount of different units used (histogram of units used). Is this needed?
 
 	// Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
 

@@ -2,6 +2,7 @@ package dataproc
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/Kaszanas/GoSC2Science/datastruct"
@@ -13,6 +14,11 @@ import (
 )
 
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
+
+	// TODO: Introduce Region string to the cleaned replay struct instead of Region number
+	// TODO: Check Realm enum and its importance to this dataset.
+	regionCode := replayData.InitData.GameDescription.Region().Code
+	fmt.Println(regionCode)
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
