@@ -1,7 +1,17 @@
 package datastruct
 
-// PackageSummary contains statistics calculated from replay information
+// PackageSummary contains statistics calculated from replay information that belong to a whole ZIP archive.
 type PackageSummary struct {
+	Summary Summary
+}
+
+// ReplaySummary contains information calculated from a single replay
+type ReplaySummary struct {
+	Summary Summary
+}
+
+// Summary is an abstract type used by both ReplaySummary and PackageSummary and contains fields that are used as descriptive statistics
+type Summary struct {
 	GameVersions      map[string]int64  `json:"gameVersions"`
 	GameTimes         map[string]int64  `json:"gameTimes"`
 	Maps              map[string]int64  `json:"maps"`

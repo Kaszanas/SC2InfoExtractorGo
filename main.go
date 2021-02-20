@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	// "github.com/icza/mpq"
@@ -80,12 +81,14 @@ func main() {
 
 	for _, replayFile := range listOfInputFiles {
 
-		didWork, replayString := dataproc.StringifyReplay(replayFile)
+		didWork, replayString, replaySummary := dataproc.Pipeline(replayFile)
 		if !didWork {
 			readErrorCounter++
 			continue
 		}
+		fmt.Println(replaySummary)
 
+		// TODO: Handle replaySummary that is being created.
 		// TODO: Write summary to JSON
 
 		// Helper saving to zip archive:

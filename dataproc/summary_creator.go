@@ -6,7 +6,8 @@ import (
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 )
 
-func generateSummary(replayData data.CleanedReplay, summaryInfo *data.PackageSummary) {
+// TODO: Add Error handling, as currently there is absolutely no information about if the operations are correct or not.
+func generateReplaySummary(replayData data.CleanedReplay, summaryStruct *data.ReplaySummary) {
 
 	// Game version histogram:
 	var gameVersionFields = []string{"baseBuild", "build", "flags", "major", "minor", "revision"}
@@ -17,30 +18,30 @@ func generateSummary(replayData data.CleanedReplay, summaryInfo *data.PackageSum
 	// Check the map for every defined field and increment its value:
 	for _, keyField := range gameVersionFields {
 		key := strconv.FormatInt(replayHeader.Version[keyField].(int64), 10)
-		summaryInfo.GameVersions = keyExistsIncrementValue(key, summaryInfo.GameVersions)
+		summaryStruct.Summary.GameVersions = keyExistsIncrementValue(key, summaryStruct.Summary.GameVersions)
 	}
 
 	replayMetadata := replayData.Metadata
 	// GameDuration histogram:
 	replayDuration := replayMetadata.Duration.String()
-	summaryInfo.GameTimes = keyExistsIncrementValue(replayDuration, summaryInfo.GameTimes)
+	/* summaryInfo.GameTimes = */ keyExistsIncrementValue(replayDuration, summaryStruct.Summary.GameTimes)
 
 	// TODO: This needs to be checked for different language versions of the SC2 game.
 	// This might require using the map checksums or some other additional information to synchronize.
 	// MapsUsed histogram:
 	replayMap := replayMetadata.MapName
-	summaryInfo.Maps = keyExistsIncrementValue(replayMap, summaryInfo.Maps)
+	summaryStruct.Summary.Maps = keyExistsIncrementValue(replayMap, summaryStruct.Summary.Maps)
 
 	// Races used histogram:
 	for _, player := range replayMetadata.Players {
 		playerRace := player.AssignedRace
-		summaryInfo.Races = keyExistsIncrementValue(playerRace, summaryInfo.Races)
+		summaryStruct.Summary.Races = keyExistsIncrementValue(playerRace, summaryStruct.Summary.Races)
 	}
 
 	// Dates of replays histogram:
 	replayYear, replayMonth, replayDay := replayData.Details.TimeUTC.Date()
 	dateString := strconv.Itoa(replayYear) + "-" + strconv.Itoa(int(replayMonth)) + "-" + strconv.Itoa(replayDay)
-	summaryInfo.Dates = keyExistsIncrementValue(dateString, summaryInfo.Dates)
+	summaryStruct.Summary.Dates = keyExistsIncrementValue(dateString, summaryStruct.Summary.Dates)
 
 	// Server information histogram. Region etc.
 
