@@ -7,15 +7,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Introduce logging.
-
 func anonimizeReplay(replayData *data.CleanedReplay) bool {
 
 	if !anonimizeMessageEvents(replayData) {
-		log.Error("Failed to anonimize messageEvents")
+		log.Error("Failed to anonimize messageEvents".)
+		return false
 	}
 	if !anonymizePlayers(replayData) {
-		log.Error()
+		log.Error("Failed to anonimize player information.")
+		return false
 	}
 
 	return true
@@ -23,6 +23,7 @@ func anonimizeReplay(replayData *data.CleanedReplay) bool {
 
 func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
+	// TODO: Introduce logging.
 	// TODO: Name of the players should be anonymized to the same persistent value that the Toon will be anonymized.
 	// Rhis means that the code should access the Toon information first and then replace respective information everywhere.
 

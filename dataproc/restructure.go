@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kaszanas/GoSC2Science/datastruct"
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
-	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
@@ -16,9 +14,11 @@ import (
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// TODO: Introduce Region string to the cleaned replay struct instead of Region number
-	// TODO: Check Realm enum and its importance to this dataset.
 	regionCode := replayData.InitData.GameDescription.Region().Code
+	// TODO: Check how to get string out of realmCode.
+	realmCode := replayData.InitData.GameDescription
 	fmt.Println(regionCode)
+	fmt.Println(realmCode)
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
@@ -294,20 +294,4 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	}
 
 	return cleanedReplay, true
-}
-
-func cleanReplayStructure(replayData *datastruct.CleanedReplay) bool {
-
-	var cleanedGameEvents []s2prot.Struct
-	for _, event := range replayData.GameEvents {
-		if !contains(settings.UnusedGameEvents, event["evtTypeName"].(string)) {
-			cleanedGameEvents = append(cleanedGameEvents, event)
-		}
-	}
-
-	replayData.MessageEvents = anonymizedMessageEvents
-	replayData.GameEvents = cleanedGameEvents
-
-	return true
-
 }

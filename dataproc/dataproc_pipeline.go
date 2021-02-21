@@ -19,6 +19,8 @@ func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
 	defer replayData.Close()
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
+	// TODO: Perform integrity checks
+
 	// Clean replay structure:
 	cleanOk, cleanReplayStructure := cleanReplay(replayData)
 	if !cleanOk {
