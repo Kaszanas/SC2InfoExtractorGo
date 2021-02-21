@@ -298,16 +298,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 func cleanReplayStructure(replayData *datastruct.CleanedReplay) bool {
 
-	// TODO: This is a part of the anonymization procedure and should be moved to a different place:
-	// Possibly to anonymization.go
-	var anonymizedMessageEvents []s2prot.Struct
-	for _, event := range replayData.MessageEvents {
-		eventType := event["evtTypeName"].(string)
-		if !contains(settings.UnusedMessageEvents, eventType) {
-			anonymizedMessageEvents = append(anonymizedMessageEvents, event)
-		}
-	}
-
 	var cleanedGameEvents []s2prot.Struct
 	for _, event := range replayData.GameEvents {
 		if !contains(settings.UnusedGameEvents, event["evtTypeName"].(string)) {

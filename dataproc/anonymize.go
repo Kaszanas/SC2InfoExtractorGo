@@ -2,9 +2,24 @@ package dataproc
 
 import (
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	settings "github.com/Kaszanas/GoSC2Science/settings"
+	"github.com/icza/s2prot"
+	log "github.com/sirupsen/logrus"
 )
 
 // TODO: Introduce logging.
+
+func anonimizeReplay(replayData *data.CleanedReplay) bool {
+
+	if !anonimizeMessageEvents(replayData) {
+		log.Error("Failed to anonimize messageEvents")
+	}
+	if !anonymizePlayers(replayData) {
+		log.Error()
+	}
+
+	return true
+}
 
 func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
@@ -24,6 +39,19 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 		} else {
 			persistPlayerNicknames[player.Name] = playerCounter
 			playerCounter++
+		}
+	}
+
+	return true
+}
+
+func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
+
+	var anonymizedMessageEvents []s2prot.Struct
+	for _, event := range replayData.MessageEvents {
+		eventType := event["evtTypeName"].(string)
+		if !contains(settings.UnusedMessageEvents, eventType) {
+			anonymizedMessageEvents = append(anonymizedMessageEvents, event)
 		}
 	}
 
