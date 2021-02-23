@@ -186,7 +186,10 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 				// Checking the region and realm strings for the players:
 				regionString := rep.Regions[int(regionChecked)].String()
-				realmString := replayData.InitData.GameDescription.Region().Realms[int(realmChecked)].String()
+				region := replayData.InitData.GameDescription.Region()
+				// TODO: Realm does not work
+				realm := *region.Realms[int(realmChecked)]
+				realmString := realm.String()
 
 				cleanedPlayerStruct := data.CleanedPlayerListStruct{
 					Name:               name,
