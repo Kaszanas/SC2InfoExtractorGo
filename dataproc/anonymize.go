@@ -1,9 +1,12 @@
 package dataproc
 
 import (
+	"strconv"
+
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
+	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,6 +36,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	// Map toon to the nickname:
 	var toonToNicknameMap map[string]string
+	var newToonDescMap map[string]*rep.PlayerDesc
 	// Iterate over players:
 	for _, playerData := range replayData.Details.PlayerList {
 		// Iterate over Toon description map:
@@ -43,14 +47,23 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
 				anonymizedID, ok := persistPlayerNicknames[toon]
 				if ok {
-					playerData.Name = string(anonymizedID)
+					playerData.Name = strconv.Itoa(anonymizedID)
+					anonymizeToonDescMap(playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
 				} else {
 					persistPlayerNicknames[toon] = playerCounter
+					anonymizeToonDescMap(playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
 					playerCounter++
 				}
+
+				// TODO: Transfer the structure from playerDesc to a new *rep.PlayerDesc
+
+				// TODO: Add the new *rep.PlayerDesc to the newToonDescMap
+
 			}
 		}
 	}
+
+	// TODO: After the loop completes replace the replayData.ToonDesc map with newToonDescMap.
 
 	// Access the information that needs to be anonymized
 	for _, player := range replayData.Details.PlayerList {
@@ -79,4 +92,21 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 	}
 
 	return true
+}
+
+func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string) {
+
+	newPlayerDesc := rep.PlayerDesc{
+		PlayerID:            playerDesc.PlayerID,
+		SlotID:              playerDesc.SlotID,
+		UserID:              playerDesc.UserID,
+		StartLocX:           playerDesc.StartLocX,
+		StartLocY:           playerDesc.StartLocY,
+		StartDir:            playerDesc.StartDir,
+		SQ:                  playerDesc.SQ,
+		SupplyCappedPercent: playerDesc.SupplyCappedPercent,
+	}
+
+	toonDescMap[anonymizedID] = &newPlayerDesc
+
 }
