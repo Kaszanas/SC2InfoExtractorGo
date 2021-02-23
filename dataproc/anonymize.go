@@ -27,9 +27,6 @@ func anonimizeReplay(replayData *data.CleanedReplay) bool {
 func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	// TODO: Introduce logging.
-	// TODO: Name of the players should be anonymized to the same persistent value that the Toon will be anonymized.
-	// Rhis means that the code should access the Toon information first and then replace respective information everywhere.
-
 	// Nickname anonymization
 	var persistPlayerNicknames map[string]int
 	playerCounter := 0
@@ -47,6 +44,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
 				anonymizedID, ok := persistPlayerNicknames[toon]
 				if ok {
+					// TODO: Add all of the other information that needs to be anonymized about the players:
 					playerData.Name = strconv.Itoa(anonymizedID)
 					anonymizeToonDescMap(playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
 				} else {
@@ -54,29 +52,12 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 					anonymizeToonDescMap(playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
 					playerCounter++
 				}
-
-				// TODO: Transfer the structure from playerDesc to a new *rep.PlayerDesc
-
-				// TODO: Add the new *rep.PlayerDesc to the newToonDescMap
-
 			}
 		}
 	}
 
-	// TODO: After the loop completes replace the replayData.ToonDesc map with newToonDescMap.
-
-	// Access the information that needs to be anonymized
-	for _, player := range replayData.Details.PlayerList {
-		// Check if it exists in some kind of persistent source that is used for the sake of anonymization
-		anonymizedID, ok := persistPlayerNicknames[player.Name]
-		if ok {
-			// Replace the information within the original data structure with the persistent version from a variable or the file.
-			player.Name = string(anonymizedID)
-		} else {
-			persistPlayerNicknames[player.Name] = playerCounter
-			playerCounter++
-		}
-	}
+	// Replacing Toon desc map with anonymmized version containing a persistent anonymized ID of the player:
+	replayData.ToonPlayerDescMap = newToonDescMap
 
 	return true
 }
@@ -96,6 +77,7 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 
 func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string) {
 
+	// Define new rep.PlayerDesc with old data
 	newPlayerDesc := rep.PlayerDesc{
 		PlayerID:            playerDesc.PlayerID,
 		SlotID:              playerDesc.SlotID,
@@ -107,6 +89,7 @@ func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*re
 		SupplyCappedPercent: playerDesc.SupplyCappedPercent,
 	}
 
+	// Adding the new PlayerDesc
 	toonDescMap[anonymizedID] = &newPlayerDesc
 
 }
