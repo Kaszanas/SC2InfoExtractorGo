@@ -43,6 +43,8 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 			// Checking if the SlotID and TeamID matches:
 			if playerDesc.SlotID == int64(playerData.TeamID) {
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
+				// TODO: This line of code needs to use external file which will be updated per package.
+				// TODO: The software should allow restarting processing from a package that errored out.
 				anonymizedID, ok := persistPlayerNicknames[toon]
 				if ok {
 					// TODO: Add all of the other information that needs to be anonymized about the players:
