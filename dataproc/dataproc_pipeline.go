@@ -6,15 +6,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
 func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
-
-	successFlag := true
 
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
 		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).Error("Failed to read file.")
-		return !successFlag, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}
 	}
 	defer replayData.Close()
 	log.WithField("file", replayFile).Info("Read data from a replay.")
@@ -25,24 +24,28 @@ func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
 	cleanOk, cleanReplayStructure := cleanReplay(replayData)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
-		return !successFlag, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}
 	}
 
 	// Create replay summary:
 	summarizeOk, summarizedReplay := summarizeReplay(&cleanReplayStructure)
 	if !summarizeOk {
-
-		return !successFlag, "", data.ReplaySummary{}
+		log.WithField("file", replayFile).Error("Failed to create replay summary.")
+		return false, "", data.ReplaySummary{}
 	}
 
-	// TODO: Anonimize:
+	// Anonimize replay:
+	if !anonymizeReplay(&cleanReplayStructure) {
+		log.WithField("file", replayFile).Error("Failed to anonymize replay.")
+		return false, "", data.ReplaySummary{}
+	}
 
 	// Create final replay string:
 	stringifyOk, finalReplayString := stringifyReplay(&cleanReplayStructure)
 	if !stringifyOk {
 		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
-		return !successFlag, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}
 	}
 
-	return successFlag, finalReplayString, summarizedReplay
+	return false, finalReplayString, summarizedReplay
 }
