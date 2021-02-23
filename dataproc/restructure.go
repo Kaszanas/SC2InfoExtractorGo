@@ -2,7 +2,6 @@ package dataproc
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
@@ -13,12 +12,7 @@ import (
 
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
-	// TODO: Introduce Region string to the cleaned replay struct instead of Region number
-	regionCode := replayData.InitData.GameDescription.Region().Code
-	// TODO: Check how to get string out of realmCode.
-	realmCode := replayData.InitData.GameDescription
-	fmt.Println(regionCode)
-	fmt.Println(realmCode)
+	// TODO: Move user initData to playerList
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
@@ -128,77 +122,92 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
 	var detailsPlayerList []data.CleanedPlayerListStruct
-	for _, player := range details.Players() {
-		// Not checking the correctness of color values as it seems to be irrelevant.
-		colorA := uint8(player.Color[0])
-		colorB := uint8(player.Color[1])
-		colorG := uint8(player.Color[2])
-		colorR := uint8(player.Color[3])
-		playerColor := data.PlayerListColor{
-			A: colorA,
-			B: colorB,
-			G: colorG,
-			R: colorR,
-		}
 
-		handicap := uint8(player.Handicap())
-		name := player.Name
-		race := player.Struct["race"].(string)
+	for _, initPlayer := range cleanedUserInitDataList {
 
-		result := player.Struct["result"].(int64)
-		resultChecked, okResult := checkUint8(result)
-		if !okResult {
-			log.WithField("result", result).Error("Found that value of result exceeds uint8")
-			return data.CleanedReplay{}, false
-		}
+		for _, player := range details.Players() {
+			if initPlayer.Name == player.Name {
 
-		teamID := player.TeamID()
-		teamIDChecked, okTeamID := checkUint8(teamID)
-		if !okTeamID {
-			log.WithField("teamID", teamID).Error("Found that value of result exceeds uint8")
-			return data.CleanedReplay{}, false
-		}
+				colorA := uint8(player.Color[0])
+				colorB := uint8(player.Color[1])
+				colorG := uint8(player.Color[2])
+				colorR := uint8(player.Color[3])
+				playerColor := data.PlayerListColor{
+					A: colorA,
+					B: colorB,
+					G: colorG,
+					R: colorR,
+				}
 
-		// TODO: Check if this cannot be done easier?
-		// Accessing toon data by Golang magic:
-		toon := player.Struct["toon"]
-		intermediateJSON, err := json.Marshal(&toon)
-		if err != nil {
-			log.WithField("error", err).Error("Encountered error while json marshaling")
-			return data.CleanedReplay{}, false
-		}
-		var unmarshalledData interface{}
-		err = json.Unmarshal(intermediateJSON, &unmarshalledData)
+				handicap := uint8(player.Handicap())
+				name := player.Name
+				race := player.Struct["race"].(string)
 
-		if err != nil {
-			log.WithField("error", err).Error("Encountered error while json unmarshaling")
-			return data.CleanedReplay{}, false
-		}
-		toonMap := unmarshalledData.(map[string]interface{})
+				result := player.Struct["result"].(int64)
+				resultChecked, okResult := checkUint8(result)
+				if !okResult {
+					log.WithField("result", result).Error("Found that value of result exceeds uint8")
+					return data.CleanedReplay{}, false
+				}
 
-		realmChecked, realmOk := checkUint8Float(toonMap["realm"].(float64))
-		if !realmOk {
-			log.Error("Found that value of realm exceeds uint8")
-			return data.CleanedReplay{}, false
-		}
-		regionChecked, regionOk := checkUint8Float(toonMap["region"].(float64))
-		if !regionOk {
-			log.Error("Found that value of region exceeds uint8")
-			return data.CleanedReplay{}, false
-		}
+				teamID := player.TeamID()
+				teamIDChecked, okTeamID := checkUint8(teamID)
+				if !okTeamID {
+					log.WithField("teamID", teamID).Error("Found that value of result exceeds uint8")
+					return data.CleanedReplay{}, false
+				}
 
-		cleanedPlayerStruct := data.CleanedPlayerListStruct{
-			Color:    playerColor,
-			Handicap: handicap,
-			Name:     name,
-			Race:     race,
-			Result:   resultChecked,
-			TeamID:   teamIDChecked,
-			Realm:    realmChecked,
-			Region:   regionChecked,
-		}
+				// TODO: Check if this cannot be done easier?
+				// Accessing toon data by Golang magic:
+				toon := player.Struct["toon"]
+				intermediateJSON, err := json.Marshal(&toon)
+				if err != nil {
+					log.WithField("error", err).Error("Encountered error while json marshaling")
+					return data.CleanedReplay{}, false
+				}
+				var unmarshalledData interface{}
+				err = json.Unmarshal(intermediateJSON, &unmarshalledData)
 
-		detailsPlayerList = append(detailsPlayerList, cleanedPlayerStruct)
+				if err != nil {
+					log.WithField("error", err).Error("Encountered error while json unmarshaling")
+					return data.CleanedReplay{}, false
+				}
+				toonMap := unmarshalledData.(map[string]interface{})
+
+				regionChecked, regionOk := checkUint8Float(toonMap["region"].(float64))
+				if !regionOk {
+					log.Error("Found that value of region exceeds uint8")
+					return data.CleanedReplay{}, false
+				}
+
+				realmChecked, realmOk := checkUint8Float(toonMap["realm"].(float64))
+				if !realmOk {
+					log.Error("Found that value of realm exceeds uint8")
+					return data.CleanedReplay{}, false
+				}
+
+				// Checking the region and realm strings for the players:
+				regionString := rep.Regions[int(regionChecked)].String()
+				realmString := replayData.InitData.GameDescription.Region().Realms[int(realmChecked)].String()
+
+				cleanedPlayerStruct := data.CleanedPlayerListStruct{
+					Name:               name,
+					Race:               race,
+					Result:             resultChecked,
+					IsInClan:           initPlayer.IsInClan,
+					HighestLeague:      initPlayer.HighestLeague,
+					Handicap:           handicap,
+					TeamID:             teamIDChecked,
+					Realm:              regionString,
+					Region:             realmString,
+					CombinedRaceLevels: initPlayer.CombinedRaceLevels,
+					Color:              playerColor,
+				}
+
+				detailsPlayerList = append(detailsPlayerList, cleanedPlayerStruct)
+
+			}
+		}
 	}
 
 	timeLocalOffset := details.TimeLocalOffset()

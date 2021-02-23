@@ -10,7 +10,7 @@ import (
 func anonimizeReplay(replayData *data.CleanedReplay) bool {
 
 	if !anonimizeMessageEvents(replayData) {
-		log.Error("Failed to anonimize messageEvents".)
+		log.Error("Failed to anonimize messageEvents.")
 		return false
 	}
 	if !anonymizePlayers(replayData) {
@@ -30,6 +30,17 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	// Nickname anonymization
 	var persistPlayerNicknames map[string]int
 	playerCounter := 0
+
+	var toonToNicknameMap map[string]string
+	for toon, player := range replayData.ToonPlayerDescMap {
+		// Map toon to the nickname
+
+		if player.PlayerID == 1 {
+			toonToNicknameMap[toon] = "something"
+		}
+
+	}
+
 	// Access the information that needs to be anonymized
 	for _, player := range replayData.Details.PlayerList {
 		// Check if it exists in some kind of persistent source that is used for the sake of anonymization
