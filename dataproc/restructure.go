@@ -113,7 +113,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	cleanInitData := data.CleanedInitData{
 		GameDescription: cleanedGameDescription,
-		UserInitData:    cleanedUserInitDataList,
 	}
 
 	// Constructing a clean CleanedDetails without unescessary fields
@@ -122,7 +121,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
 	var detailsPlayerList []data.CleanedPlayerListStruct
-
 	for _, initPlayer := range cleanedUserInitDataList {
 
 		for _, player := range details.Players() {
@@ -265,7 +263,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	dirtyMessageEvents := replayData.MessageEvts
 	dirtyGameEvents := replayData.GameEvts
 	dirtyTrackerEvents := replayData.TrackerEvts.Evts
-	dirtyPIDPlayerDescMap := replayData.TrackerEvts.PIDPlayerDescMap
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 	justGameEvtsErr := replayData.GameEvtsErr
 
@@ -295,7 +292,6 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		MessageEvents:     messageEventsStructs,
 		GameEvents:        gameEventsStructs,
 		TrackerEvents:     trackerEventsStructs,
-		PIDPlayerDescMap:  dirtyPIDPlayerDescMap,
 		ToonPlayerDescMap: dirtyToonPlayerDescMap,
 		GameEvtsErr:       justGameEvtsErr,
 		MessageEvtsErr:    justMessageEvtsErr,

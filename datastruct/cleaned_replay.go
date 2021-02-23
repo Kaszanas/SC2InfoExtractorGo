@@ -14,7 +14,6 @@ type CleanedReplay struct {
 	MessageEvents     []s2prot.Struct            `json:"messageEvents"`
 	GameEvents        []s2prot.Struct            `json:"gameEvents"`
 	TrackerEvents     []s2prot.Struct            `json:"trackerEvents"`
-	PIDPlayerDescMap  map[int64]*rep.PlayerDesc  `json:"PIDPlayerDescMap"`
 	ToonPlayerDescMap map[string]*rep.PlayerDesc `json:"ToonPlayerDescMap"`
 	GameEvtsErr       bool                       `json:"gameEventsErr"`
 	MessageEvtsErr    bool                       `json:"messageEventsErr"`

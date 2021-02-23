@@ -31,14 +31,25 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	var persistPlayerNicknames map[string]int
 	playerCounter := 0
 
+	// Map toon to the nickname:
 	var toonToNicknameMap map[string]string
-	for toon, player := range replayData.ToonPlayerDescMap {
-		// Map toon to the nickname
-
-		if player.PlayerID == 1 {
-			toonToNicknameMap[toon] = "something"
+	// Iterate over players:
+	for _, playerData := range replayData.Details.PlayerList {
+		// Iterate over Toon description map:
+		for toon, playerDesc := range replayData.ToonPlayerDescMap {
+			// Checking if the SlotID and TeamID matches:
+			if playerDesc.SlotID == int64(playerData.TeamID) {
+				toonToNicknameMap[toon] = playerData.Name
+				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
+				anonymizedID, ok := persistPlayerNicknames[toon]
+				if ok {
+					playerData.Name = string(anonymizedID)
+				} else {
+					persistPlayerNicknames[toon] = playerCounter
+					playerCounter++
+				}
+			}
 		}
-
 	}
 
 	// Access the information that needs to be anonymized

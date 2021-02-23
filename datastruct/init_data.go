@@ -7,7 +7,6 @@ import (
 // CleanedInitData is cleaned initial data of a replay derived from s2prot.Rep
 type CleanedInitData struct {
 	GameDescription CleanedGameDescription `json:"gameDescription"`
-	UserInitData    []CleanedUserInitData  `json:"userInitData"`
 }
 
 // CleanedGameDescription is cleaned game description of a replay derived from s2prot.Rep
