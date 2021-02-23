@@ -36,9 +36,12 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	// Map toon to the nickname:
 	var toonToNicknameMap map[string]string
 	var newToonDescMap map[string]*rep.PlayerDesc
+
+	var listOfStructs = make([]rep.PlayerDesc, 2)
+
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
-	for _, playerData := range replayData.Details.PlayerList {
+	for index, playerData := range replayData.Details.PlayerList {
 		// Iterate over Toon description map:
 		for toon, playerDesc := range replayData.ToonPlayerDescMap {
 			// Checking if the SlotID and TeamID matches:
@@ -49,10 +52,10 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 				if ok {
 					// TODO: Add all of the other information that needs to be anonymized about the players:
 					playerData.Name = strconv.Itoa(anonymizedID)
-					anonymizeToonDescMap(playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
+					anonymizeToonDescMap(&listOfStructs[index], newToonDescMap, strconv.Itoa(anonymizedID))
 				} else {
 					persistPlayerNicknames[toon] = playerCounter
-					anonymizeToonDescMap(playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
+					anonymizeToonDescMap(&listOfStructs[index], newToonDescMap, strconv.Itoa(anonymizedID))
 					playerCounter++
 				}
 			}
