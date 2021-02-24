@@ -22,7 +22,7 @@ func cleanReplay(replayData *rep.Rep) (bool, data.CleanedReplay) {
 	}
 
 	// TODO: This needs to be controlled from outside of stringify_replay in case other users don't want to receive clean data.
-	if cleanUnusedGameEvents(&structuredReplayData) {
+	if !cleanUnusedGameEvents(&structuredReplayData) {
 		log.Error("Error in cleaning the replay structure.")
 		return false, data.CleanedReplay{}
 	}

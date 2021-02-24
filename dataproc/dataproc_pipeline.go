@@ -15,7 +15,6 @@ func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
 		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).Error("Failed to read file.")
 		return false, "", data.ReplaySummary{}
 	}
-	defer replayData.Close()
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
 	// TODO: Perform integrity checks
@@ -46,6 +45,8 @@ func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
 		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
 		return false, "", data.ReplaySummary{}
 	}
+
+	replayData.Close()
 
 	return false, finalReplayString, summarizedReplay
 }

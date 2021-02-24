@@ -10,6 +10,11 @@ type ReplaySummary struct {
 	Summary Summary
 }
 
+// DefaultReplaySummary returns an initialized ReplaySummary
+func DefaultReplaySummary() ReplaySummary {
+	return ReplaySummary{Summary: DefaultSummary()}
+}
+
 // Summary is an abstract type used by both ReplaySummary and PackageSummary and contains fields that are used as descriptive statistics
 type Summary struct {
 	GameVersions      map[string]int64  `json:"gameVersions"`
@@ -20,6 +25,20 @@ type Summary struct {
 	Dates             map[string]int64  `json:"dates"`
 	Servers           map[string]int64  `json:"servers"`
 	MatchupHistograms MatchupHistograms `json:"matchupHistograms"`
+}
+
+// DefaultSummary ...
+func DefaultSummary() Summary {
+
+	return Summary{
+		GameVersions: make(map[string]int64),
+		GameTimes:    make(map[string]int64),
+		Maps:         make(map[string]int64),
+		Races:        make(map[string]int64),
+		Units:        make(map[string]int64),
+		Dates:        make(map[string]int64),
+		Servers:      make(map[string]int64),
+	}
 }
 
 // MatchupHistograms aggregates the data that is required to prepare histograms of Matchup vs Game Length
@@ -37,4 +56,14 @@ type MatchupTime struct {
 	// TODO: This design is not sufficient and does not fit the data that is required:
 	Matchup   map[string]int64 `json:"matchup"`
 	GameTimes map[string]int64 `json:"gameTimes"`
+}
+
+// DefaultMatchupTime ...
+func DefaultMatchupTime() MatchupTime {
+
+	return MatchupTime{
+		Matchup:   make(map[string]int64),
+		GameTimes: make(map[string]int64),
+	}
+
 }

@@ -1,6 +1,8 @@
 package dataproc
 
 import (
+	"fmt"
+
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 )
 
@@ -8,10 +10,12 @@ func summarizeReplay(replayData *data.CleanedReplay) (bool, data.ReplaySummary) 
 
 	successFlag := true
 
-	initSummaryStruct := data.ReplaySummary{}
+	initSummary := data.DefaultReplaySummary()
 
-	generateReplaySummary(*replayData, &initSummaryStruct)
+	generateReplaySummary(replayData, &initSummary)
 
-	return successFlag, initSummaryStruct
+	fmt.Println(initSummary)
+
+	return successFlag, initSummary
 
 }
