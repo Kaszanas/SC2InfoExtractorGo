@@ -39,7 +39,7 @@ func main() {
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
 
-	logLevelFlag := flag.Int("log_level", 3, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
+	logLevelFlag := flag.Int("log_level", 5, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
 	flag.Parse()
 	log.WithField("logLevel", *logLevelFlag).Info("Parsed flags, setting log level.")
@@ -121,6 +121,6 @@ func main() {
 		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
 	}
 	if compressionErrorCounter > 0 {
-		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing found: %s - compressionErrors", compressionErrorCounter)
+		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing compressionErrors: ", compressionErrorCounter)
 	}
 }

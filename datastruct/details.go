@@ -21,8 +21,8 @@ type CleanedPlayerListStruct struct {
 	HighestLeague      uint32          `json:"highestLeague"`
 	Handicap           uint8           `json:"handicap"`
 	TeamID             uint8           `json:"teamID"`
-	Realm              string          `json:"realm"`
 	Region             string          `json:"region"`
+	Realm              uint8           `json:"realm"`
 	CombinedRaceLevels uint64          `json:"combinedRaceLevels"`
 	Color              PlayerListColor `json:"color"`
 }

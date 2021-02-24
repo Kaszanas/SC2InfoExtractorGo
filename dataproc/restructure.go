@@ -12,8 +12,6 @@ import (
 
 func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
-	// TODO: Move user initData to playerList
-
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
 	duration := replayData.Header.Duration()
@@ -186,10 +184,10 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 				// Checking the region and realm strings for the players:
 				regionString := rep.Regions[int(regionChecked)].String()
-				region := replayData.InitData.GameDescription.Region()
-				// TODO: Realm does not work
-				realm := *region.Realms[int(realmChecked)]
-				realmString := realm.String()
+				// TODO: Realm string does not work
+				// region := replayData.InitData.GameDescription.Region()
+				// realm := *region.Realms[int(realmChecked)]
+				// realmString := realm.String()
 
 				cleanedPlayerStruct := data.CleanedPlayerListStruct{
 					Name:               name,
@@ -199,8 +197,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 					HighestLeague:      initPlayer.HighestLeague,
 					Handicap:           handicap,
 					TeamID:             teamIDChecked,
-					Realm:              regionString,
-					Region:             realmString,
+					Region:             regionString,
+					Realm:              realmChecked,
 					CombinedRaceLevels: initPlayer.CombinedRaceLevels,
 					Color:              playerColor,
 				}
