@@ -15,6 +15,8 @@ func checkIntegrity(replayData *rep.Rep) bool {
 
 	// Check gameEvents "userOptions" "buildNum" and "baseBuildNum" against "header" information:
 
+	// TODO: MMR should not be above certain thresholds!
+
 	return true
 }
 

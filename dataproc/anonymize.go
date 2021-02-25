@@ -18,6 +18,7 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 		log.Error("Failed to anonimize messageEvents.")
 		return false
 	}
+
 	if !anonymizePlayers(replayData) {
 		log.Error("Failed to anonimize player information.")
 		return false
@@ -29,14 +30,15 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entererd anonymizePlayers().")
-	var persistPlayerNicknames map[string]int
 	playerCounter := 0
-	var newToonDescMap map[string]*rep.PlayerDesc
+	var persistPlayerNicknames = make(map[string]int)
+	var newToonDescMap = make(map[string]*rep.PlayerDesc)
 
 	var listOfStructs = make([]rep.PlayerDesc, 2)
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
+	// TODO: Something does not work here!!! Empty toon map is generated and stringified.
 	for index, playerData := range replayData.Details.PlayerList {
 		// Iterate over Toon description map:
 		for toon, playerDesc := range replayData.ToonPlayerDescMap {
@@ -51,10 +53,10 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 					// Nickname anonymization:
 					playerData.Name = strconv.Itoa(anonymizedID)
 					// Toon anonymization:
-					anonymizeToonDescMap(&listOfStructs[index], newToonDescMap, strconv.Itoa(anonymizedID))
+					anonymizeToonDescMap(&listOfStructs[index], playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
 				} else {
 					persistPlayerNicknames[toon] = playerCounter
-					anonymizeToonDescMap(&listOfStructs[index], newToonDescMap, strconv.Itoa(anonymizedID))
+					anonymizeToonDescMap(&listOfStructs[index], playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
 					playerCounter++
 				}
 			}
@@ -79,10 +81,12 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 		}
 	}
 
+	replayData.MessageEvents = anonymizedMessageEvents
+
 	return true
 }
 
-func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string) {
+func anonymizeToonDescMap(emptyPlayerDesc *rep.PlayerDesc, playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string) {
 
 	log.Info("Entered anonymizeToonDescMap().")
 

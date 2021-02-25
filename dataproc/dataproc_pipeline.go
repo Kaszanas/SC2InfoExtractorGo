@@ -48,5 +48,5 @@ func Pipeline(replayFile string) (bool, string, data.ReplaySummary) {
 
 	replayData.Close()
 
-	return false, finalReplayString, summarizedReplay
+	return true, finalReplayString, summarizedReplay
 }
