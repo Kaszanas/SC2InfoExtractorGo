@@ -1,6 +1,7 @@
 package dataproc
 
 import (
+	"fmt"
 	"strconv"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
@@ -33,8 +34,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	playerCounter := 0
 	var persistPlayerNicknames = make(map[string]int)
 	var newToonDescMap = make(map[string]*rep.PlayerDesc)
-
-	var listOfStructs = make([]rep.PlayerDesc, 2)
+	// var listOfStructs = make([]rep.PlayerDesc, 2)
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
@@ -51,12 +51,19 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 				if ok {
 					// TODO: Add all of the other information that needs to be anonymized about the players:
 					// Nickname anonymization:
-					playerData.Name = strconv.Itoa(anonymizedID)
+					stringAnonymizedID := strconv.Itoa(anonymizedID)
+					replayData.Details.PlayerList[index].Name = stringAnonymizedID
 					// Toon anonymization:
-					anonymizeToonDescMap(&listOfStructs[index], playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
+					anonymizeToonDescMap(playerDesc, newToonDescMap, stringAnonymizedID, rep.PlayerDesc{})
 				} else {
+					// The toon was not ine the persistent map, add it:
 					persistPlayerNicknames[toon] = playerCounter
-					anonymizeToonDescMap(&listOfStructs[index], playerDesc, newToonDescMap, strconv.Itoa(anonymizedID))
+
+					// Convert player counter to string to be used as new toon in the final map:
+					stringAnonymizedID := strconv.Itoa(playerCounter)
+					replayData.Details.PlayerList[index].Name = stringAnonymizedID
+
+					anonymizeToonDescMap(playerDesc, newToonDescMap, stringAnonymizedID, rep.PlayerDesc{})
 					playerCounter++
 				}
 			}
@@ -66,6 +73,8 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	// Replacing Toon desc map with anonymmized version containing a persistent anonymized ID of the player:
 	log.Info("Replacing ToonPlayerDescMap with anonymized version.")
 	replayData.ToonPlayerDescMap = newToonDescMap
+
+	fmt.Println(replayData.ToonPlayerDescMap)
 
 	return true
 }
@@ -86,12 +95,12 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 	return true
 }
 
-func anonymizeToonDescMap(emptyPlayerDesc *rep.PlayerDesc, playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string) {
+func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string, emptyPlayerDesc rep.PlayerDesc) {
 
 	log.Info("Entered anonymizeToonDescMap().")
 
 	// Define new rep.PlayerDesc with old
-	newPlayerDesc := rep.PlayerDesc{
+	emptyPlayerDesc = rep.PlayerDesc{
 		PlayerID:            playerDesc.PlayerID,
 		SlotID:              playerDesc.SlotID,
 		UserID:              playerDesc.UserID,
@@ -104,6 +113,6 @@ func anonymizeToonDescMap(emptyPlayerDesc *rep.PlayerDesc, playerDesc *rep.Playe
 
 	// Adding the new PlayerDesc
 	log.Info("Adding new PlayerDesc to toonDescMap")
-	toonDescMap[anonymizedID] = &newPlayerDesc
+	toonDescMap[anonymizedID] = &emptyPlayerDesc
 
 }
