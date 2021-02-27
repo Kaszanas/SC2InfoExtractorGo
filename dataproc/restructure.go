@@ -55,7 +55,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		return data.CleanedReplay{}, false
 	}
 
-	maxPlayers := gameDescription.Struct["maxPlayers"].(int64)
+	maxPlayers := gameDescription.MaxPlayers()
 	maxPlayersChecked, okMaxPlayers := checkUint8(maxPlayers)
 	if !okMaxPlayers {
 		log.WithField("maxPlayers", maxPlayers).Error("Found that value of maxPlayers exceeds uint8")
@@ -122,6 +122,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	for _, initPlayer := range cleanedUserInitDataList {
 
 		for _, player := range details.Players() {
+
+			// TODO: Find other qualities to check for (e.g. toon) instead of player name because player names from details hold clan tag:
 			if initPlayer.Name == player.Name {
 
 				colorA := uint8(player.Color[0])
@@ -183,11 +185,10 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 				}
 
 				// Checking the region and realm strings for the players:
-				regionString := rep.Regions[int(regionChecked)].String()
-				// TODO: Realm string does not work
-				// region := replayData.InitData.GameDescription.Region()
-				// realm := *region.Realms[int(realmChecked)]
-				// realmString := realm.String()
+				region := rep.Regions[int(regionChecked)]
+				regionString := region.String()
+				realm := region.Realm(int64(realmChecked))
+				realmString := realm.String()
 
 				cleanedPlayerStruct := data.CleanedPlayerListStruct{
 					Name:               name,
@@ -198,7 +199,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 					Handicap:           handicap,
 					TeamID:             teamIDChecked,
 					Region:             regionString,
-					Realm:              realmChecked,
+					Realm:              realmString,
 					CombinedRaceLevels: initPlayer.CombinedRaceLevels,
 					Color:              playerColor,
 				}
@@ -212,6 +213,8 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	timeLocalOffset := details.TimeLocalOffset()
 	timeUTC := details.TimeUTC()
 	mapName := details.Struct["title"].(string)
+
+	mapNameString := details.MapFileName()
 
 	cleanDetails := data.CleanedDetails{
 		GameSpeed:       detailsGameSpeed,

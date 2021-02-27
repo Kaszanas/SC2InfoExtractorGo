@@ -43,19 +43,12 @@ func DefaultSummary() Summary {
 
 // MatchupHistograms aggregates the data that is required to prepare histograms of Matchup vs Game Length
 type MatchupHistograms struct {
-	PvPMatchup []MatchupTime `json:"PvPMatchup"`
-	TvTMatchup []MatchupTime `json:"TvTMatchup"`
-	ZvZMatchup []MatchupTime `json:"ZvZMatchup"`
-	PvZMatchup []MatchupTime `json:"PvZMatchup"`
-	PvTMatchup []MatchupTime `json:"PvTMatchup"`
-	TvZMatchup []MatchupTime `json:"TvZMatchup"`
-}
-
-// MatchupTime contains information about game length vs the current matchup
-type MatchupTime struct {
-	// TODO: This design is not sufficient and does not fit the data that is required:
-	Matchup   map[string]int64 `json:"matchup"`
-	GameTimes map[string]int64 `json:"gameTimes"`
+	PvPMatchup map[int64]int64 `json:"PvPMatchup"`
+	TvTMatchup map[int64]int64 `json:"TvTMatchup"`
+	ZvZMatchup map[int64]int64 `json:"ZvZMatchup"`
+	PvZMatchup map[int64]int64 `json:"PvZMatchup"`
+	PvTMatchup map[int64]int64 `json:"PvTMatchup"`
+	TvZMatchup map[int64]int64 `json:"TvZMatchup"`
 }
 
 // DefaultMatchupTime ...

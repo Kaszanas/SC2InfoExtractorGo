@@ -2,7 +2,6 @@ package dataproc
 
 import log "github.com/sirupsen/logrus"
 
-// TODO: Expand logging:
 func checkClan(clanTag string) bool {
 	log.Info("Entered checkClan()")
 	if clanTag != "" {

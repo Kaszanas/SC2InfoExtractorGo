@@ -30,7 +30,6 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	// TODO: This needs to be checked for different language versions of the SC2 game.
 	// This might require using the map checksums or some other additional information to synchronize.
 	// MapsUsed histogram:
-
 	replayMap := replayMetadata.MapName
 	keyExistsIncrementValue(replayMap, summaryStruct.Summary.Maps)
 

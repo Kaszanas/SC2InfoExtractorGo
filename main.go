@@ -46,6 +46,9 @@ func main() {
 	log.SetLevel(log.Level(*logLevelFlag))
 	log.Info("Set logging level.")
 
+	// TODO: read external state information for persistent anonymization:
+	// here
+
 	// Converting compression method flag:
 	compressionMethod := uint16(*compressionMethodFlag)
 
@@ -109,10 +112,11 @@ func main() {
 			writer.Close()
 			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
 			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+
+			// TODO: Dump the contents of the persistent player nickname mape and additional information about which package was processed.
+			// Helper method returning bytes buffer and zip writer:
 			log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
 			packageCounter++
-
-			// Helper method returning bytes buffer and zip writer:
 			buffer, writer = initBufferWriter()
 			log.Info("Initialized buffer and writer.")
 		}
