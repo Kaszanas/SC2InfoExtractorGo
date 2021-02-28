@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -28,6 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer logFile.Close()
 	log.SetOutput(logFile)
 	log.Info("Set logging format, defined log file.")
 
@@ -46,8 +48,23 @@ func main() {
 	log.SetLevel(log.Level(*logLevelFlag))
 	log.Info("Set logging level.")
 
-	// TODO: read external state information for persistent anonymization:
-	// here
+	// Reading external state information for persistent anonymization and to avoid processing twice the same data:
+	processingInfoFile, err := os.OpenFile("processing.log", os.O_TRUNC|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatal("Failed to create or open the processing.log: ", err)
+	}
+	byteValue, err := ioutil.ReadAll(processingInfoFile)
+	if err != nil {
+		log.Fatal("Failed to read bytes from processing.log: ", err)
+	}
+	defer processingInfoFile.Close()
+
+	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
+	var processingInfoStruct data.ProcessingInfo
+	err = json.Unmarshal(byteValue, &processingInfoStruct)
+	if err != nil {
+		log.Fatal("Failed to uunmarshall the processing.log")
+	}
 
 	// Converting compression method flag:
 	compressionMethod := uint16(*compressionMethodFlag)
@@ -113,13 +130,23 @@ func main() {
 			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
 			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 
-			// TODO: Dump the contents of the persistent player nickname mape and additional information about which package was processed.
+			// Saving contents of the persistent player nickname map and additional information about which package was processed:
+			processingInfoBytes, err := json.Marshal(processingInfoStruct)
+			if err != nil {
+				log.Fatal("Failed to marshal processingInfo that is used to create processing.log: ", err)
+			}
+			_, err = processingInfoFile.Write(processingInfoBytes)
+			if err != nil {
+				log.Fatal("Failed to save the processingInfoFile: ", err)
+			}
+
 			// Helper method returning bytes buffer and zip writer:
 			log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
 			packageCounter++
 			buffer, writer = initBufferWriter()
 			log.Info("Initialized buffer and writer.")
 		}
+		processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 	}
 	if readErrorCounter > 0 {
 		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
