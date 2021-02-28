@@ -2,7 +2,6 @@ package dataproc
 
 import (
 	"encoding/json"
-	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot"
@@ -15,7 +14,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
 	duration := replayData.Header.Duration()
-	useScaledTime := replayData.Header.Struct["useScaledTime"].(bool)
+	useScaledTime := replayData.Header.UseScaledTime()
 	version := replayData.Header.Struct["version"].(s2prot.Struct)
 
 	cleanHeader := data.CleanedHeader{
@@ -29,26 +28,21 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions.Struct
 
-	gameSpeed := gameDescription.Struct["gameSpeed"].(int64)
-	gameSpeedChecked, okGameSpeed := checkUint8(gameSpeed)
-	if !okGameSpeed {
-		log.Error("Found that the value of gameSpeed exceeds uint8")
-		return data.CleanedReplay{}, false
-	}
+	gameSpeedString := gameDescription.GameSpeed().String()
 
-	isBlizzardMap := gameDescription.Struct["isBlizzardMap"].(bool)
-	mapAuthorName := gameDescription.Struct["mapAuthorName"].(string)
+	isBlizzardMap := gameDescription.IsBlizzardMap()
+	mapAuthorName := gameDescription.MapAuthorName()
 
-	mapFileSyncChecksum := gameDescription.Struct["mapFileSyncChecksum"].(int64)
+	mapFileSyncChecksum := gameDescription.MapFileSyncChecksum()
 
-	mapSizeX := gameDescription.Struct["mapSizeX"].(int64)
+	mapSizeX := gameDescription.MapSizeX()
 	mapSizeXChecked, okMapSizeX := checkUint32(mapSizeX)
 	if !okMapSizeX {
 		log.WithField("mapSizeX", mapSizeX).Error("Found that value of mapSizeX exceeds uint32")
 		return data.CleanedReplay{}, false
 	}
 
-	mapSizeY := gameDescription.Struct["mapSizeY"].(int64)
+	mapSizeY := gameDescription.MapSizeY()
 	mapSizeYChecked, okMapSizeY := checkUint32(mapSizeY)
 	if !okMapSizeY {
 		log.WithField("mapSizeY", mapSizeY).Error("Found that value of mapSizeY exceeds uint32")
@@ -64,7 +58,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	cleanedGameDescription := data.CleanedGameDescription{
 		GameOptions:         gameOptions,
-		GameSpeed:           gameSpeedChecked,
+		GameSpeed:           gameSpeedString,
 		IsBlizzardMap:       isBlizzardMap,
 		MapAuthorName:       mapAuthorName,
 		MapFileSyncChecksum: mapFileSyncChecksum,
@@ -89,19 +83,13 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 			return data.CleanedReplay{}, false
 		}
 
-		highestLeague := userInitData.Struct["highestLeague"].(int64)
-		highestLeagueChecked, okHighestLeague := checkUint32(highestLeague)
-		if !okHighestLeague {
-			log.WithField("highestLeague", highestLeague).Error("Found that value of highestLeague exceeds uint32")
-			return data.CleanedReplay{}, false
-		}
-
-		clanTag := userInitData.Struct["clanTag"].(string)
+		highestLeague := userInitData.HighestLeague().String()
+		clanTag := userInitData.ClanTag()
 		isInClan := checkClan(clanTag)
 
 		userInitDataStruct := data.CleanedUserInitData{
 			CombinedRaceLevels: combinedRaceLevelsChecked,
-			HighestLeague:      highestLeagueChecked,
+			HighestLeague:      highestLeague,
 			Name:               name,
 			IsInClan:           isInClan,
 		}
@@ -115,7 +103,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	// Constructing a clean CleanedDetails without unescessary fields
 	details := replayData.Details
-	detailsGameSpeed := uint8(details.Struct["gameSpeed"].(int64))
+	detailsGameSpeed := details.GameSpeed().String()
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
 	var detailsPlayerList []data.CleanedPlayerListStruct
@@ -139,14 +127,9 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 				handicap := uint8(player.Handicap())
 				name := player.Name
-				race := player.Struct["race"].(string)
+				race := player.RaceString()
 
-				result := player.Struct["result"].(int64)
-				resultChecked, okResult := checkUint8(result)
-				if !okResult {
-					log.WithField("result", result).Error("Found that value of result exceeds uint8")
-					return data.CleanedReplay{}, false
-				}
+				result := player.Result().String()
 
 				teamID := player.TeamID()
 				teamIDChecked, okTeamID := checkUint8(teamID)
@@ -193,7 +176,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 				cleanedPlayerStruct := data.CleanedPlayerListStruct{
 					Name:               name,
 					Race:               race,
-					Result:             resultChecked,
+					Result:             result,
 					IsInClan:           initPlayer.IsInClan,
 					HighestLeague:      initPlayer.HighestLeague,
 					Handicap:           handicap,
@@ -212,9 +195,7 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 
 	timeLocalOffset := details.TimeLocalOffset()
 	timeUTC := details.TimeUTC()
-	mapName := details.Struct["title"].(string)
-
-	mapNameString := details.MapFileName()
+	mapNameString := details.Title()
 
 	cleanDetails := data.CleanedDetails{
 		GameSpeed:       detailsGameSpeed,
@@ -222,14 +203,15 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		PlayerList:      detailsPlayerList,
 		TimeLocalOffset: timeLocalOffset,
 		TimeUTC:         timeUTC,
-		MapName:         mapName,
+		MapName:         mapNameString,
 	}
 
 	// Constructing a clean CleanedMetadata without unescessary fields:
 	metadata := replayData.Metadata
 	metadataBaseBuild := metadata.BaseBuild()
 	metadataDataBuild := metadata.DataBuild()
-	metadataDuration := time.Duration(metadata.Struct["Duration"].(float64))
+	metadataDuration := metadata.DurationSec()
+	// metadataDuration := time.Duration(metadata.Struct["Duration"].(float64))
 	metadataGameVersion := metadata.GameVersion()
 
 	var metadataCleanedPlayersList []data.CleanedPlayer

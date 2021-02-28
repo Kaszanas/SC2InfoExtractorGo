@@ -51,12 +51,16 @@ type MatchupHistograms struct {
 	TvZMatchup map[int64]int64 `json:"TvZMatchup"`
 }
 
-// DefaultMatchupTime ...
-func DefaultMatchupTime() MatchupTime {
+// DefaultMatchupHistograms ...
+func DefaultMatchupHistograms() MatchupHistograms {
 
-	return MatchupTime{
-		Matchup:   make(map[string]int64),
-		GameTimes: make(map[string]int64),
+	return MatchupHistograms{
+		PvPMatchup: make(map[int64]int64),
+		TvTMatchup: make(map[int64]int64),
+		ZvZMatchup: make(map[int64]int64),
+		PvZMatchup: make(map[int64]int64),
+		PvTMatchup: make(map[int64]int64),
+		TvZMatchup: make(map[int64]int64),
 	}
 
 }

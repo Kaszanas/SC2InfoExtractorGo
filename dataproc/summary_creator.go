@@ -24,7 +24,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 
 	replayMetadata := replayData.Metadata
 	// GameDuration histogram:
-	replayDuration := strconv.Itoa(int(replayMetadata.Duration.Seconds()))
+	replayDuration := strconv.Itoa(int(replayMetadata.Duration))
 	keyExistsIncrementValue(replayDuration, summaryStruct.Summary.GameTimes)
 
 	// TODO: This needs to be checked for different language versions of the SC2 game.

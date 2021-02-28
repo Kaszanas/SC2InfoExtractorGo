@@ -4,7 +4,7 @@ import "time"
 
 // CleanedDetails is information about SC2 replay details derived from s2prot.Rep
 type CleanedDetails struct {
-	GameSpeed       uint8                     `json:"gameSpeed"`
+	GameSpeed       string                    `json:"gameSpeed"`
 	IsBlizzardMap   bool                      `json:"isBlizzardMap"`
 	PlayerList      []CleanedPlayerListStruct `json:"playerList"`
 	TimeLocalOffset time.Duration             `json:"timeLocalOffset"`
@@ -16,9 +16,9 @@ type CleanedDetails struct {
 type CleanedPlayerListStruct struct {
 	Name               string          `json:"name"`
 	Race               string          `json:"race"`
-	Result             uint8           `json:"result"`
+	Result             string          `json:"result"`
 	IsInClan           bool            `json:"isInClan"`
-	HighestLeague      uint32          `json:"highestLeague"`
+	HighestLeague      string          `json:"highestLeague"`
 	Handicap           uint8           `json:"handicap"`
 	TeamID             uint8           `json:"teamID"`
 	Region             string          `json:"region"`

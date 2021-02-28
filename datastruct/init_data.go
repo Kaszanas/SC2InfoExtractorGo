@@ -12,7 +12,7 @@ type CleanedInitData struct {
 // CleanedGameDescription is cleaned game description of a replay derived from s2prot.Rep
 type CleanedGameDescription struct {
 	GameOptions         s2prot.Struct `json:"gameOptions"`
-	GameSpeed           uint8         `json:"gameSpeed"`
+	GameSpeed           string        `json:"gameSpeed"`
 	IsBlizzardMap       bool          `json:"isBlizzardMap"`
 	MapAuthorName       string        `json:"mapAuthorName"`
 	MapFileSyncChecksum int64         `json:"mapFileSyncChecksum"`
@@ -24,7 +24,7 @@ type CleanedGameDescription struct {
 // CleanedUserInitData is cleaned user initial data of a replay derived from s2prot.Rep
 type CleanedUserInitData struct {
 	CombinedRaceLevels uint64 `json:"combinedRaceLevels"`
-	HighestLeague      uint32 `json:"highestLeague"`
+	HighestLeague      string `json:"highestLeague"`
 	Name               string `json:"name"`
 	IsInClan           bool   `json:"isInClan"`
 }
