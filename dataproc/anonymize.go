@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func anonymizeReplay(replayData *data.CleanedReplay) bool {
+func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized map[string]int) bool {
 
 	log.Info("Entered anonymizeReplay()")
 
@@ -20,7 +20,7 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 		return false
 	}
 
-	if !anonymizePlayers(replayData) {
+	if !anonymizePlayers(replayData, playersAnonymized) {
 		log.Error("Failed to anonimize player information.")
 		return false
 	}
@@ -28,7 +28,7 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 	return true
 }
 
-func anonymizePlayers(replayData *data.CleanedReplay) bool {
+func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized map[string]int) bool {
 
 	log.Info("Entererd anonymizePlayers().")
 	playerCounter := 0

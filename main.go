@@ -101,7 +101,7 @@ func main() {
 
 	for _, replayFile := range listOfInputFiles {
 
-		didWork, replayString, replaySummary := dataproc.Pipeline(replayFile)
+		didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers)
 		if !didWork {
 			readErrorCounter++
 			continue
@@ -109,7 +109,7 @@ func main() {
 		fmt.Println(replaySummary)
 
 		// TODO: Handle replaySummary that is being created.
-		// TODO: Write summary to JSON
+		// Append it to a list and when a package is created create a package summary and clear the list for next iterations
 
 		// Helper saving to zip archive:
 		savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
