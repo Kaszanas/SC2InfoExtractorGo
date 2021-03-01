@@ -88,45 +88,55 @@ func main() {
 	var packageSummary data.PackageSummary
 	for _, replayFile := range listOfInputFiles {
 
-		didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers)
-		if !didWork {
-			readErrorCounter++
-			continue
+		// Checking if the file was previously processed:
+		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
+			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers)
+			if !didWork {
+				readErrorCounter++
+				continue
+			}
+			fmt.Println(replaySummary)
+
+			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
+			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
+
+			// Helper saving to zip archive:
+			savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
+			if !savedSuccess {
+				compressionErrorCounter++
+				continue
+			}
+			log.Info("Added file to zip archive.")
+
+			processedCounter++
+			filesLeftToProcess := len(listOfInputFiles) - processedCounter
+			// Remembering how much files were processed and created as .json:
+			myProgressBar.Add(1)
+			// Stop after reaching the limit and compress into a bzip2
+			if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
+				log.Info("Detected processed counter to be within filesInPackage threshold.")
+				writer.Close()
+				packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
+				_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+				log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
+
+				// Saving contents of the persistent player nickname map and additional information about which package was processed:
+				saveProcessingInfo(*processingInfoFile, processingInfoStruct)
+				log.Info("Saved processing.log")
+
+				// Initializing empty packageSummary after saving the zip:
+				packageSummary = data.PackageSummary{}
+				log.Info("Initialized empty PackageSummary struct that will hold the next package information")
+
+				packageCounter++
+				// Helper method returning bytes buffer and zip writer:
+				buffer, writer = initBufferWriter()
+				log.Info("Initialized buffer and writer.")
+
+			}
+			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 		}
-		fmt.Println(replaySummary)
 
-		// TODO: Handle replaySummary that is being created.
-		// Append it to a list and when a package is created create a package summary and clear the list for next iterations
-
-		// Helper saving to zip archive:
-		savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
-		if !savedSuccess {
-			compressionErrorCounter++
-			continue
-		}
-		log.Info("Added file to zip archive.")
-
-		processedCounter++
-		filesLeftToProcess := len(listOfInputFiles) - processedCounter
-		// Remembering how much files were processed and created as .json:
-		myProgressBar.Add(1)
-		// Stop after reaching the limit and compress into a bzip2
-		if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
-			log.Info("Detected processed counter to be within filesInPackage threshold.")
-			writer.Close()
-			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
-			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
-
-			// Saving contents of the persistent player nickname map and additional information about which package was processed:
-			saveProcessingInfo(*processingInfoFile, processingInfoStruct)
-
-			log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
-			packageCounter++
-			// Helper method returning bytes buffer and zip writer:
-			buffer, writer = initBufferWriter()
-			log.Info("Initialized buffer and writer.")
-		}
-		processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 	}
 	if readErrorCounter > 0 {
 		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
@@ -134,4 +144,19 @@ func main() {
 	if compressionErrorCounter > 0 {
 		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing compressionErrors: ", compressionErrorCounter)
 	}
+}
+
+// Helper function checking if a slice contains a string.
+func contains(s []string, str string) bool {
+	log.Info("Entered contains()")
+
+	for _, v := range s {
+		if v == str {
+			log.Info("Slice contains supplied string, returning true")
+			return true
+		}
+	}
+
+	log.Info("Slice does not contain supplied string, returning false")
+	return false
 }

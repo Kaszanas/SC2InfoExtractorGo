@@ -11,7 +11,7 @@ type ReplaySummary struct {
 }
 
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
-func AddReplaySummToPackageSumm(packageSummary *PackageSummary, replaySummary *ReplaySummary) {
+func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *PackageSummary) {
 
 	// Adding GameVersion information to PackageSummary
 	replayGameVersions := replaySummary.Summary.GameVersions
