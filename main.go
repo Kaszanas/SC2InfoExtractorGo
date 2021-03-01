@@ -41,7 +41,7 @@ func main() {
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
 
-	logLevelFlag := flag.Int("log_level", 5, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
+	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
 	flag.Parse()
 	log.WithField("logLevel", *logLevelFlag).Info("Parsed flags, setting log level.")
@@ -85,7 +85,7 @@ func main() {
 	buffer, writer := initBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
-	var packageSummary data.PackageSummary
+	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
 		// Checking if the file was previously processed:
@@ -110,6 +110,7 @@ func main() {
 
 			processedCounter++
 			filesLeftToProcess := len(listOfInputFiles) - processedCounter
+			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 			// Remembering how much files were processed and created as .json:
 			myProgressBar.Add(1)
 			// Stop after reaching the limit and compress into a bzip2
@@ -134,9 +135,7 @@ func main() {
 				log.Info("Initialized buffer and writer.")
 
 			}
-			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 		}
-
 	}
 	if readErrorCounter > 0 {
 		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)

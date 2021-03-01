@@ -18,13 +18,13 @@ func createProcessingInfoFile() (*os.File, data.ProcessingInfo) {
 	if err != nil {
 		log.Fatal("Failed to read bytes from processing.log: ", err)
 	}
-	defer processingInfoFile.Close()
 
 	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
 	var processingInfoStruct data.ProcessingInfo
 	err = json.Unmarshal(byteValue, &processingInfoStruct)
 	if err != nil {
-		log.Fatal("Failed to uunmarshall the processing.log")
+		processingInfoStruct = data.DefaultProcessingInfo()
+		log.Error("Failed to unmarshall the processing.log, initializing empty data.ProcessingInfo struct")
 	}
 
 	return processingInfoFile, processingInfoStruct
