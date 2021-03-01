@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -49,22 +48,8 @@ func main() {
 	log.Info("Set logging level.")
 
 	// Reading external state information for persistent anonymization and to avoid processing twice the same data:
-	processingInfoFile, err := os.OpenFile("processing.log", os.O_TRUNC|os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		log.Fatal("Failed to create or open the processing.log: ", err)
-	}
-	byteValue, err := ioutil.ReadAll(processingInfoFile)
-	if err != nil {
-		log.Fatal("Failed to read bytes from processing.log: ", err)
-	}
+	processingInfoFile, processingInfoStruct := createProcessingInfoFile()
 	defer processingInfoFile.Close()
-
-	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
-	var processingInfoStruct data.ProcessingInfo
-	err = json.Unmarshal(byteValue, &processingInfoStruct)
-	if err != nil {
-		log.Fatal("Failed to uunmarshall the processing.log")
-	}
 
 	// Converting compression method flag:
 	compressionMethod := uint16(*compressionMethodFlag)
@@ -131,18 +116,11 @@ func main() {
 			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 
 			// Saving contents of the persistent player nickname map and additional information about which package was processed:
-			processingInfoBytes, err := json.Marshal(processingInfoStruct)
-			if err != nil {
-				log.Fatal("Failed to marshal processingInfo that is used to create processing.log: ", err)
-			}
-			_, err = processingInfoFile.Write(processingInfoBytes)
-			if err != nil {
-				log.Fatal("Failed to save the processingInfoFile: ", err)
-			}
+			saveProcessingInfo(*processingInfoFile, processingInfoStruct)
 
-			// Helper method returning bytes buffer and zip writer:
 			log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
 			packageCounter++
+			// Helper method returning bytes buffer and zip writer:
 			buffer, writer = initBufferWriter()
 			log.Info("Initialized buffer and writer.")
 		}
