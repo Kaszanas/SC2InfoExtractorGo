@@ -44,13 +44,32 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	dateString := strconv.Itoa(replayYear) + "-" + strconv.Itoa(int(replayMonth)) + "-" + strconv.Itoa(replayDay)
 	keyExistsIncrementValue(dateString, summaryStruct.Summary.Dates)
 
-	// Server information histogram. Region etc.
+	// Server information histogram:
+	for _, player := range replayData.Details.PlayerList {
+		keyExistsIncrementValue(player.Region, summaryStruct.Summary.Servers)
+	}
 
-	// Amount of different units used (histogram of units used). Is this needed?
+	// Amount of different units created (histogram of units used). Is this needed?
+	// TODO: verify if this is needed it seems like too much information that is going to be generated:
+	for _, event := range replayData.GameEvents {
+		// TODO: Add another check not to include geisers, mineral fields and other unescessary information:
+		if event["evtTypeName"].(string) == "UnitBorn" {
+			keyExistsIncrementValue(event["unitTypeName"].(string), summaryStruct.Summary.Units)
+		}
+	}
 
-	// Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
+	// // Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
 
-	// How many unique accounts were found
+	// // TODO: flip the string to be the same always e.g. "TvP" == "PvT"
+	// matchupString := replayData.Details.PlayerList[0].Race + "vs" + replayData.Details.PlayerList[1].Race
+
+	// raceSlice := ["Zerg", "Protoss", ]
+
+	// matchupSplit := strings.Split(matchupString, "Zerg")
+
+	// keyExistsIncrementValue(matchupString, summaryStruct.Summary.MatchupHistograms)
+
+	// // How many unique accounts were found:
 
 }
 
