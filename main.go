@@ -14,6 +14,7 @@ import (
 	"strconv"
 
 	"github.com/Kaszanas/GoSC2Science/dataproc"
+	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/larzconwell/bzip2"
 	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
@@ -84,6 +85,7 @@ func main() {
 	buffer, writer := initBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
+	var packageSummary data.PackageSummary
 	for _, replayFile := range listOfInputFiles {
 
 		didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers)
