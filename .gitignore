@@ -8,3 +8,7 @@
 /DEMOS
 
 *.log
+
+.vscode/
+
+map_translator/
