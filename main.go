@@ -92,8 +92,12 @@ func main() {
 	buffer, writer := initBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
-	// TODO: Open and marshal the JSON to map[string]string to use in the pipeline
+	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSON)
+	if localizedMapsMap == nil {
+		log.Info("Could not read the JSON mapping file, closing the program.")
+		os.Exit(1)
+	}
 
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
@@ -176,10 +180,15 @@ func unmarshalLocaleMapping(pathToMappingFile string) map[string]string {
 	var file, err = os.Open(pathToMappingFile)
 	if err != nil {
 		log.WithField("fileError", err.Error()).Info("Failed to open Localization Mapping file.")
+		return localizedMapping
 	}
 	defer file.Close()
 
-	jsonBytes, _ := ioutil.ReadAll(file)
+	jsonBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.WithField("readError", err.Error()).Info("Failed to read Localization Mapping file.")
+		return localizedMapping
+	}
 
 	err = json.Unmarshal([]byte(jsonBytes), &localizedMapping)
 	if err != nil {
