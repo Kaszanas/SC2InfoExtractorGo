@@ -10,12 +10,12 @@ import (
 	"github.com/Kaszanas/GoSC2Science/settings"
 )
 
-func cleanReplay(replayData *rep.Rep) (bool, data.CleanedReplay) {
+func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]string) (bool, data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
 	// Restructure replay:
-	structuredReplayData, redefOk := redifineReplayStructure(replayData)
+	structuredReplayData, redefOk := redifineReplayStructure(replayData, localizeMapsBool, localizedMapsMap)
 	if !redefOk {
 		log.Error("Error in redefining replay structure.")
 		return false, data.CleanedReplay{}

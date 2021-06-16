@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -40,6 +41,8 @@ func main() {
 	filesInPackage := flag.Int("files_in_package", 3, "Provide a number of files to be compressed into a bzip2 archive.")
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
+	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
+	localizationMappingFileFlag := flag.String("localized_maps_file", "./localized_maps_json/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
@@ -59,6 +62,10 @@ func main() {
 	absolutePathInputDirectory, _ := filepath.Abs(*inputDirectory)
 	// absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
+
+	// Localization flags dereference:
+	localizeMapsBool := *localizeMapsBoolFlag
+	localizationMappingJSON := *localizationMappingFileFlag
 
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
@@ -85,12 +92,15 @@ func main() {
 	buffer, writer := initBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
+	// TODO: Open and marshal the JSON to map[string]string to use in the pipeline
+	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSON)
+
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers)
+			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap)
 			if !didWork {
 				readErrorCounter++
 				continue
@@ -158,4 +168,23 @@ func contains(s []string, str string) bool {
 
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
+}
+
+func unmarshalLocaleMapping(pathToMappingFile string) map[string]string {
+	var localizedMapping map[string]string
+
+	var file, err = os.Open(pathToMappingFile)
+	if err != nil {
+		log.WithField("fileError", err.Error()).Info("Failed to open Localization Mapping file.")
+	}
+	defer file.Close()
+
+	jsonBytes, _ := ioutil.ReadAll(file)
+
+	err = json.Unmarshal([]byte(jsonBytes), &localizedMapping)
+	if err != nil {
+		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the Localization JSON file.")
+	}
+
+	return localizedMapping
 }

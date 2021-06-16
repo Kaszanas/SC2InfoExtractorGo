@@ -7,7 +7,7 @@ import (
 )
 
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
-func Pipeline(replayFile string, playersAnonymized map[string]int) (bool, string, data.ReplaySummary) {
+func Pipeline(replayFile string, playersAnonymized map[string]int, localizeMapsBool bool, localizedMapsMap map[string]string) (bool, string, data.ReplaySummary) {
 
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
@@ -20,7 +20,7 @@ func Pipeline(replayFile string, playersAnonymized map[string]int) (bool, string
 	// TODO: Perform integrity checks
 
 	// Clean replay structure:
-	cleanOk, cleanReplayStructure := cleanReplay(replayData)
+	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizeMapsBool, localizedMapsMap)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
 		return false, "", data.ReplaySummary{}
