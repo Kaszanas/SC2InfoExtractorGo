@@ -15,28 +15,27 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	}
 
 	// Check gameEvents "userOptions" "buildNum" and "baseBuildNum" against "header" information:
+	playerList := replayData.Metadata.Players()
+
+	if len(playerList) < 2 {
+		log.Error("Integrity check failed number of players is less than 2!")
+		return false
+	}
 
 	// MMR should be below 8000 for all of the replays:
-	for _, playerStats := range replayData.Metadata.Players() {
+	for _, playerStats := range playerList {
 
 		// TODO: Encode maximum MMR difference between players that is possible in the game:
 		// Around 1200 MMR
 		if playerStats.MMR() > 8000 {
-			log.Error("Integrity failed! One of the players MMR is higher than 8000!")
+			log.Error("Integrity check failed! One of the players MMR is higher than 8000!")
 			return false
 		}
 
 		if playerStats.APM() == 0 {
-			log.Error("Integrity failed! One of the players APM is equal to 0!")
+			log.Error("Integrity check failed! One of the players APM is equal to 0!")
 			return false
 		}
-	}
-
-	// There should always be 2 players in the replay:
-	log.Info("Checking if there are more than 2 players in the replay!")
-	if len(replayData.Metadata.Players()) < 2 {
-		log.Error("Integrity failed! Found less than 2 players in the replay!")
-		return false
 	}
 
 	return true

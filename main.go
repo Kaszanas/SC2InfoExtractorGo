@@ -39,6 +39,9 @@ func main() {
 	// interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
 	filesInPackage := flag.Int("files_in_package", 3, "Provide a number of files to be compressed into a bzip2 archive.")
+
+	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
+
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
@@ -62,6 +65,8 @@ func main() {
 	absolutePathInputDirectory, _ := filepath.Abs(*inputDirectory)
 	// absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
+
+	integrityCheckBool := *integrityCheckFlag
 
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
@@ -104,7 +109,7 @@ func main() {
 
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap)
+			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool)
 			if !didWork {
 				readErrorCounter++
 				continue
