@@ -29,45 +29,40 @@ func (w GameMode) EnumIndex() int {
 	return int(w)
 }
 
-func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameMode int) bool {
+func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeInt int) bool {
 
-	if checkGameMode == AllGameModes.EnumIndex() {
+	if checkGameModeInt == AllGameModes.EnumIndex() {
+		log.Info("")
 		if checkIntegrityBool {
 			basicIntegrityOk := checkBasicIntegrity(replayData)
 			if !basicIntegrityOk {
+				log.Info("")
 				return false
 			}
 		}
+		log.Info("")
 		return true
 	}
 
-	if checkGameMode == Ranked1v1.EnumIndex() {
-		is1v1RankedGameMode := checkRanked1v1(replayData)
-		if !is1v1RankedGameMode {
+	if checkGameModeInt == Ranked1v1.EnumIndex() {
+
+		if !checkGameMode(checkGameModeInt) {
 			return false
 		}
 
 		if checkIntegrityBool {
 			basicIntegrityOk := checkBasicIntegrity(replayData)
 			if !basicIntegrityOk {
+				log.Info("")
 				return false
 			}
 		}
 	}
 
-	// TODO: check which game mode is currently being processed and if the integrity is to be upheld.
-	if checkIntegrityBool {
-		basicIntegrityOk := checkBasicIntegrity(replayData)
-		if !basicIntegrityOk {
+	if checkGameModeInt == Ranked2v2.EnumIndex() {
+		if !checkGameMode(checkGameModeInt) {
 			return false
 		}
-	}
-
-	// Checking if isBlizzardMap is the same in both of the available places:
-	log.Info("Checking if the map included is marked as isBlizzardMap!")
-	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
-		log.Error("Integrity failed! Map was found not to be a blizzard map!")
-		return false
 	}
 
 	return true
@@ -100,11 +95,25 @@ func checkBasicIntegrity(replayData *rep.Rep) bool {
 
 }
 
-func checkGameMode() {
+func checkGameMode(checkGameMode int) bool {
+
+	log.Info("")
+	is1v1RankedGameMode := checkRanked1v1(replayData)
+	if !is1v1RankedGameMode {
+		log.Info("")
+		return false
+	}
 
 }
 
 func checkRanked1v1(replayData *rep.Rep) bool {
+
+	// Checking if isBlizzardMap is the same in both of the available places:
+	log.Info("Checking if the map included is marked as isBlizzardMap!")
+	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
+		log.Error("Integrity failed! Map was found not to be a blizzard map!")
+		return false
+	}
 
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions
@@ -126,6 +135,13 @@ func checkRanked1v1(replayData *rep.Rep) bool {
 
 func checkRanked2v2(replayData *rep.Rep) bool {
 
+	// Checking if isBlizzardMap is the same in both of the available places:
+	log.Info("Checking if the map included is marked as isBlizzardMap!")
+	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
+		log.Error("Integrity failed! Map was found not to be a blizzard map!")
+		return false
+	}
+
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions
 
@@ -145,6 +161,13 @@ func checkRanked2v2(replayData *rep.Rep) bool {
 }
 
 func checkRanked3v3(replayData *rep.Rep) bool {
+
+	// Checking if isBlizzardMap is the same in both of the available places:
+	log.Info("Checking if the map included is marked as isBlizzardMap!")
+	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
+		log.Error("Integrity failed! Map was found not to be a blizzard map!")
+		return false
+	}
 
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions
@@ -166,6 +189,13 @@ func checkRanked3v3(replayData *rep.Rep) bool {
 
 func checkRanked4v4(replayData *rep.Rep) bool {
 
+	// Checking if isBlizzardMap is the same in both of the available places:
+	log.Info("Checking if the map included is marked as isBlizzardMap!")
+	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
+		log.Error("Integrity failed! Map was found not to be a blizzard map!")
+		return false
+	}
+
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions
 
@@ -185,6 +215,13 @@ func checkRanked4v4(replayData *rep.Rep) bool {
 }
 
 func checkRankedArchon(replayData *rep.Rep) bool {
+
+	// Checking if isBlizzardMap is the same in both of the available places:
+	log.Info("Checking if the map included is marked as isBlizzardMap!")
+	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
+		log.Error("Integrity failed! Map was found not to be a blizzard map!")
+		return false
+	}
 
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions
