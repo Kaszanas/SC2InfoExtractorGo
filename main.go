@@ -40,7 +40,9 @@ func main() {
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
 	filesInPackage := flag.Int("files_in_package", 3, "Provide a number of files to be compressed into a bzip2 archive.")
 
-	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
+	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")\
+	// TODO: Write the docs for other game modes:
+	gameModeCheckFlag := flag.Int("game_mode", 1, "Provide which game mode should be included from the processed files from 1-11. AllGameModes - 1")
 
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
@@ -67,6 +69,11 @@ func main() {
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 
 	integrityCheckBool := *integrityCheckFlag
+	gameModeCheckInt := *gameModeCheckFlag
+	if gameModeCheckInt > 11 || gameModeCheckInt < 1 {
+		log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
+		os.Exit(1)
+	}
 
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
@@ -100,7 +107,7 @@ func main() {
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSON)
 	if localizedMapsMap == nil {
-		log.Info("Could not read the JSON mapping file, closing the program.")
+		log.Error("Could not read the JSON mapping file, closing the program.")
 		os.Exit(1)
 	}
 
