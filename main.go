@@ -75,6 +75,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Filter game modes:
+	filterGameModeFlag := *gameModeCheckFlag
+
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
 	localizationMappingJSON := *localizationMappingFileFlag
@@ -116,7 +119,7 @@ func main() {
 
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool)
+			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool, filterGameModeFlag)
 			if !didWork {
 				readErrorCounter++
 				continue

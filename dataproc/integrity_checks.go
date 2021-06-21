@@ -35,16 +35,16 @@ var gameModeList = []int{
 }
 
 var gameModeFiltersMapping = map[int]VerifyGameInfo{
-	Ranked1v1:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 2, isCompetitiveOrRanked: true},
-	Ranked2v2:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
-	Ranked3v3:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 6, isCompetitiveOrRanked: true},
-	Ranked4v4:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 8, isCompetitiveOrRanked: true},
-	RankedArchon: VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
-	Custom1v1:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 2, isCompetitiveOrRanked: false},
-	Custom2v2:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 4, isCompetitiveOrRanked: false},
-	Custom3v3:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 6, isCompetitiveOrRanked: false},
-	Custom4v4:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 8, isCompetitiveOrRanked: false},
-	CustomFFA:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 8, isCompetitiveOrRanked: false},
+	Ranked1v1:    {isAutoMatchMaking: true, maxPlayers: 2, isCompetitiveOrRanked: true},
+	Ranked2v2:    {isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
+	Ranked3v3:    {isAutoMatchMaking: true, maxPlayers: 6, isCompetitiveOrRanked: true},
+	Ranked4v4:    {isAutoMatchMaking: true, maxPlayers: 8, isCompetitiveOrRanked: true},
+	RankedArchon: {isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
+	Custom1v1:    {isAutoMatchMaking: false, maxPlayers: 2, isCompetitiveOrRanked: false},
+	Custom2v2:    {isAutoMatchMaking: false, maxPlayers: 4, isCompetitiveOrRanked: false},
+	Custom3v3:    {isAutoMatchMaking: false, maxPlayers: 6, isCompetitiveOrRanked: false},
+	Custom4v4:    {isAutoMatchMaking: false, maxPlayers: 8, isCompetitiveOrRanked: false},
+	CustomFFA:    {isAutoMatchMaking: false, maxPlayers: 8, isCompetitiveOrRanked: false},
 }
 
 type VerifyGameInfo struct {
