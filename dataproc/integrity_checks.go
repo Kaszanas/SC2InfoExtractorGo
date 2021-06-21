@@ -7,8 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type GameMode int
-
 const (
 	Ranked1v1 = 1 << iota
 	Ranked2v2
@@ -35,18 +33,18 @@ var gameModeList = []int{
 	CustomFFA,
 }
 
-func (w GameMode) String() string {
-	return [...]string{"AllGameModes", "Ranked1v1", "Ranked2v2", "Ranked3v3", "Ranked4v4", "RankedArchon", "Custom1v1", "Custom2v2", "Custom3v3", "Custom4v4", "CustomFFA"}[w-1]
-}
-
-func (w GameMode) EnumIndex() int {
-	return int(w)
-}
-
-// TODO: Finish this
 var gameModeFiltersMapping = map[int]VerifyGameInfo{
-	Ranked1v1: VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 2, isCompetitiveOrRanked: true},
-	Ranked2v2: VerifyGameInfo{}}
+	Ranked1v1:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 2, isCompetitiveOrRanked: true},
+	Ranked2v2:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
+	Ranked3v3:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 6, isCompetitiveOrRanked: true},
+	Ranked4v4:    VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 8, isCompetitiveOrRanked: true},
+	RankedArchon: VerifyGameInfo{isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
+	Custom1v1:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 2, isCompetitiveOrRanked: false},
+	Custom2v2:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 4, isCompetitiveOrRanked: false},
+	Custom3v3:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 6, isCompetitiveOrRanked: false},
+	Custom4v4:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 8, isCompetitiveOrRanked: false},
+	CustomFFA:    VerifyGameInfo{isAutoMatchMaking: false, maxPlayers: 8, isCompetitiveOrRanked: false},
+}
 
 type VerifyGameInfo struct {
 	isAutoMatchMaking     bool
@@ -67,6 +65,7 @@ func checkGame(replayData *rep.Rep, getGameModeFlag int) bool {
 	return result
 }
 
+// checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
 func checkGameParameters(replayData *rep.Rep, gameInfo VerifyGameInfo) bool {
 
 	if !checkNumberOfPlayers(replayData, gameInfo.maxPlayers) {
@@ -93,54 +92,12 @@ func checkGameParameters(replayData *rep.Rep, gameInfo VerifyGameInfo) bool {
 }
 
 // Integrity
-
-// Validity
-
-// Filtering
-
 func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeInt int) bool {
-
-	if checkGameModeInt == AllGameModes.EnumIndex() {
-		log.Info("")
-		if checkIntegrityBool {
-			basicIntegrityOk := checkBasicIntegrity(replayData)
-			if !basicIntegrityOk {
-				log.Info("")
-				return false
-			}
-		}
-		log.Info("")
-		return true
-	}
-
-	if checkGameModeInt == Ranked1v1.EnumIndex() {
-
-		if !checkGameMode(checkGameModeInt) {
-			return false
-		}
-
-		if checkIntegrityBool {
-			basicIntegrityOk := checkBasicIntegrity(replayData)
-			if !basicIntegrityOk {
-				log.Info("")
-				return false
-			}
-		}
-	}
-
-	if checkGameModeInt == Ranked2v2.EnumIndex() {
-		if !checkGameMode(checkGameModeInt) {
-			return false
-		}
-	}
 
 	return true
 }
 
-func checkBasicIntegrity(replayData *rep.Rep) bool {
-
-}
-
+// Validity
 func validateData(replayData *rep.Rep) bool {
 
 	// Hand picked values for data validation of most probable data that can be met:
@@ -171,16 +128,14 @@ func validateData(replayData *rep.Rep) bool {
 			return false
 		}
 	}
+
+	return true
 }
 
+// Filtering
 func checkGameMode(checkGameMode int) bool {
 
-	log.Info("")
-	is1v1RankedGameMode := checkRanked1v1(replayData)
-	if !is1v1RankedGameMode {
-		log.Info("")
-		return false
-	}
+	return true
 
 }
 
@@ -213,269 +168,6 @@ func checkBlizzardMap(replayData *rep.Rep) bool {
 
 	if !detailsIsBlizzardMap {
 		log.Error("Detected that the replay was played on a non-Blizzard map in gameDetails, returning")
-		return false
-	}
-
-}
-
-func checkRanked1v1(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 2) {
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != true {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != true {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() > 2 {
-		return false
-	}
-
-	return true
-}
-
-func checkRanked2v2(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 4) {
-		return false
-	}
-
-	// Checking if isBlizzardMap is the same in both of the available places:
-	log.Info("Checking if the map included is marked as isBlizzardMap!")
-	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
-		log.Error("Integrity failed! Map was found not to be a blizzard map!")
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != true {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != true {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 4 {
-		return false
-	}
-
-	return true
-}
-
-func checkRanked3v3(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 6) {
-		return false
-	}
-
-	// Checking if isBlizzardMap is the same in both of the available places:
-	log.Info("Checking if the map included is marked as isBlizzardMap!")
-	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
-		log.Error("Integrity failed! Map was found not to be a blizzard map!")
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != true {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != true {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 6 {
-		return false
-	}
-
-	return true
-}
-
-func checkRanked4v4(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 8) {
-		return false
-	}
-
-	// Checking if isBlizzardMap is the same in both of the available places:
-	log.Info("Checking if the map included is marked as isBlizzardMap!")
-	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
-		log.Error("Integrity failed! Map was found not to be a blizzard map!")
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != true {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != true {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 8 {
-		return false
-	}
-
-	return true
-}
-
-func checkRankedArchon(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 4) {
-		return false
-	}
-
-	// Checking if isBlizzardMap is the same in both of the available places:
-	log.Info("Checking if the map included is marked as isBlizzardMap!")
-	if replayData.InitData.GameDescription.Struct["isBlizzardMap"].(bool) == replayData.Details.IsBlizzardMap() {
-		log.Error("Integrity failed! Map was found not to be a blizzard map!")
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != true {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != true {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 4 {
-		return false
-	}
-
-	return true
-}
-
-func checkCustom1v1(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 2) {
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != false {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != false {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 2 {
-		return false
-	}
-
-	return true
-}
-
-func checkCustom2v2(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 4) {
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != false {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != false {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 4 {
-		return false
-	}
-
-	return true
-}
-
-func checkCustom3v3(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 6) {
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != false {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != false {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 6 {
-		return false
-	}
-
-	return true
-}
-
-func checkCustom4v4(replayData *rep.Rep) bool {
-
-	if !checkNumberOfPlayers(replayData, 8) {
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != false {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != false {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 8 {
-		return false
-	}
-
-	return true
-}
-
-func checkCustomFFA(replayData *rep.Rep) bool {
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != false {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != false {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != 8 {
 		return false
 	}
 
