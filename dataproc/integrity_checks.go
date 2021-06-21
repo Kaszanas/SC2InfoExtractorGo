@@ -52,47 +52,27 @@ type VerifyGameInfo struct {
 	isCompetitiveOrRanked bool
 }
 
-func checkGame(replayData *rep.Rep, getGameModeFlag int) bool {
-	result := false
-
-	for _, value := range gameModeList {
-
-		if getGameModeFlag&value != 0 {
-			result = result || checkGameParameters(replayData, gameModeFiltersMapping[value])
-		}
-	}
-
-	return result
-}
-
-// checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
-func checkGameParameters(replayData *rep.Rep, gameInfo VerifyGameInfo) bool {
-
-	if !checkNumberOfPlayers(replayData, gameInfo.maxPlayers) {
-		return false
-	}
-
-	gameDescription := replayData.InitData.GameDescription
-	gameOptions := gameDescription.GameOptions
-
-	if gameOptions.Amm() != gameInfo.isAutoMatchMaking {
-		return false
-	}
-
-	if gameOptions.CompetitiveOrRanked() != gameInfo.isCompetitiveOrRanked {
-		return false
-	}
-
-	if gameDescription.MaxPlayers() != int64(gameInfo.maxPlayers) {
-		return false
-	}
-
-	return true
-
-}
-
 // Integrity
 func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeInt int) bool {
+
+	maxPlayers := replayData.InitData.GameDescription.MaxPlayers()
+	replayDetails := replayData.Details
+
+	// Technically there cannot be more than 15 human players!
+	// Based on: https://s2editor-tutorials.readthedocs.io/en/master/01_Introduction/009_Player_Properties.html
+	if maxPlayers > 16 || maxPlayers < 1 {
+		return false
+	}
+
+	// Map name of a replay is available in two places in the parsed data, if they mismatch then integrity test fails:
+	if replayData.Metadata.Title() != replayDetails.Title() {
+		return false
+	}
+
+	// Checking if player list from replayDetails is of the same length as ToonPlayerDescMap:
+	if len(replayDetails.Players()) != len(replayData.TrackerEvts.ToonPlayerDescMap) {
+		return false
+	}
 
 	return true
 }
@@ -133,7 +113,40 @@ func validateData(replayData *rep.Rep) bool {
 }
 
 // Filtering
-func checkGameMode(checkGameMode int) bool {
+func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
+	result := false
+
+	for _, value := range gameModeList {
+
+		if getGameModeFlag&value != 0 {
+			result = result || checkGameParameters(replayData, gameModeFiltersMapping[value])
+		}
+	}
+
+	return result
+}
+
+// checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
+func checkGameParameters(replayData *rep.Rep, gameInfo VerifyGameInfo) bool {
+
+	if !checkNumberOfPlayers(replayData, gameInfo.maxPlayers) {
+		return false
+	}
+
+	gameDescription := replayData.InitData.GameDescription
+	gameOptions := gameDescription.GameOptions
+
+	if gameOptions.Amm() != gameInfo.isAutoMatchMaking {
+		return false
+	}
+
+	if gameOptions.CompetitiveOrRanked() != gameInfo.isCompetitiveOrRanked {
+		return false
+	}
+
+	if gameDescription.MaxPlayers() != int64(gameInfo.maxPlayers) {
+		return false
+	}
 
 	return true
 
