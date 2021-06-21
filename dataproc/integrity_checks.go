@@ -56,6 +56,7 @@ type VerifyGameInfo struct {
 // Integrity
 func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeInt int) bool {
 
+	log.Info("Entered checkIntegrity()")
 	maxPlayers := replayData.InitData.GameDescription.MaxPlayers()
 	replayDetails := replayData.Details
 
@@ -101,16 +102,14 @@ func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeI
 		return false
 	}
 
-	log.Info("Integrity checks passed!")
+	log.Info("Integrity checks passed! Returning from checkIntegrity()")
 	return true
 }
 
 // Validity
 func validateData(replayData *rep.Rep) bool {
 
-	// Hand picked values for data validation of most probable data that can be met:
-
-	// Check gameEvents "userOptions" "buildNum" and "baseBuildNum" against "header" information:
+	log.Info("Entered validateData()")
 	playerList := replayData.Metadata.Players()
 
 	if len(playerList) == 2 {
@@ -122,26 +121,28 @@ func validateData(replayData *rep.Rep) bool {
 		}
 	}
 
-	// MMR should be below 8000 for all of the replays:
+	// In the history of StarCraft II there was no player that reached 8000 MMR so it should be below 8000 for all of the replays:
 	for _, playerStats := range playerList {
 
 		// Currently no player is 8000
 		if playerStats.MMR() > 8000 {
-			log.Error("Data validation failed! One of the players MMR is higher than 8000!")
+			log.Error("Data validation failed! One of the players MMR is higher than 8000! Returning")
 			return false
 		}
 
 		if playerStats.APM() == 0 {
-			log.Error("Data validation failed! One of the players APM is equal to 0!")
+			log.Error("Data validation failed! One of the players APM is equal to 0! Returning")
 			return false
 		}
 	}
 
+	log.Info("Finished validateData(), returning")
 	return true
 }
 
 // Filtering
 func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
+	log.Info("")
 	result := false
 
 	for _, value := range gameModeList {
@@ -151,47 +152,65 @@ func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
 		}
 	}
 
+	log.Info("")
 	return result
 }
 
 // checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
-func checkGameParameters(replayData *rep.Rep, gameInfo VerifyGameInfo) bool {
+func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) bool {
 
-	if !checkNumberOfPlayers(replayData, gameInfo.maxPlayers) {
+	log.Info("Entered checkGameParameters()")
+
+	if !checkNumberOfPlayers(replayData, gameInfoFilter.maxPlayers) {
+		log.Error("Game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
 	gameDescription := replayData.InitData.GameDescription
 	gameOptions := gameDescription.GameOptions
+	gameOptionsAmm := gameOptions.Amm()
 
-	if gameOptions.Amm() != gameInfo.isAutoMatchMaking {
+	if gameOptionsAmm != gameInfoFilter.isAutoMatchMaking {
+		log.WithFields(log.Fields{"gameOptionsAmm": gameOptionsAmm, "isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).Error("Game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
-	if gameOptions.CompetitiveOrRanked() != gameInfo.isCompetitiveOrRanked {
+	competitiveOrRanked := gameOptions.CompetitiveOrRanked()
+	if competitiveOrRanked != gameInfoFilter.isCompetitiveOrRanked {
+		log.WithFields(log.Fields{"competitiveOrRanked": competitiveOrRanked, "isCompetitiveOrRanked": gameInfoFilter.isCompetitiveOrRanked}).Error("Game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
-	if gameDescription.MaxPlayers() != int64(gameInfo.maxPlayers) {
+	maxPlayers := gameDescription.MaxPlayers()
+	if maxPlayers != int64(gameInfoFilter.maxPlayers) {
+		log.WithFields(log.Fields{"maxPlayers": maxPlayers, "gameInfoFilter.maxPlayers": gameInfoFilter.maxPlayers}).Error("Game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
+	log.Info("Finished checkGameParameters()")
 	return true
 
 }
 
 func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
-	// Check gameEvents "userOptions" "buildNum" and "baseBuildNum" against "header" information:
-	playerList := replayData.Metadata.Players()
 
-	if len(playerList) != requiredNumber {
-		log.Error("Integrity check failed number of players is not right!")
+	log.Info("Entered checkNumberOfPlayers()")
+
+	playerList := replayData.Metadata.Players()
+	numberOfPlayers := len(playerList)
+
+	if numberOfPlayers != requiredNumber {
+		log.WithFields(log.Fields{"len(playerList)": numberOfPlayers, "requiredNumber": requiredNumber}).Error("Integrity check failed number of players is not right!")
 		return false
 	}
+
+	log.Info("Finished checkNumberOfPlayers(), returning")
 	return true
 }
 
 func checkBlizzardMap(replayData *rep.Rep) bool {
+
+	log.Info("Entered checkBlizzardMap()")
 
 	gameDescIsBlizzardMap := replayData.InitData.GameDescription.IsBlizzardMap()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
@@ -212,5 +231,6 @@ func checkBlizzardMap(replayData *rep.Rep) bool {
 		return false
 	}
 
+	log.Info("Finished checkBlizzardMap(), returning")
 	return true
 }
