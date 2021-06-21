@@ -42,7 +42,7 @@ func main() {
 
 	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")\
 	// TODO: Write the docs for other game modes:
-	gameModeCheckFlag := flag.Int("game_mode", 1, "Provide which game mode should be included from the processed files from 1-11. AllGameModes - 1")
+	gameModeCheckFlag := flag.Int("game_mode", 0xFFFFFFFF, "Provide which game mode should be included from the processed files from 1-11. AllGameModes - 1")
 
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
