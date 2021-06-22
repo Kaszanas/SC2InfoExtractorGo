@@ -289,6 +289,8 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	return cleanedReplay, true
 }
 
+// Using mapping from a separate tool for map name extraction
+// Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func verifyLocalizedMapName(mapName string, localizedMaps map[string]string) {
 
 }
