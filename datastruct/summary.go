@@ -1,6 +1,6 @@
 package datastruct
 
-// PackageSummary contains statistics calculated from replay information that belong to a whole ZIP archive.
+// PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
 type PackageSummary struct {
 	Summary Summary
 }

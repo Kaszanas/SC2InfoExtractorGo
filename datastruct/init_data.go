@@ -4,12 +4,12 @@ import (
 	"github.com/icza/s2prot"
 )
 
-// CleanedInitData is cleaned initial data of a replay derived from s2prot.Rep
+// CleanedInitData is a structure holding cleaned initial data of a replay derived from s2prot.Rep.initData
 type CleanedInitData struct {
 	GameDescription CleanedGameDescription `json:"gameDescription"`
 }
 
-// CleanedGameDescription is cleaned game description of a replay derived from s2prot.Rep
+// CleanedGameDescription is cleaned game description of a replay derived from s2prot.Rep.initData.GameDescription
 type CleanedGameDescription struct {
 	GameOptions         s2prot.Struct `json:"gameOptions"`
 	GameSpeed           string        `json:"gameSpeed"`
