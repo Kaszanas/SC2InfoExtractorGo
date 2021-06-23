@@ -34,7 +34,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized map[stri
 	playerCounter := 0
 
 	// TODO: if this is going to be persistent it needs to be passed as a pointer and live in the main function.
-	var persistPlayerNicknames = make(map[string]int)
+
 	var newToonDescMap = make(map[string]*rep.PlayerDesc)
 	// var listOfStructs = make([]rep.PlayerDesc, 2)
 

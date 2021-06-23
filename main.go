@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -47,7 +46,9 @@ func main() {
 	// Other compression methods than Deflate need to be registered further down in the code:
 	compressionMethodFlag := flag.Int("compression_method", 8, "Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered in code.")
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
-	localizationMappingFileFlag := flag.String("localized_maps_file", "./localized_maps_json/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
+	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
+
+	anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
@@ -80,7 +81,9 @@ func main() {
 
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
-	localizationMappingJSON := *localizationMappingFileFlag
+	localizationMappingJSONFile := *localizationMappingFileFlag
+
+	anonymizedPlayerMappingFile := *anonymizedPlayerMappingFileFlag
 
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
@@ -108,7 +111,15 @@ func main() {
 	log.Info("Initialized buffer and writer.")
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
-	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSON)
+
+	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSONFile)
+	if localizedMapsMap == nil {
+		log.Error("Could not read the JSON mapping file, closing the program.")
+		os.Exit(1)
+	}
+
+	// TODO: This function also needs to create the file if it doesn't exist just the same as logging helper function:
+	anonymizedPlayerMap := unmarshalLocaleMapping(anonymizedPlayerMappingFile)
 	if localizedMapsMap == nil {
 		log.Error("Could not read the JSON mapping file, closing the program.")
 		os.Exit(1)
@@ -187,28 +198,4 @@ func contains(s []string, str string) bool {
 
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
-}
-
-func unmarshalLocaleMapping(pathToMappingFile string) map[string]string {
-	var localizedMapping map[string]string
-
-	var file, err = os.Open(pathToMappingFile)
-	if err != nil {
-		log.WithField("fileError", err.Error()).Info("Failed to open Localization Mapping file.")
-		return localizedMapping
-	}
-	defer file.Close()
-
-	jsonBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.WithField("readError", err.Error()).Info("Failed to read Localization Mapping file.")
-		return localizedMapping
-	}
-
-	err = json.Unmarshal([]byte(jsonBytes), &localizedMapping)
-	if err != nil {
-		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the Localization JSON file.")
-	}
-
-	return localizedMapping
 }
