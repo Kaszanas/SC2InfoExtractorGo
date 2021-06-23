@@ -9,7 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
+// TODO: Commented out pieces of code need to be verified for redundant information.
+
+func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]string) (data.CleanedReplay, bool) {
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
@@ -193,17 +195,17 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 		}
 	}
 
-	timeLocalOffset := details.TimeLocalOffset()
+	// timeLocalOffset := details.TimeLocalOffset()
 	timeUTC := details.TimeUTC()
-	mapNameString := details.Title()
+	// mapNameString := details.Title()
 
 	cleanDetails := data.CleanedDetails{
-		GameSpeed:       detailsGameSpeed,
-		IsBlizzardMap:   detailsIsBlizzardMap,
-		PlayerList:      detailsPlayerList,
-		TimeLocalOffset: timeLocalOffset,
-		TimeUTC:         timeUTC,
-		MapName:         mapNameString,
+		GameSpeed:     detailsGameSpeed,
+		IsBlizzardMap: detailsIsBlizzardMap,
+		PlayerList:    detailsPlayerList,
+		// TimeLocalOffset: timeLocalOffset,
+		TimeUTC: timeUTC,
+		// MapName: mapNameString,
 	}
 
 	// Constructing a clean CleanedMetadata without unescessary fields:
@@ -285,4 +287,10 @@ func redifineReplayStructure(replayData *rep.Rep) (data.CleanedReplay, bool) {
 	}
 
 	return cleanedReplay, true
+}
+
+// Using mapping from a separate tool for map name extraction
+// Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
+func verifyLocalizedMapName(mapName string, localizedMaps map[string]string) {
+
 }

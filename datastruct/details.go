@@ -2,17 +2,17 @@ package datastruct
 
 import "time"
 
-// CleanedDetails is information about SC2 replay details derived from s2prot.Rep
+// CleanedDetails is a structure holding information about SC2 replay details derived from s2prot.Rep.Details
 type CleanedDetails struct {
-	GameSpeed       string                    `json:"gameSpeed"`
-	IsBlizzardMap   bool                      `json:"isBlizzardMap"`
-	PlayerList      []CleanedPlayerListStruct `json:"playerList"`
-	TimeLocalOffset time.Duration             `json:"timeLocalOffset"`
-	TimeUTC         time.Time                 `json:"timeUTC"`
-	MapName         string                    `json:"mapName"` // originally title
+	GameSpeed     string                    `json:"gameSpeed"`
+	IsBlizzardMap bool                      `json:"isBlizzardMap"`
+	PlayerList    []CleanedPlayerListStruct `json:"playerList"`
+	// TimeLocalOffset time.Duration             `json:"timeLocalOffset"`
+	TimeUTC time.Time `json:"timeUTC"`
+	// MapName string    `json:"mapName"` // originally title
 }
 
-// CleanedPlayerListStruct is a nested structure that lies within CleanedDetails derived from s2prot.Rep
+// CleanedPlayerListStruct is a nested structure that lies within CleanedDetails derived from s2prot.Rep.Details.PlayerList
 type CleanedPlayerListStruct struct {
 	Name               string          `json:"name"`
 	Race               string          `json:"race"`

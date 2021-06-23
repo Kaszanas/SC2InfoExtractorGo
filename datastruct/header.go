@@ -6,7 +6,7 @@ import (
 	"github.com/icza/s2prot"
 )
 
-// CleanedHeader is header information of a replay file derived from s2prot.Rep
+// CleanedHeader is a structure holding header information of a replay file derived from s2prot.Rep.Header
 type CleanedHeader struct {
 	ElapsedGameLoops uint64        `json:"elapsedGameLoops"`
 	Duration         time.Duration `json:"duration"`

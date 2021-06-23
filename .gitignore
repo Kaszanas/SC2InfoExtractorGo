@@ -3,6 +3,9 @@
 *.exe
 *.zip
 
+*.SC2Map
+*.xlsx
+
 *__debug_bin
 
 /DEMOS
