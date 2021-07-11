@@ -1,5 +1,9 @@
 package datastruct
 
+import (
+	log "github.com/sirupsen/logrus"
+)
+
 // PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
 type PackageSummary struct {
 	Summary Summary
@@ -14,46 +18,47 @@ type ReplaySummary struct {
 func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *PackageSummary) {
 
 	// Adding GameVersion information to PackageSummary
-	replayGameVersions := replaySummary.Summary.GameVersions
-	packageGameVersions := packageSummary.Summary.GameVersions
-	collapsedGameVersions := collapseMapToMap(replayGameVersions, packageGameVersions)
-	packageSummary.Summary.GameVersions = collapsedGameVersions
+	// replayGameVersions := replaySummary.Summary.GameVersions
+	// packageGameVersions := packageSummary.Summary.GameVersions
+	log.WithFields(log.Fields{"replaySummary": replaySummary, "packageSummary": packageSummary}).Info("Replay and Package Summaries are as follows.")
+	collapseMapToMap(&replaySummary.Summary.GameVersions, &packageSummary.Summary.GameVersions)
+	// packageSummary.Summary.GameVersions = collapsedGameVersions
 
-	// Adding GameTimes information to PackageSummary
-	replayGameTimes := replaySummary.Summary.GameTimes
-	packageGameTimes := packageSummary.Summary.GameTimes
-	collapsedGameTimes := collapseMapToMap(replayGameTimes, packageGameTimes)
-	packageSummary.Summary.GameTimes = collapsedGameTimes
+	// // Adding GameTimes information to PackageSummary
+	// replayGameTimes := replaySummary.Summary.GameTimes
+	// packageGameTimes := packageSummary.Summary.GameTimes
+	// collapsedGameTimes := collapseMapToMap(replayGameTimes, packageGameTimes)
+	// packageSummary.Summary.GameTimes = collapsedGameTimes
 
-	// Adding Maps information to PackageSummary
-	replayMaps := replaySummary.Summary.Maps
-	packageMaps := replaySummary.Summary.Maps
-	collapsedMaps := collapseMapToMap(replayMaps, packageMaps)
-	packageSummary.Summary.Maps = collapsedMaps
+	// // Adding Maps information to PackageSummary
+	// replayMaps := replaySummary.Summary.Maps
+	// packageMaps := replaySummary.Summary.Maps
+	// collapsedMaps := collapseMapToMap(replayMaps, packageMaps)
+	// packageSummary.Summary.Maps = collapsedMaps
 
-	// Adding Races information to PackageSummary
-	replayRaces := replaySummary.Summary.Races
-	packageRaces := packageSummary.Summary.Races
-	collapsedRaces := collapseMapToMap(replayRaces, packageRaces)
-	packageSummary.Summary.Races = collapsedRaces
+	// // Adding Races information to PackageSummary
+	// replayRaces := replaySummary.Summary.Races
+	// packageRaces := packageSummary.Summary.Races
+	// collapsedRaces := collapseMapToMap(replayRaces, packageRaces)
+	// packageSummary.Summary.Races = collapsedRaces
 
-	// Adding Units information to PackageSummary
-	replayUnits := replaySummary.Summary.Units
-	packageUnits := packageSummary.Summary.Units
-	collapsedUnits := collapseMapToMap(replayUnits, packageUnits)
-	packageSummary.Summary.Units = collapsedUnits
+	// // Adding Units information to PackageSummary
+	// replayUnits := replaySummary.Summary.Units
+	// packageUnits := packageSummary.Summary.Units
+	// collapsedUnits := collapseMapToMap(replayUnits, packageUnits)
+	// packageSummary.Summary.Units = collapsedUnits
 
-	// Adding Dates information to PackageSummary
-	replayDates := replaySummary.Summary.Dates
-	packageDates := packageSummary.Summary.Dates
-	collapsedDates := collapseMapToMap(replayDates, packageDates)
-	packageSummary.Summary.Dates = collapsedDates
+	// // Adding Dates information to PackageSummary
+	// replayDates := replaySummary.Summary.Dates
+	// packageDates := packageSummary.Summary.Dates
+	// collapsedDates := collapseMapToMap(replayDates, packageDates)
+	// packageSummary.Summary.Dates = collapsedDates
 
-	// Adding Servers information to PackageSummary
-	replayServers := replaySummary.Summary.Servers
-	packageServers := packageSummary.Summary.Servers
-	collapsedServers := collapseMapToMap(replayServers, packageServers)
-	packageSummary.Summary.Servers = collapsedServers
+	// // Adding Servers information to PackageSummary
+	// replayServers := replaySummary.Summary.Servers
+	// packageServers := packageSummary.Summary.Servers
+	// collapsedServers := collapseMapToMap(replayServers, packageServers)
+	// packageSummary.Summary.Servers = collapsedServers
 
 	// Adding matchup information to the PackageSummary
 	replayPvP := replaySummary.Summary.MatchupHistograms.PvPMatchup
@@ -77,18 +82,16 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 }
 
 // collapseMapToMap adds the keys and values of one map to another.
-func collapseMapToMap(mapToCollapse map[string]int64, collapseInto map[string]int64) map[string]int64 {
+func collapseMapToMap(mapToCollapse *map[string]int64, collapseInto *map[string]int64) {
 
-	for key, value := range mapToCollapse {
-		collapseValue, ok := collapseInto[key]
+	for key, value := range *mapToCollapse {
+		collapseValue, ok := (*collapseInto)[key]
 		if ok {
-			collapseInto[key] = collapseValue + value
+			(*collapseInto)[key] = collapseValue + value
 		} else {
-			collapseInto[key] = value
+			(*collapseInto)[key] = value
 		}
 	}
-
-	return collapseInto
 }
 
 // DefaultPackageSummary returns an initialized PackageSummary

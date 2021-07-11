@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized map[string]int) bool {
+func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
 
 	log.Info("Entered anonymizeReplay()")
 
@@ -28,7 +28,7 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized map[strin
 	return true
 }
 
-func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized map[string]int) bool {
+func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
 
 	log.Info("Entererd anonymizePlayers().")
 	playerCounter := 0
@@ -49,7 +49,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized map[stri
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
 				// TODO: This line of code needs to use external file which will be updated per package.
 				// TODO: The software should allow restarting processing from a package that errored out.
-				anonymizedID, ok := persistPlayerNicknames[toon]
+				anonymizedID, ok := (*playersAnonymized)[toon]
 				if ok {
 					// TODO: Add all of the other information that needs to be anonymized about the players:
 					// Nickname anonymization:
@@ -59,7 +59,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized map[stri
 					anonymizeToonDescMap(playerDesc, newToonDescMap, stringAnonymizedID, rep.PlayerDesc{})
 				} else {
 					// The toon was not ine the persistent map, add it:
-					persistPlayerNicknames[toon] = playerCounter
+					(*playersAnonymized)[toon] = playerCounter
 
 					// Convert player counter to string to be used as new toon in the final map:
 					stringAnonymizedID := strconv.Itoa(playerCounter)

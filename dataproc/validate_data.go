@@ -3,6 +3,7 @@ package dataproc
 import (
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
@@ -81,7 +82,8 @@ func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeI
 		return false
 	}
 
-	metadataBaseBuildInt, err := strconv.Atoi(replayData.Metadata.BaseBuild())
+	metadatBaseBuildString := strings.Replace(replayData.Metadata.BaseBuild(), "Base", "", -1)
+	metadataBaseBuildInt, err := strconv.Atoi(metadatBaseBuildString)
 	if err != nil {
 		log.Info("Integrity check failed! Cannot convert replayData.Metadata.BaseBuild() to integer!")
 		return false

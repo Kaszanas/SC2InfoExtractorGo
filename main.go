@@ -48,7 +48,7 @@ func main() {
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
 
-	anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
+	// anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
@@ -70,11 +70,11 @@ func main() {
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 
 	integrityCheckBool := *integrityCheckFlag
-	gameModeCheckInt := *gameModeCheckFlag
-	if gameModeCheckInt > 11 || gameModeCheckInt < 1 {
-		log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
-		os.Exit(1)
-	}
+	// gameModeCheckInt := *gameModeCheckFlag
+	// if gameModeCheckInt > 11 || gameModeCheckInt < 1 {
+	// 	log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
+	// 	os.Exit(1)
+	// }
 
 	// Filter game modes:
 	filterGameModeFlag := *gameModeCheckFlag
@@ -82,8 +82,6 @@ func main() {
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
 	localizationMappingJSONFile := *localizationMappingFileFlag
-
-	anonymizedPlayerMappingFile := *anonymizedPlayerMappingFileFlag
 
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
@@ -111,7 +109,6 @@ func main() {
 	log.Info("Initialized buffer and writer.")
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
-
 	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSONFile)
 	if localizedMapsMap == nil {
 		log.Error("Could not read the JSON mapping file, closing the program.")
@@ -119,18 +116,18 @@ func main() {
 	}
 
 	// TODO: This function also needs to create the file if it doesn't exist just the same as logging helper function:
-	anonymizedPlayerMap := unmarshalLocaleMapping(anonymizedPlayerMappingFile)
-	if localizedMapsMap == nil {
-		log.Error("Could not read the JSON mapping file, closing the program.")
-		os.Exit(1)
-	}
+	// anonymizedPlayerMap := unmarshalLocaleMapping(anonymizedPlayerMappingFile)
+	// if localizedMapsMap == nil {
+	// 	log.Error("Could not read the JSON mapping file, closing the program.")
+	// 	os.Exit(1)
+	// }
 
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool, filterGameModeFlag)
+			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, &processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool, filterGameModeFlag)
 			if !didWork {
 				readErrorCounter++
 				continue
@@ -166,7 +163,7 @@ func main() {
 				log.Info("Saved processing.log")
 
 				// Initializing empty packageSummary after saving the zip:
-				packageSummary = data.PackageSummary{}
+				packageSummary = data.DefaultPackageSummary()
 				log.Info("Initialized empty PackageSummary struct that will hold the next package information")
 
 				packageCounter++

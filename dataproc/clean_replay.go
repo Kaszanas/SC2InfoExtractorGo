@@ -10,7 +10,7 @@ import (
 	"github.com/Kaszanas/GoSC2Science/settings"
 )
 
-func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]string) (bool, data.CleanedReplay) {
+func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (bool, data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
