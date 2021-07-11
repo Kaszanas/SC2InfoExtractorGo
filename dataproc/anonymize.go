@@ -25,6 +25,7 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[stri
 		return false
 	}
 
+	log.Info("Finished anonymizeReplay()")
 	return true
 }
 

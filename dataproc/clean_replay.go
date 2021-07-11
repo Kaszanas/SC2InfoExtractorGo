@@ -27,10 +27,12 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 		return false, data.CleanedReplay{}
 	}
 
+	log.Info("Finished cleanReplay()")
 	return true, structuredReplayData
 }
 
 func cleanUnusedGameEvents(replayData *datastruct.CleanedReplay) bool {
+	log.Info("Entered cleanUnusedGameEvents()")
 
 	var cleanedGameEvents []s2prot.Struct
 	for _, event := range replayData.GameEvents {
@@ -41,5 +43,6 @@ func cleanUnusedGameEvents(replayData *datastruct.CleanedReplay) bool {
 
 	replayData.GameEvents = cleanedGameEvents
 
+	log.Info("Finished cleanUnusedGameEvents()")
 	return true
 }

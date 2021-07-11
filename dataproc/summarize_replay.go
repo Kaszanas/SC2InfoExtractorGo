@@ -4,9 +4,12 @@ import (
 	"fmt"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	log "github.com/sirupsen/logrus"
 )
 
 func summarizeReplay(replayData *data.CleanedReplay) (bool, data.ReplaySummary) {
+
+	log.Info("Entered summarizeReplay()")
 
 	successFlag := true
 
@@ -16,6 +19,7 @@ func summarizeReplay(replayData *data.CleanedReplay) (bool, data.ReplaySummary) 
 
 	fmt.Println(initSummary)
 
+	log.Info("Finished summarizeReplay()")
 	return successFlag, initSummary
 
 }

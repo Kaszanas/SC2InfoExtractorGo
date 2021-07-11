@@ -17,67 +17,56 @@ type ReplaySummary struct {
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
 func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *PackageSummary) {
 
+	log.Info("Entered AddReplaySummToPackageSumm()")
+
 	// Adding GameVersion information to PackageSummary
-	// replayGameVersions := replaySummary.Summary.GameVersions
-	// packageGameVersions := packageSummary.Summary.GameVersions
-	log.WithFields(log.Fields{"replaySummary": replaySummary, "packageSummary": packageSummary}).Info("Replay and Package Summaries are as follows.")
+	// log.WithFields(log.Fields{"replaySummary": replaySummary, "packageSummary": packageSummary}).Info("Replay and Package Summaries are as follows.")
 	collapseMapToMap(&replaySummary.Summary.GameVersions, &packageSummary.Summary.GameVersions)
-	// packageSummary.Summary.GameVersions = collapsedGameVersions
+	log.Info("Finished collapsing GameVersions")
 
-	// // Adding GameTimes information to PackageSummary
-	// replayGameTimes := replaySummary.Summary.GameTimes
-	// packageGameTimes := packageSummary.Summary.GameTimes
-	// collapsedGameTimes := collapseMapToMap(replayGameTimes, packageGameTimes)
-	// packageSummary.Summary.GameTimes = collapsedGameTimes
+	// Adding GameTimes information to PackageSummary
+	collapseMapToMap(&replaySummary.Summary.GameTimes, &packageSummary.Summary.GameTimes)
+	log.Info("Finished collapsing GameTimes")
 
-	// // Adding Maps information to PackageSummary
-	// replayMaps := replaySummary.Summary.Maps
-	// packageMaps := replaySummary.Summary.Maps
-	// collapsedMaps := collapseMapToMap(replayMaps, packageMaps)
-	// packageSummary.Summary.Maps = collapsedMaps
+	// Adding Maps information to PackageSummary
+	collapseMapToMap(&replaySummary.Summary.Maps, &replaySummary.Summary.Maps)
+	log.Info("Finished collapsing Maps")
 
-	// // Adding Races information to PackageSummary
-	// replayRaces := replaySummary.Summary.Races
-	// packageRaces := packageSummary.Summary.Races
-	// collapsedRaces := collapseMapToMap(replayRaces, packageRaces)
-	// packageSummary.Summary.Races = collapsedRaces
+	// Adding Races information to PackageSummary
+	collapseMapToMap(&replaySummary.Summary.Races, &packageSummary.Summary.Races)
+	log.Info("Finished collapsing Races")
 
-	// // Adding Units information to PackageSummary
-	// replayUnits := replaySummary.Summary.Units
-	// packageUnits := packageSummary.Summary.Units
-	// collapsedUnits := collapseMapToMap(replayUnits, packageUnits)
-	// packageSummary.Summary.Units = collapsedUnits
+	// Adding Units information to PackageSummary
+	collapseMapToMap(&replaySummary.Summary.Units, &packageSummary.Summary.Units)
+	log.Info("Finished collapsing Units")
 
-	// // Adding Dates information to PackageSummary
-	// replayDates := replaySummary.Summary.Dates
-	// packageDates := packageSummary.Summary.Dates
-	// collapsedDates := collapseMapToMap(replayDates, packageDates)
-	// packageSummary.Summary.Dates = collapsedDates
+	// Adding Dates information to PackageSummary
+	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
+	log.Info("Finished collapsing Dates")
 
-	// // Adding Servers information to PackageSummary
-	// replayServers := replaySummary.Summary.Servers
-	// packageServers := packageSummary.Summary.Servers
-	// collapsedServers := collapseMapToMap(replayServers, packageServers)
-	// packageSummary.Summary.Servers = collapsedServers
+	// Adding Servers information to PackageSummary
+	collapseMapToMap(&replaySummary.Summary.Servers, &packageSummary.Summary.Servers)
+	log.Info("Finished collapsing Servers")
 
 	// Adding matchup information to the PackageSummary
-	replayPvP := replaySummary.Summary.MatchupHistograms.PvPMatchup
-	packageSummary.Summary.MatchupHistograms.PvPMatchup = packageSummary.Summary.MatchupHistograms.PvPMatchup + replayPvP
+	// TODO: Check if this is working?
+	packageSummary.Summary.MatchupHistograms.PvPMatchup = packageSummary.Summary.MatchupHistograms.PvPMatchup + replaySummary.Summary.MatchupHistograms.PvPMatchup
+	log.Info("Finished collapsing PvPMatchup")
 
-	replayTvT := replaySummary.Summary.MatchupHistograms.TvTMatchup
-	packageSummary.Summary.MatchupHistograms.TvTMatchup = packageSummary.Summary.MatchupHistograms.TvTMatchup + replayTvT
+	packageSummary.Summary.MatchupHistograms.TvTMatchup = packageSummary.Summary.MatchupHistograms.TvTMatchup + replaySummary.Summary.MatchupHistograms.TvTMatchup
+	log.Info("Finished collapsing TvTMatchup")
 
-	replayZvZ := replaySummary.Summary.MatchupHistograms.ZvZMatchup
-	packageSummary.Summary.MatchupHistograms.ZvZMatchup = packageSummary.Summary.MatchupHistograms.ZvZMatchup + replayZvZ
+	packageSummary.Summary.MatchupHistograms.ZvZMatchup = packageSummary.Summary.MatchupHistograms.ZvZMatchup + replaySummary.Summary.MatchupHistograms.ZvZMatchup
+	log.Info("Finished collapsing ZvZMatchup")
 
-	replayPvZ := replaySummary.Summary.MatchupHistograms.PvZMatchup
-	packageSummary.Summary.MatchupHistograms.PvZMatchup = packageSummary.Summary.MatchupHistograms.PvZMatchup + replayPvZ
+	packageSummary.Summary.MatchupHistograms.PvZMatchup = packageSummary.Summary.MatchupHistograms.PvZMatchup + replaySummary.Summary.MatchupHistograms.PvZMatchup
+	log.Info("Finished collapsing PvZMatchup")
 
-	replayPvT := replaySummary.Summary.MatchupHistograms.PvTMatchup
-	packageSummary.Summary.MatchupHistograms.PvTMatchup = packageSummary.Summary.MatchupHistograms.PvTMatchup + replayPvT
+	packageSummary.Summary.MatchupHistograms.PvTMatchup = packageSummary.Summary.MatchupHistograms.PvTMatchup + replaySummary.Summary.MatchupHistograms.PvTMatchup
+	log.Info("Finished collapsing PvTMatchup")
 
-	replayTvZ := replaySummary.Summary.MatchupHistograms.TvZMatchup
-	packageSummary.Summary.MatchupHistograms.TvTMatchup = packageSummary.Summary.MatchupHistograms.TvTMatchup + replayTvZ
+	// packageSummary.Summary.MatchupHistograms.TvTMatchup = packageSummary.Summary.MatchupHistograms.TvTMatchup + replaySummary.Summary.MatchupHistograms.TvZMatchup
+	// log.Info("Finished collapsing PvTMatchup")
 
 }
 

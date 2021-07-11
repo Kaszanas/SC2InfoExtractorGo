@@ -115,13 +115,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: This function also needs to create the file if it doesn't exist just the same as logging helper function:
-	// anonymizedPlayerMap := unmarshalLocaleMapping(anonymizedPlayerMappingFile)
-	// if localizedMapsMap == nil {
-	// 	log.Error("Could not read the JSON mapping file, closing the program.")
-	// 	os.Exit(1)
-	// }
-
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
@@ -136,6 +129,7 @@ func main() {
 
 			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
 			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
+			log.Info("Added replaySummary to packageSummary")
 
 			// Helper saving to zip archive:
 			savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)

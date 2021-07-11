@@ -118,7 +118,7 @@ func validateData(replayData *rep.Rep) bool {
 		absoluteMMRDifference := math.Abs(playerList[0].MMR() - playerList[1].MMR())
 		// Around 1200 MMR:
 		if absoluteMMRDifference > 1200 {
-			log.Error("")
+			log.Error("MMR Difference was found to be to big! validateData() failed, returning!")
 			return false
 		}
 	}
@@ -144,7 +144,7 @@ func validateData(replayData *rep.Rep) bool {
 
 // Filtering
 func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
-	log.Info("")
+	log.Info("Entered checkGameMode()")
 	result := false
 
 	for _, value := range gameModeList {
@@ -154,7 +154,7 @@ func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
 		}
 	}
 
-	log.Info("")
+	log.Info("Finished checkGameMode()")
 	return result
 }
 

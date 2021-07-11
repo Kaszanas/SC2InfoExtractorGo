@@ -13,6 +13,8 @@ import (
 
 func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
+	log.Info("Entered redefineReplayStructure()")
+
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
 	duration := replayData.Header.Duration()
@@ -25,6 +27,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		UseScaledTime:    useScaledTime,
 		Version:          version,
 	}
+	log.Info("Defined cleanHeader struct")
 
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
@@ -68,6 +71,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		MapSizeY:            mapSizeYChecked,
 		MaxPlayers:          maxPlayersChecked,
 	}
+	log.Info("Defined cleanedGameDescription struct")
 
 	// Constructing a clean UserInitData without unescessary fields:
 	var cleanedUserInitDataList []data.CleanedUserInitData
@@ -102,6 +106,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	cleanInitData := data.CleanedInitData{
 		GameDescription: cleanedGameDescription,
 	}
+	log.Info("Defined cleanInitData struct")
 
 	// Constructing a clean CleanedDetails without unescessary fields
 	details := replayData.Details
@@ -207,6 +212,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		TimeUTC: timeUTC,
 		// MapName: mapNameString,
 	}
+	log.Info("Defined cleanDetails struct")
 
 	// Constructing a clean CleanedMetadata without unescessary fields:
 	metadata := replayData.Metadata
@@ -247,6 +253,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		Players:     metadataCleanedPlayersList,
 		MapName:     metadataMapName,
 	}
+	log.Info("Defined cleanMetadata struct")
 
 	dirtyMessageEvents := replayData.MessageEvts
 	dirtyGameEvents := replayData.GameEvts
@@ -285,6 +292,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		MessageEvtsErr:    justMessageEvtsErr,
 		TrackerEvtsErr:    justTrackerEvtsErr,
 	}
+	log.Info("Defined cleanedReplay struct")
+
+	log.Info("Finished cleanReplayStructure()")
 
 	return cleanedReplay, true
 }
