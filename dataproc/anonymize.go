@@ -34,8 +34,6 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 	log.Info("Entererd anonymizePlayers().")
 	playerCounter := 0
 
-	// TODO: if this is going to be persistent it needs to be passed as a pointer and live in the main function.
-
 	var newToonDescMap = make(map[string]*rep.PlayerDesc)
 	// var listOfStructs = make([]rep.PlayerDesc, 2)
 
@@ -48,8 +46,6 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 			// Checking if the SlotID and TeamID matches:
 			if playerDesc.SlotID == int64(playerData.TeamID) {
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
-				// TODO: This line of code needs to use external file which will be updated per package.
-				// TODO: The software should allow restarting processing from a package that errored out.
 				anonymizedID, ok := (*playersAnonymized)[toon]
 				if ok {
 					// TODO: Add all of the other information that needs to be anonymized about the players:
@@ -57,7 +53,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 					stringAnonymizedID := strconv.Itoa(anonymizedID)
 					replayData.Details.PlayerList[index].Name = stringAnonymizedID
 					// Toon anonymization:
-					anonymizeToonDescMap(playerDesc, newToonDescMap, stringAnonymizedID, rep.PlayerDesc{})
+					anonymizeToonDescMap(playerDesc, &newToonDescMap, stringAnonymizedID)
 				} else {
 					// The toon was not ine the persistent map, add it:
 					(*playersAnonymized)[toon] = playerCounter
@@ -66,7 +62,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 					stringAnonymizedID := strconv.Itoa(playerCounter)
 					replayData.Details.PlayerList[index].Name = stringAnonymizedID
 
-					anonymizeToonDescMap(playerDesc, newToonDescMap, stringAnonymizedID, rep.PlayerDesc{})
+					anonymizeToonDescMap(playerDesc, &newToonDescMap, stringAnonymizedID)
 					playerCounter++
 				}
 			}
@@ -79,6 +75,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 
 	fmt.Println(replayData.ToonPlayerDescMap)
 
+	log.Info("Finished anonymizePlayers()")
 	return true
 }
 
@@ -95,15 +92,16 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 
 	replayData.MessageEvents = anonymizedMessageEvents
 
+	log.Info("Finished anonymizeMessageEvents()")
 	return true
 }
 
-func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*rep.PlayerDesc, anonymizedID string, emptyPlayerDesc rep.PlayerDesc) {
+func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap *map[string]*rep.PlayerDesc, anonymizedID string) {
 
 	log.Info("Entered anonymizeToonDescMap().")
 
 	// Define new rep.PlayerDesc with old
-	emptyPlayerDesc = rep.PlayerDesc{
+	emptyPlayerDesc := rep.PlayerDesc{
 		PlayerID:            playerDesc.PlayerID,
 		SlotID:              playerDesc.SlotID,
 		UserID:              playerDesc.UserID,
@@ -116,6 +114,7 @@ func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap map[string]*re
 
 	// Adding the new PlayerDesc
 	log.Info("Adding new PlayerDesc to toonDescMap")
-	toonDescMap[anonymizedID] = &emptyPlayerDesc
+	(*toonDescMap)[anonymizedID] = &emptyPlayerDesc
 
+	log.Info("Finished anonymizeToonDescMap()")
 }

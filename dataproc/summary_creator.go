@@ -11,19 +11,10 @@ import (
 func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.ReplaySummary) {
 
 	log.Info("Entered generateReplaySummary()")
-	// Game version histogram:
-	var gameVersionFields = []string{"baseBuild", "build", "flags", "major", "minor", "revision"}
 
-	// Getting the needed information out of the replay:
-	replayHeader := replayData.Header
-
-	// Check the map for every defined field and increment its value:
-	for _, keyField := range gameVersionFields {
-		key := strconv.FormatInt(replayHeader.Version[keyField].(int64), 10)
-		// TODO: summaryStruct.Summary.GameVersions needs fields for every game version field that there is...
-		keyExistsIncrementValue(key, summaryStruct.Summary.GameVersions)
-	}
-	log.Info("Finished incrementing summaryStruct.Summary.GameVersions")
+	// GameVersion information:
+	keyExistsIncrementValue(replayData.Metadata.GameVersion, summaryStruct.Summary.GameVersions)
+	log.Info("Finished incrementing replayData.Metadata.GameVersion")
 
 	replayMetadata := replayData.Metadata
 	// GameDuration histogram:

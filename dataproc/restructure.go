@@ -2,6 +2,7 @@ package dataproc
 
 import (
 	"encoding/json"
+	"strings"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot"
@@ -10,7 +11,6 @@ import (
 )
 
 // TODO: Commented out pieces of code need to be verified for redundant information.
-
 func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
@@ -118,8 +118,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 		for _, player := range details.Players() {
 
-			// TODO: Find other qualities to check for (e.g. toon) instead of player name because player names from details hold clan tag:
-			if initPlayer.Name == player.Name {
+			// TODO: VERY IMPORTANT!!!!!!!!!!!!!!!!!
+			// TODO: It is not sure that there cannot be names that are similar enough so that they will pass this test:
+			if strings.Contains(player.Name, initPlayer.Name) {
 
 				colorA := uint8(player.Color[0])
 				colorB := uint8(player.Color[1])

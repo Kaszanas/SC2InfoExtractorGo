@@ -4,23 +4,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
-type PackageSummary struct {
-	Summary Summary
-}
-
-// ReplaySummary contains information calculated from a single replay
-type ReplaySummary struct {
-	Summary Summary
-}
-
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
 func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *PackageSummary) {
 
 	log.Info("Entered AddReplaySummToPackageSumm()")
 
 	// Adding GameVersion information to PackageSummary
-	// log.WithFields(log.Fields{"replaySummary": replaySummary, "packageSummary": packageSummary}).Info("Replay and Package Summaries are as follows.")
 	collapseMapToMap(&replaySummary.Summary.GameVersions, &packageSummary.Summary.GameVersions)
 	log.Info("Finished collapsing GameVersions")
 
@@ -81,6 +70,16 @@ func collapseMapToMap(mapToCollapse *map[string]int64, collapseInto *map[string]
 			(*collapseInto)[key] = value
 		}
 	}
+}
+
+// PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
+type PackageSummary struct {
+	Summary Summary
+}
+
+// ReplaySummary contains information calculated from a single replay
+type ReplaySummary struct {
+	Summary Summary
 }
 
 // DefaultPackageSummary returns an initialized PackageSummary

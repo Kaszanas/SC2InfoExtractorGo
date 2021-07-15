@@ -20,6 +20,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// TODO: The software should allow restarting processing from a package that errored out
+
 func main() {
 
 	log.SetFormatter(&log.JSONFormatter{})
