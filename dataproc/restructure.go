@@ -2,6 +2,7 @@ package dataproc
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
@@ -246,6 +247,15 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 	metadataMapName := metadata.Title()
 
+	// Verifying if it is possible to localize the map:
+	if localizeMapsBool {
+		localizedMap, ok := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
+		if !ok {
+			return data.CleanedReplay{}, false
+		}
+		metadataMapName = localizedMap
+	}
+
 	cleanMetadata := data.CleanedMetadata{
 		BaseBuild:   metadataBaseBuild,
 		DataBuild:   metadataDataBuild,
@@ -302,6 +312,15 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 // Using mapping from a separate tool for map name extraction
 // Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
-func verifyLocalizedMapName(mapName string, localizedMaps map[string]string) {
+func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}) (string, bool) {
+
+	value, ok := localizedMaps[mapName]
+	if !ok {
+		log.Error("Cannot localize map! English map name was not found!")
+		return "", false
+	}
+	stringEngMapName := fmt.Sprintf("%v", value)
+
+	return stringEngMapName, true
 
 }
