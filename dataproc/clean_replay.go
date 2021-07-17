@@ -10,7 +10,7 @@ import (
 	"github.com/Kaszanas/GoSC2Science/settings"
 )
 
-func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]string) (bool, data.CleanedReplay) {
+func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}, performCleanupBool bool) (bool, data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
@@ -21,16 +21,20 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 		return false, data.CleanedReplay{}
 	}
 
-	// TODO: This needs to be controlled from outside of stringify_replay in case other users don't want to receive clean data.
-	if !cleanUnusedGameEvents(&structuredReplayData) {
-		log.Error("Error in cleaning the replay structure.")
-		return false, data.CleanedReplay{}
+	if !performCleanupBool {
+		log.Info("Detected bypassCleanupBool, performing cleanup of defined unused events.")
+		if !cleanUnusedGameEvents(&structuredReplayData) {
+			log.Error("Error in cleaning the replay structure.")
+			return false, data.CleanedReplay{}
+		}
 	}
 
+	log.Info("Finished cleanReplay()")
 	return true, structuredReplayData
 }
 
 func cleanUnusedGameEvents(replayData *datastruct.CleanedReplay) bool {
+	log.Info("Entered cleanUnusedGameEvents()")
 
 	var cleanedGameEvents []s2prot.Struct
 	for _, event := range replayData.GameEvents {
@@ -41,5 +45,6 @@ func cleanUnusedGameEvents(replayData *datastruct.CleanedReplay) bool {
 
 	replayData.GameEvents = cleanedGameEvents
 
+	log.Info("Finished cleanUnusedGameEvents()")
 	return true
 }

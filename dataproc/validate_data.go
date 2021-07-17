@@ -3,6 +3,7 @@ package dataproc
 import (
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
@@ -81,7 +82,8 @@ func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeI
 		return false
 	}
 
-	metadataBaseBuildInt, err := strconv.Atoi(replayData.Metadata.BaseBuild())
+	metadatBaseBuildString := strings.Replace(replayData.Metadata.BaseBuild(), "Base", "", -1)
+	metadataBaseBuildInt, err := strconv.Atoi(metadatBaseBuildString)
 	if err != nil {
 		log.Info("Integrity check failed! Cannot convert replayData.Metadata.BaseBuild() to integer!")
 		return false
@@ -116,7 +118,7 @@ func validateData(replayData *rep.Rep) bool {
 		absoluteMMRDifference := math.Abs(playerList[0].MMR() - playerList[1].MMR())
 		// Around 1200 MMR:
 		if absoluteMMRDifference > 1200 {
-			log.Error("")
+			log.Error("MMR Difference was found to be to big! validateData() failed, returning!")
 			return false
 		}
 	}
@@ -142,7 +144,7 @@ func validateData(replayData *rep.Rep) bool {
 
 // Filtering
 func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
-	log.Info("")
+	log.Info("Entered checkGameMode()")
 	result := false
 
 	for _, value := range gameModeList {
@@ -152,7 +154,7 @@ func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
 		}
 	}
 
-	log.Info("")
+	log.Info("Finished checkGameMode()")
 	return result
 }
 

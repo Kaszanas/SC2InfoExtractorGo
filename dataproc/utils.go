@@ -48,8 +48,8 @@ func checkUint32(intToCheck int64) (uint32, bool) {
 func checkUint64(intToCheck int64) (uint64, bool) {
 	log.Info("Entered checkUint64()")
 
-	// TODO: Check the upper bounds of uint64
-	if intToCheck < 0 {
+	// Hard to verify as int64 will always fit in uint64!!!
+	if intToCheck < 0 || intToCheck > 9223372036854775807 {
 		log.Info("Value does not fit in uint64, returning 0")
 		return uint64(0), false
 	} else {

@@ -9,6 +9,7 @@ import (
 
 func stringifyReplay(replayData *data.CleanedReplay) (bool, string) {
 
+	log.Info("Entered stringifyReplay()")
 	successFlag := true
 
 	replayDataString, marshalErr := json.MarshalIndent(replayData, "", "  ")
@@ -17,5 +18,6 @@ func stringifyReplay(replayData *data.CleanedReplay) (bool, string) {
 		return !successFlag, ""
 	}
 
+	log.Info("Finished stringifyReplay()")
 	return successFlag, string(replayDataString)
 }

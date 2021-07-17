@@ -20,6 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// TODO: The software should allow restarting processing from a package that errored out
 func main() {
 
 	log.SetFormatter(&log.JSONFormatter{})
@@ -40,6 +41,7 @@ func main() {
 	filesInPackage := flag.Int("files_in_package", 3, "Provide a number of files to be compressed into a bzip2 archive.")
 
 	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
+
 	// TODO: Write the docs for other game modes:
 	gameModeCheckFlag := flag.Int("game_mode", 0xFFFFFFFF, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0xFFFFFFFF")
 
@@ -48,7 +50,10 @@ func main() {
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
 
-	anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
+	bypassCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
+	bypassAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
+
+	// anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
@@ -70,20 +75,21 @@ func main() {
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 
 	integrityCheckBool := *integrityCheckFlag
-	gameModeCheckInt := *gameModeCheckFlag
-	if gameModeCheckInt > 11 || gameModeCheckInt < 1 {
-		log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
-		os.Exit(1)
-	}
+	// gameModeCheckInt := *gameModeCheckFlag
 
 	// Filter game modes:
 	filterGameModeFlag := *gameModeCheckFlag
+	// if filterGameModeFlag >= 0x00000000 || filterGameModeFlag <= 0xFFFFFFFF {
+	// 	log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
+	// 	os.Exit(1)
+	// }
 
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
 	localizationMappingJSONFile := *localizationMappingFileFlag
 
-	anonymizedPlayerMappingFile := *anonymizedPlayerMappingFileFlag
+	bypassAnonymizationBool := *bypassAnonymizationFlag
+	bypassCleanupBool := *bypassCleanupFlag
 
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
@@ -111,26 +117,38 @@ func main() {
 	log.Info("Initialized buffer and writer.")
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
-
 	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSONFile)
 	if localizedMapsMap == nil {
 		log.Error("Could not read the JSON mapping file, closing the program.")
 		os.Exit(1)
 	}
 
-	// TODO: This function also needs to create the file if it doesn't exist just the same as logging helper function:
-	anonymizedPlayerMap := unmarshalLocaleMapping(anonymizedPlayerMappingFile)
-	if localizedMapsMap == nil {
-		log.Error("Could not read the JSON mapping file, closing the program.")
-		os.Exit(1)
-	}
+	// [*] --> main
+	// main: inputDirectory
+	// main: outputDirectory
+	// main: filesInPackage
+	// main: integrityCheckFlag
+	// main: gameModeCheckFlag
+	// main: compressionMethodFlag
+	// main: localizeMapsBoolFlag
+	// main: localizationMappingFileFlag
+	// main: logLevelFlag
 
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool, filterGameModeFlag)
+			didWork, replayString, replaySummary := dataproc.Pipeline(
+				replayFile,
+				&processingInfoStruct.AnonymizedPlayers,
+				integrityCheckBool,
+				filterGameModeFlag,
+				bypassAnonymizationBool,
+				bypassCleanupBool,
+				localizeMapsBool,
+				localizedMapsMap)
+
 			if !didWork {
 				readErrorCounter++
 				continue
@@ -139,6 +157,7 @@ func main() {
 
 			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
 			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
+			log.Info("Added replaySummary to packageSummary")
 
 			// Helper saving to zip archive:
 			savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
@@ -166,7 +185,7 @@ func main() {
 				log.Info("Saved processing.log")
 
 				// Initializing empty packageSummary after saving the zip:
-				packageSummary = data.PackageSummary{}
+				packageSummary = data.DefaultPackageSummary()
 				log.Info("Initialized empty PackageSummary struct that will hold the next package information")
 
 				packageCounter++

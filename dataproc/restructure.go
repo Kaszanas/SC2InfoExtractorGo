@@ -2,6 +2,8 @@ package dataproc
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot"
@@ -10,8 +12,9 @@ import (
 )
 
 // TODO: Commented out pieces of code need to be verified for redundant information.
+func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
-func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]string) (data.CleanedReplay, bool) {
+	log.Info("Entered redefineReplayStructure()")
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
@@ -25,6 +28,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		UseScaledTime:    useScaledTime,
 		Version:          version,
 	}
+	log.Info("Defined cleanHeader struct")
 
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
@@ -68,6 +72,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		MapSizeY:            mapSizeYChecked,
 		MaxPlayers:          maxPlayersChecked,
 	}
+	log.Info("Defined cleanedGameDescription struct")
 
 	// Constructing a clean UserInitData without unescessary fields:
 	var cleanedUserInitDataList []data.CleanedUserInitData
@@ -102,6 +107,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	cleanInitData := data.CleanedInitData{
 		GameDescription: cleanedGameDescription,
 	}
+	log.Info("Defined cleanInitData struct")
 
 	// Constructing a clean CleanedDetails without unescessary fields
 	details := replayData.Details
@@ -113,8 +119,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 		for _, player := range details.Players() {
 
-			// TODO: Find other qualities to check for (e.g. toon) instead of player name because player names from details hold clan tag:
-			if initPlayer.Name == player.Name {
+			// TODO: VERY IMPORTANT!!!!!!!!!!!!!!!!!
+			// TODO: It is not sure that there cannot be names that are similar enough so that they will pass this test:
+			if strings.Contains(player.Name, initPlayer.Name) {
 
 				colorA := uint8(player.Color[0])
 				colorB := uint8(player.Color[1])
@@ -207,6 +214,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		TimeUTC: timeUTC,
 		// MapName: mapNameString,
 	}
+	log.Info("Defined cleanDetails struct")
 
 	// Constructing a clean CleanedMetadata without unescessary fields:
 	metadata := replayData.Metadata
@@ -239,6 +247,15 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 	metadataMapName := metadata.Title()
 
+	// Verifying if it is possible to localize the map:
+	if localizeMapsBool {
+		localizedMap, ok := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
+		if !ok {
+			return data.CleanedReplay{}, false
+		}
+		metadataMapName = localizedMap
+	}
+
 	cleanMetadata := data.CleanedMetadata{
 		BaseBuild:   metadataBaseBuild,
 		DataBuild:   metadataDataBuild,
@@ -247,6 +264,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		Players:     metadataCleanedPlayersList,
 		MapName:     metadataMapName,
 	}
+	log.Info("Defined cleanMetadata struct")
 
 	dirtyMessageEvents := replayData.MessageEvts
 	dirtyGameEvents := replayData.GameEvts
@@ -285,12 +303,24 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		MessageEvtsErr:    justMessageEvtsErr,
 		TrackerEvtsErr:    justTrackerEvtsErr,
 	}
+	log.Info("Defined cleanedReplay struct")
+
+	log.Info("Finished cleanReplayStructure()")
 
 	return cleanedReplay, true
 }
 
 // Using mapping from a separate tool for map name extraction
 // Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
-func verifyLocalizedMapName(mapName string, localizedMaps map[string]string) {
+func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}) (string, bool) {
+
+	value, ok := localizedMaps[mapName]
+	if !ok {
+		log.Error("Cannot localize map! English map name was not found!")
+		return "", false
+	}
+	stringEngMapName := fmt.Sprintf("%v", value)
+
+	return stringEngMapName, true
 
 }
