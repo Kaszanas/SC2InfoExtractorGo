@@ -123,17 +123,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// [*] --> main
-	// main: inputDirectory
-	// main: outputDirectory
-	// main: filesInPackage
-	// main: integrityCheckFlag
-	// main: gameModeCheckFlag
-	// main: compressionMethodFlag
-	// main: localizeMapsBoolFlag
-	// main: localizationMappingFileFlag
-	// main: logLevelFlag
-
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
