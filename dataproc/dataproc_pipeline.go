@@ -7,7 +7,14 @@ import (
 )
 
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
-func Pipeline(replayFile string, playersAnonymized *map[string]int, localizeMapsBool bool, localizedMapsMap map[string]interface{}, integrityCheckBool bool, gameModeCheckFlag int) (bool, string, data.ReplaySummary) {
+func Pipeline(replayFile string,
+	playersAnonymized *map[string]int,
+	integrityCheckBool bool,
+	gameModeCheckFlag int,
+	performAnonymizationBool bool,
+	performCleanupBool bool,
+	localizeMapsBool bool,
+	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary) {
 
 	log.Info("Entered Pipeline()")
 
@@ -29,7 +36,7 @@ func Pipeline(replayFile string, playersAnonymized *map[string]int, localizeMaps
 	}
 
 	// Clean replay structure:
-	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizeMapsBool, localizedMapsMap)
+	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizeMapsBool, localizedMapsMap, performCleanupBool)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
 		return false, "", data.ReplaySummary{}
@@ -43,9 +50,12 @@ func Pipeline(replayFile string, playersAnonymized *map[string]int, localizeMaps
 	}
 
 	// Anonimize replay:
-	if !anonymizeReplay(&cleanReplayStructure, playersAnonymized) {
-		log.WithField("file", replayFile).Error("Failed to anonymize replay.")
-		return false, "", data.ReplaySummary{}
+	if !performAnonymizationBool {
+		log.Info("Detected bypassAnonymizationBool, performing anonymization.")
+		if !anonymizeReplay(&cleanReplayStructure, playersAnonymized) {
+			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
+			return false, "", data.ReplaySummary{}
+		}
 	}
 
 	// Create final replay string:

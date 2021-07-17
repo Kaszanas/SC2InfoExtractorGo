@@ -10,7 +10,7 @@ import (
 	"github.com/Kaszanas/GoSC2Science/settings"
 )
 
-func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (bool, data.CleanedReplay) {
+func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}, performCleanupBool bool) (bool, data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
@@ -21,10 +21,12 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 		return false, data.CleanedReplay{}
 	}
 
-	// TODO: This needs to be controlled from outside of stringify_replay in case other users don't want to receive clean data.
-	if !cleanUnusedGameEvents(&structuredReplayData) {
-		log.Error("Error in cleaning the replay structure.")
-		return false, data.CleanedReplay{}
+	if !performCleanupBool {
+		log.Info("Detected bypassCleanupBool, performing cleanup of defined unused events.")
+		if !cleanUnusedGameEvents(&structuredReplayData) {
+			log.Error("Error in cleaning the replay structure.")
+			return false, data.CleanedReplay{}
+		}
 	}
 
 	log.Info("Finished cleanReplay()")

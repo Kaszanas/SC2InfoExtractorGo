@@ -21,7 +21,6 @@ import (
 )
 
 // TODO: The software should allow restarting processing from a package that errored out
-
 func main() {
 
 	log.SetFormatter(&log.JSONFormatter{})
@@ -50,6 +49,9 @@ func main() {
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
 
+	bypassCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
+	bypassAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
+
 	// anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
@@ -73,17 +75,20 @@ func main() {
 
 	integrityCheckBool := *integrityCheckFlag
 	// gameModeCheckInt := *gameModeCheckFlag
-	// if gameModeCheckInt > 11 || gameModeCheckInt < 1 {
+
+	// Filter game modes:
+	filterGameModeFlag := *gameModeCheckFlag
+	// if filterGameModeFlag >= 0x00000000 || filterGameModeFlag <= 0xFFFFFFFF {
 	// 	log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
 	// 	os.Exit(1)
 	// }
 
-	// Filter game modes:
-	filterGameModeFlag := *gameModeCheckFlag
-
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
 	localizationMappingJSONFile := *localizationMappingFileFlag
+
+	bypassAnonymizationBool := *bypassAnonymizationFlag
+	bypassCleanupBool := *bypassCleanupFlag
 
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
@@ -122,7 +127,16 @@ func main() {
 
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(replayFile, &processingInfoStruct.AnonymizedPlayers, localizeMapsBool, localizedMapsMap, integrityCheckBool, filterGameModeFlag)
+			didWork, replayString, replaySummary := dataproc.Pipeline(
+				replayFile,
+				&processingInfoStruct.AnonymizedPlayers,
+				integrityCheckBool,
+				filterGameModeFlag,
+				bypassAnonymizationBool,
+				bypassCleanupBool,
+				localizeMapsBool,
+				localizedMapsMap)
+
 			if !didWork {
 				readErrorCounter++
 				continue
