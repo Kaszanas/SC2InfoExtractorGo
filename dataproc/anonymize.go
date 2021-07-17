@@ -39,7 +39,7 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
-	// TODO: Something does not work here!!! Empty toon map is generated and stringified.
+
 	for index, playerData := range replayData.Details.PlayerList {
 		// Iterate over Toon description map:
 		for toon, playerDesc := range replayData.ToonPlayerDescMap {
