@@ -2,6 +2,7 @@ package dataproc
 
 import (
 	"strconv"
+	"strings"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	log "github.com/sirupsen/logrus"
@@ -58,17 +59,52 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 
 	// // Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
 
-	// // TODO: flip the string to be the same always e.g. "TvP" == "PvT"
-	// matchupString := replayData.Details.PlayerList[0].Race + "vs" + replayData.Details.PlayerList[1].Race
-
-	// raceSlice := ["Zerg", "Protoss", ]
-
-	// matchupSplit := strings.Split(matchupString, "Zerg")
-
-	// keyExistsIncrementValue(matchupString, summaryStruct.Summary.MatchupHistograms)
+	// Creating matchup histograms:
+	matchupString := replayData.Details.PlayerList[0].Race + replayData.Details.PlayerList[1].Race
+	if !checkMatchup(matchupString, summaryStruct) {
+		log.Error("Failed to increment matchup information!")
+	}
 
 	// // How many unique accounts were found:
 
+}
+
+func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool {
+	log.Info("Entered checkMatchup()")
+
+	if matchupString == "TT" {
+		log.Info("Found matchup to be TvT")
+		keyExistsIncrementValue("TvT", summaryStruct.Summary.MatchupHistograms)
+		return true
+	}
+	if matchupString == "PP" {
+		log.Debug("Found matchup to be PvP")
+		keyExistsIncrementValue("PvP", summaryStruct.Summary.MatchupHistograms)
+		return true
+	}
+	if matchupString == "ZZ" {
+		log.Debug("Found matchup to be ZvZ")
+		keyExistsIncrementValue("ZvZ", summaryStruct.Summary.MatchupHistograms)
+		return true
+	}
+	if strings.ContainsAny(matchupString, "P & T") {
+		log.Debug("Found matchup to be PvT")
+		keyExistsIncrementValue("PvT", summaryStruct.Summary.MatchupHistograms)
+		return true
+	}
+	if strings.ContainsAny(matchupString, "Z & T") {
+		log.Debug("Found matchup to be ZvT")
+		keyExistsIncrementValue("ZvT", summaryStruct.Summary.MatchupHistograms)
+		return true
+	}
+	if strings.ContainsAny(matchupString, "Z & P") {
+		log.Debug("Found matchup to be ZvP")
+		keyExistsIncrementValue("ZvP", summaryStruct.Summary.MatchupHistograms)
+		return true
+	}
+
+	log.Info("Failed checkMatchup(), no matchup was found!")
+	return false
 }
 
 func keyExistsIncrementValue(key string, mapToCheck map[string]int64) {
