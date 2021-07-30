@@ -1,14 +1,18 @@
 package dataproc
 
 import (
+	"context"
 	"fmt"
-	"strconv"
+	"os"
+	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	pb "github.com/Kaszanas/GoSC2Science/proto"
 	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
@@ -29,42 +33,48 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[stri
 	return true
 }
 
-func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
+func grpcConnection() {
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewGreeterClient(conn)
+
+	// Contact the server and print out its response.
+	name := defaultName
+	if len(os.Args) > 1 {
+		name = os.Args[1]
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: name})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Greeting: %s", r.GetMessage())
+}
+
+func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entererd anonymizePlayers().")
-	playerCounter := 0
 
 	var newToonDescMap = make(map[string]*rep.PlayerDesc)
-	// var listOfStructs = make([]rep.PlayerDesc, 2)
+	// Connecting to gRPC server:
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
 
-	for index, playerData := range replayData.Details.PlayerList {
+	// TODO: Iterating over PlayerList might not be the best IDEA!!!!!!!
+	// There is absolutely no assurance when it comes to the ordering of the players.
+	for _, playerData := range replayData.Metadata.Players {
 		// Iterate over Toon description map:
 		for toon, playerDesc := range replayData.ToonPlayerDescMap {
 			// Checking if the SlotID and TeamID matches:
-			if playerDesc.SlotID == int64(playerData.TeamID) {
+			if playerDesc.PlayerID == int64(playerData.PlayerID) {
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
-				anonymizedID, ok := (*playersAnonymized)[toon]
-				if ok {
-					// TODO: Add all of the other information that needs to be anonymized about the players:
-					// Nickname anonymization:
-					stringAnonymizedID := strconv.Itoa(anonymizedID)
-					replayData.Details.PlayerList[index].Name = stringAnonymizedID
-					// Toon anonymization:
-					anonymizeToonDescMap(playerDesc, &newToonDescMap, stringAnonymizedID)
-				} else {
-					// The toon was not ine the persistent map, add it:
-					(*playersAnonymized)[toon] = playerCounter
-
-					// Convert player counter to string to be used as new toon in the final map:
-					stringAnonymizedID := strconv.Itoa(playerCounter)
-					replayData.Details.PlayerList[index].Name = stringAnonymizedID
-
-					anonymizeToonDescMap(playerDesc, &newToonDescMap, stringAnonymizedID)
-					playerCounter++
-				}
+				// TODO: Use gRPC here!
 			}
 		}
 	}
