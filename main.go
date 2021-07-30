@@ -207,3 +207,20 @@ func contains(s []string, str string) bool {
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
 }
+
+func chunkSlice(slice []int, chunkSize int) [][]int {
+	var chunks [][]int
+	for i := 0; i < len(slice); i += chunkSize {
+		end := i + chunkSize
+
+		// necessary check to avoid slicing beyond
+		// slice capacity
+		if end > len(slice) {
+			end = len(slice)
+		}
+
+		chunks = append(chunks, slice[i:end])
+	}
+
+	return chunks
+}
