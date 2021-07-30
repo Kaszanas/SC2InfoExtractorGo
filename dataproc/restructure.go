@@ -247,10 +247,11 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 	metadataMapName := metadata.Title()
 
-	// Verifying if it is possible to localize the map:
+	// Verifying if it is possible to localize the map and localizing if possible:
 	if localizeMapsBool {
 		localizedMap, ok := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
 		if !ok {
+			log.WithField("metadataMapName", metadataMapName).Error("Not possible to localize the map!")
 			return data.CleanedReplay{}, false
 		}
 		metadataMapName = localizedMap
@@ -313,6 +314,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 // Using mapping from a separate tool for map name extraction
 // Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}) (string, bool) {
+	log.Info("Entered verifyLocalizedMapName()")
 
 	value, ok := localizedMaps[mapName]
 	if !ok {
@@ -321,6 +323,6 @@ func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}
 	}
 	stringEngMapName := fmt.Sprintf("%v", value)
 
+	log.Info("Finished verifyLocalizedMapName()")
 	return stringEngMapName, true
-
 }
