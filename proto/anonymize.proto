@@ -1,0 +1,17 @@
+// python -m grpc_tools.protoc -I./proto --python_out=. --grpc_python_out=. ./proto/anonymize.proto
+
+syntax = "proto3";
+
+option go_package = "github.com/Kaszanas/GoSC2Science/proto";
+
+service AnonymizeService {
+    rpc getAnonymizedID (SendNickname) returns (ReceiveID);
+}
+
+message SendNickname {
+    string nickname = 1;
+}
+
+message ReceiveID {
+    string anonymizedID = 1;
+}
