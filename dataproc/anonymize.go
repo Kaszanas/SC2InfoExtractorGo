@@ -3,7 +3,6 @@ package dataproc
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
@@ -33,27 +32,27 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[stri
 	return true
 }
 
-func grpcConnection() {
-	// Set up a connection to the server.
+// grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
+func grpcConnectAnonymize(toonString string) string {
+	// Set up a connection to the server:
 	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGreeterClient(conn)
 
-	// Contact the server and print out its response.
-	name := defaultName
-	if len(os.Args) > 1 {
-		name = os.Args[1]
-	}
+	// Start-up a gRPC client:
+	c := pb.NewAnonymizeServiceClient(conn)
+
+	// Contact the server and print out its response:
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: name})
+	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Greeting: %s", r.GetMessage())
+	log.WithField("gRPC_response", result.AnonymizedID).Debug("Received anonymized ID for a player.")
+	return result.AnonymizedID
 }
 
 func anonymizePlayers(replayData *data.CleanedReplay) bool {
@@ -73,6 +72,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 		for toon, playerDesc := range replayData.ToonPlayerDescMap {
 			// Checking if the SlotID and TeamID matches:
 			if playerDesc.PlayerID == int64(playerData.PlayerID) {
+				grpcConnectAnonymize(toon)
 				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
 				// TODO: Use gRPC here!
 			}
