@@ -38,7 +38,7 @@ func main() {
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	// interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
-	filesInPackage := flag.Int("files_in_package", 3, "Provide a number of files to be compressed into a bzip2 archive.")
+	numberOfPackagesFlag := flag.Int("number_of_packages", 3, "Provide a number of packages to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
 
 	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 
@@ -91,14 +91,17 @@ func main() {
 	bypassAnonymizationBool := *bypassAnonymizationFlag
 	bypassCleanupBool := *bypassCleanupFlag
 
+	numberOfPackages := *numberOfPackagesFlag
+
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
 		"outputDirectory":   absolutePathOutputDirectory,
-		"filesInPackage":    *filesInPackage,
+		"filesInPackage":    numberOfPackages,
 		"compressionMethod": compressionMethod}).Info("Parsed command line flags")
 
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := listFiles(absolutePathInputDirectory, ".SC2Replay")
+	listOfChunksFiles := chunkSlice(listOfInputFiles, numberOfPackages)
 
 	// Register a custom compressor.
 	zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
@@ -130,7 +133,6 @@ func main() {
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
 			didWork, replayString, replaySummary := dataproc.Pipeline(
 				replayFile,
-				&processingInfoStruct.AnonymizedPlayers,
 				integrityCheckBool,
 				filterGameModeFlag,
 				bypassAnonymizationBool,
@@ -162,7 +164,7 @@ func main() {
 			// Remembering how much files were processed and created as .json:
 			myProgressBar.Add(1)
 			// Stop after reaching the limit and compress into a bzip2
-			if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
+			if processedCounter%*numberOfPackages == 0 || filesLeftToProcess == 0 {
 				log.Info("Detected processed counter to be within filesInPackage threshold.")
 				writer.Close()
 				packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
@@ -208,13 +210,15 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func chunkSlice(slice []int, chunkSize int) [][]int {
-	var chunks [][]int
+func chunkSlice(slice []string, chunkSize int) [][]string {
+
+	log.Info("Entered chunkSlice()")
+
+	var chunks [][]string
 	for i := 0; i < len(slice); i += chunkSize {
 		end := i + chunkSize
 
-		// necessary check to avoid slicing beyond
-		// slice capacity
+		// necessary check to avoid slicing beyond slice capacity:
 		if end > len(slice) {
 			end = len(slice)
 		}
@@ -222,5 +226,6 @@ func chunkSlice(slice []int, chunkSize int) [][]int {
 		chunks = append(chunks, slice[i:end])
 	}
 
+	log.Info("Finished chunkSlice(), returning")
 	return chunks
 }

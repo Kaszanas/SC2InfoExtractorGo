@@ -1,14 +1,40 @@
 package dataproc
 
 import (
+	"runtime"
+
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
+func MultiprocessingPipeline(listOfFiles []string,
+	integrityCheckBool bool,
+	gameModeCheckFlag int,
+	performAnonymizationBool bool,
+	performCleanupBool bool,
+	localizeMapsBool bool,
+	localizedMapsMap map[string]interface{},
+	noMultiprocessing bool) {
+
+	if noMultiprocessing {
+		runtime.GOMAXPROCS(1)
+	}
+
+	for index, file := range listOfFiles {
+		go Pipeline(file,
+			integrityCheckBool,
+			gameModeCheckFlag,
+			performAnonymizationBool,
+			performCleanupBool,
+			localizeMapsBool,
+			localizedMapsMap)
+	}
+
+}
+
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
 func Pipeline(replayFile string,
-	playersAnonymized *map[string]int,
 	integrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
@@ -52,7 +78,7 @@ func Pipeline(replayFile string,
 	// Anonimize replay:
 	if !performAnonymizationBool {
 		log.Info("Detected bypassAnonymizationBool, performing anonymization.")
-		if !anonymizeReplay(&cleanReplayStructure, playersAnonymized) {
+		if !anonymizeReplay(&cleanReplayStructure) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
 			return false, "", data.ReplaySummary{}
 		}

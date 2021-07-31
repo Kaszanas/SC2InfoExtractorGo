@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
+func anonymizeReplay(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entered anonymizeReplay()")
 
@@ -23,7 +23,7 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[stri
 		return false
 	}
 
-	if !anonymizePlayers(replayData, playersAnonymized) {
+	if !anonymizePlayers(replayData) {
 		log.Error("Failed to anonimize player information.")
 		return false
 	}
