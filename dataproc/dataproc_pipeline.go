@@ -1,14 +1,83 @@
 package dataproc
 
 import (
+	"runtime"
+
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
+func PipelineWrapper(chunks [][]string,
+	integrityCheckBool bool,
+	gameModeCheckFlag int,
+	performAnonymizationBool bool,
+	performCleanupBool bool,
+	localizeMapsBool bool,
+	localizedMapsMap map[string]interface{},
+	noMultiprocessing bool) {
+
+	if noMultiprocessing {
+		runtime.GOMAXPROCS(1)
+	}
+
+	for index, chunk := range chunks {
+		go MultiprocessingChunkPipeline(chunk,
+			integrityCheckBool,
+			gameModeCheckFlag,
+			performAnonymizationBool,
+			performCleanupBool,
+			localizeMapsBool,
+			localizedMapsMap,
+			index)
+	}
+
+}
+
+func MultiprocessingChunkPipeline(listOfFiles []string,
+	integrityCheckBool bool,
+	gameModeCheckFlag int,
+	performAnonymizationBool bool,
+	performCleanupBool bool,
+	localizeMapsBool bool,
+	localizedMapsMap map[string]interface{},
+	chunkIndex int) {
+
+	// TODO: Create logging file:
+
+	// Defining counters:
+	readErrorCounter := 0
+	compressionErrorCounter := 0
+	processedCounter := 0
+
+	// Helper method returning bytes buffer and zip writer:
+	buffer, writer := initBufferWriter()
+	log.Info("Initialized buffer and writer.")
+
+	// Processing file:
+	for _, file := range listOfFiles {
+
+		didWork, replayString, replaySummary := FileProcessingPipeline(file,
+			integrityCheckBool,
+			gameModeCheckFlag,
+			performAnonymizationBool,
+			performCleanupBool,
+			localizeMapsBool,
+			localizedMapsMap)
+
+		if !didWork {
+			readErrorCounter++
+			continue
+		}
+
+	}
+
+	// TODO: Save the ZIP archive:
+
+}
+
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
-func Pipeline(replayFile string,
-	playersAnonymized *map[string]int,
+func FileProcessingPipeline(replayFile string,
 	integrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
@@ -52,7 +121,7 @@ func Pipeline(replayFile string,
 	// Anonimize replay:
 	if !performAnonymizationBool {
 		log.Info("Detected bypassAnonymizationBool, performing anonymization.")
-		if !anonymizeReplay(&cleanReplayStructure, playersAnonymized) {
+		if !anonymizeReplay(&cleanReplayStructure) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
 			return false, "", data.ReplaySummary{}
 		}

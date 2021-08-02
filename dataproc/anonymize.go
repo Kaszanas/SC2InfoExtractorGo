@@ -1,17 +1,20 @@
 package dataproc
 
 import (
+	"context"
 	"fmt"
-	"strconv"
+	"time"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	pb "github.com/Kaszanas/GoSC2Science/proto"
 	settings "github.com/Kaszanas/GoSC2Science/settings"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
-func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
+func anonymizeReplay(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entered anonymizeReplay()")
 
@@ -20,7 +23,7 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[stri
 		return false
 	}
 
-	if !anonymizePlayers(replayData, playersAnonymized) {
+	if !anonymizePlayers(replayData) {
 		log.Error("Failed to anonimize player information.")
 		return false
 	}
@@ -29,42 +32,45 @@ func anonymizeReplay(replayData *data.CleanedReplay, playersAnonymized *map[stri
 	return true
 }
 
-func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[string]int) bool {
+// grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
+func grpcConnectAnonymize(toonString string) string {
+	// Set up a connection to the server:
+	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	// Start-up a gRPC client:
+	c := pb.NewAnonymizeServiceClient(conn)
+
+	// Contact the server and print out its response:
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.WithField("gRPC_response", result.AnonymizedID).Debug("Received anonymized ID for a player.")
+	return result.AnonymizedID
+}
+
+func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entererd anonymizePlayers().")
-	playerCounter := 0
 
 	var newToonDescMap = make(map[string]*rep.PlayerDesc)
-	// var listOfStructs = make([]rep.PlayerDesc, 2)
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
-
-	for index, playerData := range replayData.Details.PlayerList {
+	for _, playerData := range replayData.Metadata.Players {
 		// Iterate over Toon description map:
 		for toon, playerDesc := range replayData.ToonPlayerDescMap {
 			// Checking if the SlotID and TeamID matches:
-			if playerDesc.SlotID == int64(playerData.TeamID) {
-				// Checking if the player toon was already anonymized (toons are unique, nicknames are not)
-				anonymizedID, ok := (*playersAnonymized)[toon]
-				if ok {
-					// TODO: Add all of the other information that needs to be anonymized about the players:
-					// Nickname anonymization:
-					stringAnonymizedID := strconv.Itoa(anonymizedID)
-					replayData.Details.PlayerList[index].Name = stringAnonymizedID
-					// Toon anonymization:
-					anonymizeToonDescMap(playerDesc, &newToonDescMap, stringAnonymizedID)
-				} else {
-					// The toon was not ine the persistent map, add it:
-					(*playersAnonymized)[toon] = playerCounter
-
-					// Convert player counter to string to be used as new toon in the final map:
-					stringAnonymizedID := strconv.Itoa(playerCounter)
-					replayData.Details.PlayerList[index].Name = stringAnonymizedID
-
-					anonymizeToonDescMap(playerDesc, &newToonDescMap, stringAnonymizedID)
-					playerCounter++
-				}
+			if playerDesc.PlayerID == int64(playerData.PlayerID) {
+				// Using gRPC for anonymization:
+				anonymizedID := grpcConnectAnonymize(toon)
+				newToonDescMap[anonymizedID] = playerDesc
 			}
 		}
 	}
@@ -72,6 +78,8 @@ func anonymizePlayers(replayData *data.CleanedReplay, playersAnonymized *map[str
 	// Replacing Toon desc map with anonymmized version containing a persistent anonymized ID of the player:
 	log.Info("Replacing ToonPlayerDescMap with anonymized version.")
 	replayData.ToonPlayerDescMap = newToonDescMap
+
+	log.WithField("toonDescMapAnonymized", replayData.ToonPlayerDescMap).Debug("Replaced toonDescMap with anonymized version")
 
 	fmt.Println(replayData.ToonPlayerDescMap)
 

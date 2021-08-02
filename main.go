@@ -38,7 +38,7 @@ func main() {
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	// interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
-	filesInPackage := flag.Int("files_in_package", 3, "Provide a number of files to be compressed into a bzip2 archive.")
+	numberOfPackagesFlag := flag.Int("number_of_packages", 3, "Provide a number of packages to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
 
 	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 
@@ -53,7 +53,7 @@ func main() {
 	bypassCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
 	bypassAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
 
-	// anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
+	processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", true, "Provide if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
@@ -79,10 +79,6 @@ func main() {
 
 	// Filter game modes:
 	filterGameModeFlag := *gameModeCheckFlag
-	// if filterGameModeFlag >= 0x00000000 || filterGameModeFlag <= 0xFFFFFFFF {
-	// 	log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
-	// 	os.Exit(1)
-	// }
 
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
@@ -91,14 +87,17 @@ func main() {
 	bypassAnonymizationBool := *bypassAnonymizationFlag
 	bypassCleanupBool := *bypassCleanupFlag
 
+	numberOfPackages := *numberOfPackagesFlag
+
 	log.WithFields(log.Fields{
 		"inputDirectory":    absolutePathInputDirectory,
 		"outputDirectory":   absolutePathOutputDirectory,
-		"filesInPackage":    *filesInPackage,
+		"filesInPackage":    numberOfPackages,
 		"compressionMethod": compressionMethod}).Info("Parsed command line flags")
 
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := listFiles(absolutePathInputDirectory, ".SC2Replay")
+	listOfChunksFiles := chunkSlice(listOfInputFiles, numberOfPackages)
 
 	// Register a custom compressor.
 	zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
@@ -113,7 +112,7 @@ func main() {
 	packageCounter := 0
 
 	// Helper method returning bytes buffer and zip writer:
-	buffer, writer := initBufferWriter()
+	buffer, writer := dataproc.initBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
@@ -123,6 +122,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	dataproc.PipelineWrapper(listOfChunksFiles, integrityCheckBool, filterGameModeFlag, bypassAnonymizationBool, bypassCleanupBool, localizeMapsBool, localizedMapsMap)
+
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
 
@@ -130,7 +131,6 @@ func main() {
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
 			didWork, replayString, replaySummary := dataproc.Pipeline(
 				replayFile,
-				&processingInfoStruct.AnonymizedPlayers,
 				integrityCheckBool,
 				filterGameModeFlag,
 				bypassAnonymizationBool,
@@ -162,7 +162,7 @@ func main() {
 			// Remembering how much files were processed and created as .json:
 			myProgressBar.Add(1)
 			// Stop after reaching the limit and compress into a bzip2
-			if processedCounter%*filesInPackage == 0 || filesLeftToProcess == 0 {
+			if processedCounter%*numberOfPackages == 0 || filesLeftToProcess == 0 {
 				log.Info("Detected processed counter to be within filesInPackage threshold.")
 				writer.Close()
 				packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
@@ -206,4 +206,24 @@ func contains(s []string, str string) bool {
 
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
+}
+
+func chunkSlice(slice []string, chunkSize int) [][]string {
+
+	log.Info("Entered chunkSlice()")
+
+	var chunks [][]string
+	for i := 0; i < len(slice); i += chunkSize {
+		end := i + chunkSize
+
+		// necessary check to avoid slicing beyond slice capacity:
+		if end > len(slice) {
+			end = len(slice)
+		}
+
+		chunks = append(chunks, slice[i:end])
+	}
+
+	log.Info("Finished chunkSlice(), returning")
+	return chunks
 }
