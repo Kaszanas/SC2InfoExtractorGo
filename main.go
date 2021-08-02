@@ -53,7 +53,7 @@ func main() {
 	bypassCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
 	bypassAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
 
-	// anonymizedPlayerMappingFileFlag := flag.String("anonymized_players_file", "./operation_files/anonymized_players.json", "Specify a path to a file that will contain anonymized player mappings.")
+	processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", true, "Provide if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 
@@ -79,10 +79,6 @@ func main() {
 
 	// Filter game modes:
 	filterGameModeFlag := *gameModeCheckFlag
-	// if filterGameModeFlag >= 0x00000000 || filterGameModeFlag <= 0xFFFFFFFF {
-	// 	log.Error("You have provided unsuported game mode integer. Please check usage documentation for guidance.")
-	// 	os.Exit(1)
-	// }
 
 	// Localization flags dereference:
 	localizeMapsBool := *localizeMapsBoolFlag
@@ -126,7 +122,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	dataproc.MultiprocessingChunkPipeline()
+	dataproc.PipelineWrapper(listOfChunksFiles, integrityCheckBool, filterGameModeFlag, bypassAnonymizationBool, bypassCleanupBool, localizeMapsBool, localizedMapsMap)
 
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {
