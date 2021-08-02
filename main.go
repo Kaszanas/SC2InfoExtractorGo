@@ -116,7 +116,7 @@ func main() {
 	packageCounter := 0
 
 	// Helper method returning bytes buffer and zip writer:
-	buffer, writer := initBufferWriter()
+	buffer, writer := dataproc.initBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
@@ -125,6 +125,8 @@ func main() {
 		log.Error("Could not read the JSON mapping file, closing the program.")
 		os.Exit(1)
 	}
+
+	dataproc.MultiprocessingChunkPipeline()
 
 	packageSummary := data.DefaultPackageSummary()
 	for _, replayFile := range listOfInputFiles {

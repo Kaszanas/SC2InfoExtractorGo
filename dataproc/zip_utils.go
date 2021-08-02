@@ -1,4 +1,4 @@
-package main
+package dataproc
 
 import (
 	"archive/zip"

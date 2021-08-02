@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func MultiprocessingPipeline(listOfFiles []string,
+func PipelineWrapper(chunks [][]string,
 	integrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
@@ -21,20 +21,63 @@ func MultiprocessingPipeline(listOfFiles []string,
 		runtime.GOMAXPROCS(1)
 	}
 
-	for index, file := range listOfFiles {
-		go Pipeline(file,
+	for index, chunk := range chunks {
+		go MultiprocessingChunkPipeline(chunk,
+			integrityCheckBool,
+			gameModeCheckFlag,
+			performAnonymizationBool,
+			performCleanupBool,
+			localizeMapsBool,
+			localizedMapsMap,
+			index)
+	}
+
+}
+
+func MultiprocessingChunkPipeline(listOfFiles []string,
+	integrityCheckBool bool,
+	gameModeCheckFlag int,
+	performAnonymizationBool bool,
+	performCleanupBool bool,
+	localizeMapsBool bool,
+	localizedMapsMap map[string]interface{},
+	chunkIndex int) {
+
+	// TODO: Create logging file:
+
+	// Defining counters:
+	readErrorCounter := 0
+	compressionErrorCounter := 0
+	processedCounter := 0
+
+	// Helper method returning bytes buffer and zip writer:
+	buffer, writer := initBufferWriter()
+	log.Info("Initialized buffer and writer.")
+
+	// Processing file:
+	for _, file := range listOfFiles {
+
+		didWork, replayString, replaySummary := FileProcessingPipeline(file,
 			integrityCheckBool,
 			gameModeCheckFlag,
 			performAnonymizationBool,
 			performCleanupBool,
 			localizeMapsBool,
 			localizedMapsMap)
+
+		if !didWork {
+			readErrorCounter++
+			continue
+		}
+
 	}
+
+	// TODO: Save the ZIP archive:
 
 }
 
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
-func Pipeline(replayFile string,
+func FileProcessingPipeline(replayFile string,
 	integrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
