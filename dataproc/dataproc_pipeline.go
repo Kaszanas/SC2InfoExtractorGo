@@ -12,7 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func PipelineWrapper(chunks [][]string,
+func PipelineWrapper(absolutePathOutputDirectory string,
+	chunks [][]string,
 	integrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
@@ -29,7 +30,8 @@ func PipelineWrapper(chunks [][]string,
 	}
 
 	for index, chunk := range chunks {
-		go MultiprocessingChunkPipeline(chunk,
+		go MultiprocessingChunkPipeline(absolutePathOutputDirectory,
+			chunk,
 			integrityCheckBool,
 			gameModeCheckFlag,
 			performAnonymizationBool,
@@ -43,7 +45,8 @@ func PipelineWrapper(chunks [][]string,
 	log.Info("Finished PipelineWrapper()")
 }
 
-func MultiprocessingChunkPipeline(listOfFiles []string,
+func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
+	listOfFiles []string,
 	integrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
@@ -56,7 +59,7 @@ func MultiprocessingChunkPipeline(listOfFiles []string,
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// TODO: Create logging file:
-	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile()
+	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
 	defer processingInfoFile.Close()
 
 	// Defining counters:
@@ -101,7 +104,7 @@ func MultiprocessingChunkPipeline(listOfFiles []string,
 
 			// Writing the zip archive to drive:
 			writer.Close()
-			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
+			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
 			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 
 			processedCounter++

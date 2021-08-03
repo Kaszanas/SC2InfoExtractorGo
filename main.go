@@ -58,10 +58,6 @@ func main() {
 	log.SetLevel(log.Level(*logLevelFlag))
 	log.Info("Set logging level.")
 
-	// Reading external state information for persistent anonymization and to avoid processing twice the same data:
-	processingInfoFile, processingInfoStruct := createProcessingInfoFile()
-	defer processingInfoFile.Close()
-
 	// Converting compression method flag:
 	compressionMethod := uint16(*compressionMethodFlag)
 
@@ -80,8 +76,9 @@ func main() {
 	localizeMapsBool := *localizeMapsBoolFlag
 	localizationMappingJSONFile := *localizationMappingFileFlag
 
-	bypassAnonymizationBool := *bypassAnonymizationFlag
-	bypassCleanupBool := *bypassCleanupFlag
+	performAnonymizationBool := *bypassAnonymizationFlag
+	performCleanupBool := *bypassCleanupFlag
+	processWithMultiprocessingBool := *processWithMultiprocessingFlag
 
 	numberOfPackages := *numberOfPackagesFlag
 
@@ -107,13 +104,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	dataproc.PipelineWrapper(listOfChunksFiles,
+	dataproc.PipelineWrapper(absolutePathOutputDirectory,
+		listOfChunksFiles,
 		integrityCheckBool,
 		filterGameModeFlag,
-		bypassAnonymizationBool,
-		bypassCleanupBool,
+		performAnonymizationBool,
+		performCleanupBool,
 		localizeMapsBool,
-		localizedMapsMap)
+		localizedMapsMap,
+		compressionMethod,
+		processWithMultiprocessingBool)
 
 }
 
