@@ -19,7 +19,10 @@ func PipelineWrapper(chunks [][]string,
 	performCleanupBool bool,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
+	compressionMethod uint16,
 	noMultiprocessing bool) {
+
+	log.Info("Entered PipelineWrapper()")
 
 	if noMultiprocessing {
 		runtime.GOMAXPROCS(1)
@@ -33,9 +36,11 @@ func PipelineWrapper(chunks [][]string,
 			performCleanupBool,
 			localizeMapsBool,
 			localizedMapsMap,
+			compressionMethod,
 			index)
 	}
 
+	log.Info("Finished PipelineWrapper()")
 }
 
 func MultiprocessingChunkPipeline(listOfFiles []string,
@@ -45,8 +50,10 @@ func MultiprocessingChunkPipeline(listOfFiles []string,
 	performCleanupBool bool,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
-	chunkIndex int,
-	compressionMethod uint16) {
+	compressionMethod uint16,
+	chunkIndex int) {
+
+	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// TODO: Create logging file:
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile()
@@ -118,6 +125,8 @@ func MultiprocessingChunkPipeline(listOfFiles []string,
 		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing compressionErrors: ", compressionErrorCounter)
 	}
 
+	log.Info("Finished MultiprocessingChunkPipeline()")
+
 }
 
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
@@ -129,7 +138,7 @@ func FileProcessingPipeline(replayFile string,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary) {
 
-	log.Info("Entered Pipeline()")
+	log.Info("Entered FileProcessingPipeline()")
 
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
@@ -181,6 +190,7 @@ func FileProcessingPipeline(replayFile string,
 	replayData.Close()
 	log.Info("Closed replayData")
 
-	log.Info("Finished Pipeline()")
+	log.Info("Finished FileProcessingPipeline()")
+
 	return true, finalReplayString, summarizedReplay
 }
