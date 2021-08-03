@@ -1,7 +1,8 @@
-package main
+package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -9,7 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func createFile(filePath string) (os.File, []byte) {
+func readOrCreateFile(filePath string) (os.File, []byte) {
+
+	log.Info("Entered readOrCreateFile()")
+
 	createdOrReadFile, err := os.OpenFile(filePath, os.O_TRUNC|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		log.Fatal("Failed to create or open the processing.log: ", err)
@@ -21,12 +25,17 @@ func createFile(filePath string) (os.File, []byte) {
 		os.Exit(1)
 	}
 
+	log.Info("Finished readOrCreateFile()")
 	return *createdOrReadFile, byteValue
 }
 
-func createProcessingInfoFile() (*os.File, data.ProcessingInfo) {
+func CreateFailedInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 
-	processingInfoFile, byteValue := createFile("processing.log")
+	log.Info("Entered CreateFailedInfoFile()")
+
+	// Formatting the processing info file name:
+	processingLogName := fmt.Sprintf("./logs/failed_files/failed_%v.log", fileNumber)
+	processingInfoFile, byteValue := readOrCreateFile(processingLogName)
 
 	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
 	var processingInfoStruct data.ProcessingInfo
@@ -36,10 +45,35 @@ func createProcessingInfoFile() (*os.File, data.ProcessingInfo) {
 		log.Error("Failed to unmarshall the processing.log, initializing empty data.ProcessingInfo struct")
 	}
 
+	log.Info("Finished CreateFailedInfoFile()")
+
 	return &processingInfoFile, processingInfoStruct
 }
 
-func saveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.ProcessingInfo) {
+func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
+
+	log.Info("Entered CreateProcessingInfoFile()")
+
+	// Formatting the processing info file name:
+	processingLogName := fmt.Sprintf("./logs/processed_files/processing_%v.log", fileNumber)
+	processingInfoFile, byteValue := readOrCreateFile(processingLogName)
+
+	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
+	var processingInfoStruct data.ProcessingInfo
+	err := json.Unmarshal(byteValue, &processingInfoStruct)
+	if err != nil {
+		processingInfoStruct = data.DefaultProcessingInfo()
+		log.Error("Failed to unmarshall the processing.log, initializing empty data.ProcessingInfo struct")
+	}
+
+	log.Info("Finished CreateProcessingInfoFile()")
+
+	return &processingInfoFile, processingInfoStruct
+}
+
+func SaveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.ProcessingInfo) {
+
+	log.Info("Entered SaveProcessingInfo()")
 
 	processingInfoBytes, err := json.Marshal(processingInfoStruct)
 	if err != nil {
@@ -49,9 +83,14 @@ func saveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.Pr
 	if err != nil {
 		log.Fatal("Failed to save the processingInfoFile: ", err)
 	}
+	log.Info("Finished SaveProcessingInfo()")
+
 }
 
-func unmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
+func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
+
+	log.Info("Entered unmarshalLocaleMapping()")
+
 	localizedMapping := make(map[string]interface{})
 
 	if !unmarshalFile(pathToMappingFile, &localizedMapping) {
@@ -59,10 +98,14 @@ func unmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 		return localizedMapping
 	}
 
+	log.Info("Finished unmarshalLocaleMapping()")
+
 	return localizedMapping
 }
 
+// TODO: Verify if this is required:
 func unmarshalPersistentAnonymizedNicknames(pathToMappingFile string) map[string]interface{} {
+
 	persistentPlayerMapping := make(map[string]interface{})
 
 	if !unmarshalFile(pathToMappingFile, &persistentPlayerMapping) {
@@ -74,6 +117,9 @@ func unmarshalPersistentAnonymizedNicknames(pathToMappingFile string) map[string
 }
 
 func unmarshalFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
+
+	log.Info("Entered unmarshalFile()")
+
 	var file, err = os.Open(pathToMappingFile)
 	if err != nil {
 		log.WithField("fileError", err.Error()).Info("Failed to open Localization Mapping file.")
@@ -91,6 +137,8 @@ func unmarshalFile(pathToMappingFile string, mappingToPopulate *map[string]inter
 	if err != nil {
 		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the Localization JSON file.")
 	}
+
+	log.Info("Finished unmarshalFile()")
 
 	return true
 }

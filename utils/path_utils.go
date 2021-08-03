@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"io/ioutil"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func listFiles(inputPath string, fileExtension string) []string {
+func ListFiles(inputPath string, fileExtension string) []string {
 
 	files, err := ioutil.ReadDir(inputPath)
 	if err != nil {

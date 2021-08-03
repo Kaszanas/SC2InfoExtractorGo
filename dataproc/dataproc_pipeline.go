@@ -1,9 +1,13 @@
 package dataproc
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"runtime"
+	"strconv"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	"github.com/Kaszanas/GoSC2Science/utils"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
@@ -41,9 +45,12 @@ func MultiprocessingChunkPipeline(listOfFiles []string,
 	performCleanupBool bool,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
-	chunkIndex int) {
+	chunkIndex int,
+	compressionMethod uint16) {
 
 	// TODO: Create logging file:
+	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile()
+	defer processingInfoFile.Close()
 
 	// Defining counters:
 	readErrorCounter := 0
@@ -51,28 +58,65 @@ func MultiprocessingChunkPipeline(listOfFiles []string,
 	processedCounter := 0
 
 	// Helper method returning bytes buffer and zip writer:
-	buffer, writer := initBufferWriter()
+	buffer, writer := utils.InitBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
+	// Create package summary structure:
+	packageSummary := data.DefaultPackageSummary()
 	// Processing file:
-	for _, file := range listOfFiles {
+	for _, replayFile := range listOfFiles {
+		// Checking if the file was previously processed:
+		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
+			didWork, replayString, replaySummary := FileProcessingPipeline(replayFile,
+				integrityCheckBool,
+				gameModeCheckFlag,
+				performAnonymizationBool,
+				performCleanupBool,
+				localizeMapsBool,
+				localizedMapsMap)
 
-		didWork, replayString, replaySummary := FileProcessingPipeline(file,
-			integrityCheckBool,
-			gameModeCheckFlag,
-			performAnonymizationBool,
-			performCleanupBool,
-			localizeMapsBool,
-			localizedMapsMap)
+			if !didWork {
+				readErrorCounter++
+				continue
+			}
 
-		if !didWork {
-			readErrorCounter++
-			continue
+			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
+			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
+			log.Info("Added replaySummary to packageSummary")
+
+			// Saving output to zip archive:
+			savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
+			if !savedSuccess {
+				compressionErrorCounter++
+				continue
+			}
+			log.Info("Added file to zip archive.")
+
+			// Writing the zip archive to drive:
+			writer.Close()
+			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
+			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+
+			processedCounter++
+			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
+
+			// Saving contents of the persistent player nickname map and additional information about which package was processed:
+			utils.SaveProcessingInfo(*processingInfoFile, processingInfoStruct)
+			log.Info("Saved processing.log")
 		}
-
 	}
 
+	// TODO: Write packageSummary to drive!!!
+
 	// TODO: Save the ZIP archive:
+
+	// Logging error information:
+	if readErrorCounter > 0 {
+		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
+	}
+	if compressionErrorCounter > 0 {
+		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing compressionErrors: ", compressionErrorCounter)
+	}
 
 }
 

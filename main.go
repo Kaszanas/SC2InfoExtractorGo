@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	// "github.com/icza/mpq"
@@ -9,14 +8,11 @@ import (
 	"archive/zip"
 	"flag"
 	"io"
-	"io/ioutil"
 	"path/filepath"
-	"strconv"
 
 	"github.com/Kaszanas/GoSC2Science/dataproc"
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	"github.com/Kaszanas/GoSC2Science/utils"
 	"github.com/larzconwell/bzip2"
-	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -96,116 +92,29 @@ func main() {
 		"compressionMethod": compressionMethod}).Info("Parsed command line flags")
 
 	// Getting list of absolute paths for files from input directory:
-	listOfInputFiles := listFiles(absolutePathInputDirectory, ".SC2Replay")
+	listOfInputFiles := utils.ListFiles(absolutePathInputDirectory, ".SC2Replay")
 	listOfChunksFiles := chunkSlice(listOfInputFiles, numberOfPackages)
 
-	// Register a custom compressor.
+	// Register a custom compressor:
 	zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
 		return bzip2.NewWriterLevel(out, 9)
 	})
 
-	myProgressBar := progressbar.Default(int64(len(listOfInputFiles)))
-
-	readErrorCounter := 0
-	compressionErrorCounter := 0
-	processedCounter := 0
-	packageCounter := 0
-
-	// Helper method returning bytes buffer and zip writer:
-	buffer, writer := dataproc.initBufferWriter()
-	log.Info("Initialized buffer and writer.")
-
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
-	localizedMapsMap := unmarshalLocaleMapping(localizationMappingJSONFile)
+	localizedMapsMap := utils.UnmarshalLocaleMapping(localizationMappingJSONFile)
 	if localizedMapsMap == nil {
 		log.Error("Could not read the JSON mapping file, closing the program.")
 		os.Exit(1)
 	}
 
-	dataproc.PipelineWrapper(listOfChunksFiles, integrityCheckBool, filterGameModeFlag, bypassAnonymizationBool, bypassCleanupBool, localizeMapsBool, localizedMapsMap)
+	dataproc.PipelineWrapper(listOfChunksFiles,
+		integrityCheckBool,
+		filterGameModeFlag,
+		bypassAnonymizationBool,
+		bypassCleanupBool,
+		localizeMapsBool,
+		localizedMapsMap)
 
-	packageSummary := data.DefaultPackageSummary()
-	for _, replayFile := range listOfInputFiles {
-
-		// Checking if the file was previously processed:
-		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := dataproc.Pipeline(
-				replayFile,
-				integrityCheckBool,
-				filterGameModeFlag,
-				bypassAnonymizationBool,
-				bypassCleanupBool,
-				localizeMapsBool,
-				localizedMapsMap)
-
-			if !didWork {
-				readErrorCounter++
-				continue
-			}
-			fmt.Println(replaySummary)
-
-			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
-			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
-			log.Info("Added replaySummary to packageSummary")
-
-			// Helper saving to zip archive:
-			savedSuccess := saveFileToArchive(replayString, replayFile, compressionMethod, writer)
-			if !savedSuccess {
-				compressionErrorCounter++
-				continue
-			}
-			log.Info("Added file to zip archive.")
-
-			processedCounter++
-			filesLeftToProcess := len(listOfInputFiles) - processedCounter
-			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
-			// Remembering how much files were processed and created as .json:
-			myProgressBar.Add(1)
-			// Stop after reaching the limit and compress into a bzip2
-			if processedCounter%*numberOfPackages == 0 || filesLeftToProcess == 0 {
-				log.Info("Detected processed counter to be within filesInPackage threshold.")
-				writer.Close()
-				packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(packageCounter)+".zip")
-				_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
-				log.Info("Saved package: %s to path: %s", packageCounter, packageAbsPath)
-
-				// Saving contents of the persistent player nickname map and additional information about which package was processed:
-				saveProcessingInfo(*processingInfoFile, processingInfoStruct)
-				log.Info("Saved processing.log")
-
-				// Initializing empty packageSummary after saving the zip:
-				packageSummary = data.DefaultPackageSummary()
-				log.Info("Initialized empty PackageSummary struct that will hold the next package information")
-
-				packageCounter++
-				// Helper method returning bytes buffer and zip writer:
-				buffer, writer = initBufferWriter()
-				log.Info("Initialized buffer and writer.")
-
-			}
-		}
-	}
-	if readErrorCounter > 0 {
-		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
-	}
-	if compressionErrorCounter > 0 {
-		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing compressionErrors: ", compressionErrorCounter)
-	}
-}
-
-// Helper function checking if a slice contains a string.
-func contains(s []string, str string) bool {
-	log.Info("Entered contains()")
-
-	for _, v := range s {
-		if v == str {
-			log.Info("Slice contains supplied string, returning true")
-			return true
-		}
-	}
-
-	log.Info("Slice does not contain supplied string, returning false")
-	return false
 }
 
 func chunkSlice(slice []string, chunkSize int) [][]string {
