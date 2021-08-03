@@ -34,6 +34,9 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 
 // grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
 func grpcConnectAnonymize(toonString string) string {
+
+	log.Info("Entered grpcConnectAnonymize()")
+
 	// Set up a connection to the server:
 	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -52,6 +55,8 @@ func grpcConnectAnonymize(toonString string) string {
 		log.Fatalf("could not greet: %v", err)
 	}
 	log.WithField("gRPC_response", result.AnonymizedID).Debug("Received anonymized ID for a player.")
+
+	log.Info("Finished grpcConnectAnonymize()")
 	return result.AnonymizedID
 }
 

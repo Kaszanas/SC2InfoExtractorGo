@@ -12,10 +12,13 @@ import (
 func InitBufferWriter() (*bytes.Buffer, *zip.Writer) {
 
 	log.Info("Entered initBufferWriter()")
+
 	// Create a buffer to write our archive to:
 	buf := new(bytes.Buffer)
 	// Create a new zip archive:
 	w := zip.NewWriter(buf)
+
+	log.Info("Finished initBufferWriter()")
 
 	return buf, w
 }
@@ -56,6 +59,8 @@ func SaveFileToArchive(replayString string, replayFile string, compressionMethod
 			"compressionError": true}).Error("Got error when adding a file header to the archive.")
 		return false
 	}
+
+	log.Info("Finished SaveFileToArchive()")
 
 	return true
 }

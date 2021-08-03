@@ -65,7 +65,9 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 		log.Error("Failed to increment matchup information!")
 	}
 
-	// // How many unique accounts were found:
+	// How many unique accounts were found:
+
+	log.Info("Finished generateReplaySummary()")
 
 }
 
@@ -75,31 +77,37 @@ func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool 
 	if matchupString == "TT" {
 		log.Info("Found matchup to be TvT")
 		keyExistsIncrementValue("TvT", summaryStruct.Summary.MatchupHistograms)
+		log.Info("Finished checkMatchup()")
 		return true
 	}
 	if matchupString == "PP" {
 		log.Debug("Found matchup to be PvP")
 		keyExistsIncrementValue("PvP", summaryStruct.Summary.MatchupHistograms)
+		log.Info("Finished checkMatchup()")
 		return true
 	}
 	if matchupString == "ZZ" {
 		log.Debug("Found matchup to be ZvZ")
 		keyExistsIncrementValue("ZvZ", summaryStruct.Summary.MatchupHistograms)
+		log.Info("Finished checkMatchup()")
 		return true
 	}
 	if strings.ContainsAny(matchupString, "P & T") {
 		log.Debug("Found matchup to be PvT")
 		keyExistsIncrementValue("PvT", summaryStruct.Summary.MatchupHistograms)
+		log.Info("Finished checkMatchup()")
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Z & T") {
 		log.Debug("Found matchup to be ZvT")
 		keyExistsIncrementValue("ZvT", summaryStruct.Summary.MatchupHistograms)
+		log.Info("Finished checkMatchup()")
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Z & P") {
 		log.Debug("Found matchup to be ZvP")
 		keyExistsIncrementValue("ZvP", summaryStruct.Summary.MatchupHistograms)
+		log.Info("Finished checkMatchup()")
 		return true
 	}
 
@@ -108,9 +116,13 @@ func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool 
 }
 
 func keyExistsIncrementValue(key string, mapToCheck map[string]int64) {
+	log.Info("Entered keyExistsIncrementValue()")
+
 	if val, ok := mapToCheck[key]; ok {
 		mapToCheck[key] = val + 1
+		log.Info("Finished keyExistsIncrementValue()")
 	} else {
 		mapToCheck[key] = 1
+		log.Info("Finished keyExistsIncrementValue()")
 	}
 }

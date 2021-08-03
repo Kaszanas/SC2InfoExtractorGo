@@ -2,11 +2,14 @@ package utils
 
 import (
 	"io/ioutil"
-	"log"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func ListFiles(inputPath string, fileExtension string) []string {
+
+	log.Info("Entered ListFiles()")
 
 	files, err := ioutil.ReadDir(inputPath)
 	if err != nil {
@@ -23,6 +26,8 @@ func ListFiles(inputPath string, fileExtension string) []string {
 			listOfReplayFiles = append(listOfReplayFiles, absoluteReplayPath)
 		}
 	}
+
+	log.Info("Finished ListFiles()")
 
 	return listOfReplayFiles
 
