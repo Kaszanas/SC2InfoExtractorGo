@@ -29,41 +29,20 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 	return *createdOrReadFile, byteValue
 }
 
-func CreateFailedInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
-
-	log.Info("Entered CreateFailedInfoFile()")
-
-	// Formatting the processing info file name:
-	processingLogName := fmt.Sprintf("./logs/failed_files/failed_%v.log", fileNumber)
-	processingInfoFile, byteValue := readOrCreateFile(processingLogName)
-
-	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
-	var processingInfoStruct data.ProcessingInfo
-	err := json.Unmarshal(byteValue, &processingInfoStruct)
-	if err != nil {
-		processingInfoStruct = data.DefaultProcessingInfo()
-		log.Error("Failed to unmarshall the processing.log, initializing empty data.ProcessingInfo struct")
-	}
-
-	log.Info("Finished CreateFailedInfoFile()")
-
-	return &processingInfoFile, processingInfoStruct
-}
-
 func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 
 	log.Info("Entered CreateProcessingInfoFile()")
 
 	// Formatting the processing info file name:
-	processingLogName := fmt.Sprintf("./logs/processed_files/processing_%v.log", fileNumber)
+	processingLogName := fmt.Sprintf("./logs/processed_failed_%v.log", fileNumber)
 	processingInfoFile, byteValue := readOrCreateFile(processingLogName)
 
-	// This will hold: {"anonymizedPlayers": {"toon": id}, "packageCounter": int, "processedFiles": [path, path, path]}
+	// This will hold: {"processedFiles": [path, path, path], "failedFiles": [path, path, path]}
 	var processingInfoStruct data.ProcessingInfo
 	err := json.Unmarshal(byteValue, &processingInfoStruct)
 	if err != nil {
 		processingInfoStruct = data.DefaultProcessingInfo()
-		log.Error("Failed to unmarshall the processing.log, initializing empty data.ProcessingInfo struct")
+		log.Errorf("Failed to unmarshall the ./logs/processed_failed_%v.log, initializing empty data.ProcessingInfo struct", fileNumber)
 	}
 
 	log.Info("Finished CreateProcessingInfoFile()")

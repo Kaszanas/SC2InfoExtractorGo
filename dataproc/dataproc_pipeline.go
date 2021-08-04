@@ -77,7 +77,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	for _, replayFile := range listOfFiles {
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary := FileProcessingPipeline(replayFile,
+			didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(replayFile,
 				integrityCheckBool,
 				gameModeCheckFlag,
 				performAnonymizationBool,
@@ -87,6 +87,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 			if !didWork {
 				readErrorCounter++
+				processingInfoStruct.FailedToProcess = append(processingInfoStruct.FailedToProcess, map[string]string{replayFile: failureReason})
 				continue
 			}
 
@@ -139,7 +140,7 @@ func FileProcessingPipeline(replayFile string,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
 	localizeMapsBool bool,
-	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary) {
+	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary, string) {
 
 	log.Info("Entered FileProcessingPipeline()")
 
@@ -147,7 +148,7 @@ func FileProcessingPipeline(replayFile string,
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
 		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).Error("Failed to read file.")
-		return false, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}, "rep.NewFromFile() failed"
 	}
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
@@ -156,7 +157,7 @@ func FileProcessingPipeline(replayFile string,
 	if !integrityOk {
 		log.WithField("file", replayData).Error("Integrity check failed in file.")
 		if integrityCheckBool {
-			return false, "", data.ReplaySummary{}
+			return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
 		}
 	}
 
@@ -164,14 +165,14 @@ func FileProcessingPipeline(replayFile string,
 	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizeMapsBool, localizedMapsMap, performCleanupBool)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
-		return false, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}, "cleanReplay() failed"
 	}
 
 	// Create replay summary:
 	summarizeOk, summarizedReplay := summarizeReplay(&cleanReplayStructure)
 	if !summarizeOk {
 		log.WithField("file", replayFile).Error("Failed to create replay summary.")
-		return false, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}, "summarizeReplay() failed"
 	}
 
 	// Anonimize replay:
@@ -179,7 +180,7 @@ func FileProcessingPipeline(replayFile string,
 		log.Info("Detected bypassAnonymizationBool, performing anonymization.")
 		if !anonymizeReplay(&cleanReplayStructure) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
-			return false, "", data.ReplaySummary{}
+			return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
 		}
 	}
 
@@ -187,7 +188,7 @@ func FileProcessingPipeline(replayFile string,
 	stringifyOk, finalReplayString := stringifyReplay(&cleanReplayStructure)
 	if !stringifyOk {
 		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
-		return false, "", data.ReplaySummary{}
+		return false, "", data.ReplaySummary{}, "stringifyReplay() failed"
 	}
 
 	replayData.Close()
@@ -195,5 +196,5 @@ func FileProcessingPipeline(replayFile string,
 
 	log.Info("Finished FileProcessingPipeline()")
 
-	return true, finalReplayString, summarizedReplay
+	return true, finalReplayString, summarizedReplay, ""
 }
