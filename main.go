@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer logFile.Close()
+
 	log.SetOutput(logFile)
 	log.Info("Set logging format, defined log file.")
 
@@ -34,7 +34,7 @@ func main() {
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	// interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
-	numberOfPackagesFlag := flag.Int("number_of_packages", 3, "Provide a number of packages to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
+	numberOfPackagesFlag := flag.Int("number_of_packaged_files", 1000, "Provide a number of files to be packaged to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
 
 	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 
@@ -115,6 +115,8 @@ func main() {
 		compressionMethod,
 		processWithMultiprocessingBool)
 
+	// Closing the log file:
+	logFile.Close()
 }
 
 func chunkSlice(slice []string, chunkSize int) [][]string {

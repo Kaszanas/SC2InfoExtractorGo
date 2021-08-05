@@ -36,16 +36,14 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 
 	// Formatting the processing info file name:
 	processingLogName := fmt.Sprintf("./logs/processed_failed_%v.log", fileNumber)
-	processingInfoFile, byteValue := readOrCreateFile(processingLogName)
+	processingInfoFile, _ := readOrCreateFile(processingLogName)
 
 	// This will hold: {"processedFiles": [path, path, path], "failedFiles": [path, path, path]}
 	var processingInfoStruct data.ProcessingInfo
-	err := json.Unmarshal(byteValue, &processingInfoStruct)
-	if err != nil {
-		processingInfoStruct = data.DefaultProcessingInfo()
-		log.Errorf("Failed to unmarshall the ./logs/processed_failed_%v.log, initializing empty data.ProcessingInfo struct", fileNumber)
-	}
+	processingInfoStruct = data.DefaultProcessingInfo()
+	SaveProcessingInfo(processingInfoFile, processingInfoStruct)
 
+	log.Infof("Created and saved the ./logs/processed_failed_%v.log", fileNumber)
 	log.Info("Finished CreateProcessingInfoFile()")
 
 	return &processingInfoFile, processingInfoStruct

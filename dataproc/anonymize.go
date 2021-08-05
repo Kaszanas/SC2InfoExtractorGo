@@ -40,7 +40,7 @@ func grpcConnectAnonymize(toonString string) string {
 	// Set up a connection to the server:
 	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.WithField("error", err).Fatal("Failed to connect to grpc anonymization service")
 	}
 	defer conn.Close()
 
@@ -52,7 +52,7 @@ func grpcConnectAnonymize(toonString string) string {
 	defer cancel()
 	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.WithField("error", err).Fatalf("Could not receive anonymized information from grpc service!")
 	}
 	log.WithField("gRPC_response", result.AnonymizedID).Debug("Received anonymized ID for a player.")
 

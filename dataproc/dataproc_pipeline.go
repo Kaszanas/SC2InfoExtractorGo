@@ -60,7 +60,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 	// Create ProcessingInfoFile:
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
-	defer processingInfoFile.Close()
 
 	// Defining counters:
 	readErrorCounter := 0
@@ -110,6 +109,8 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			utils.SaveProcessingInfo(*processingInfoFile, processingInfoStruct)
 			log.Info("Saved processing.log")
 		}
+
+		processingInfoFile.Close()
 	}
 
 	// Writing PackageSummaryFile to drive:
