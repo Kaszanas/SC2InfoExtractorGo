@@ -50,18 +50,37 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 	return &processingInfoFile, processingInfoStruct
 }
 
+func CreatePackageSummaryFile(packageSummaryStruct data.PackageSummary, fileNumber int) {
+	log.Info("Entered CreatePackageSummaryFile()")
+
+	packageSummaryFilename := fmt.Sprintf("./DEMOS/Output/package_summary_%v.json", fileNumber)
+	packageSummaryFile, _ := readOrCreateFile(packageSummaryFilename)
+
+	packageSummaryBytes, err := json.Marshal(packageSummaryStruct)
+	if err != nil {
+		log.WithField("error", err).Fatal("Failed to marshal packageSummaryStruct")
+	}
+	_, err = packageSummaryFile.Write(packageSummaryBytes)
+	if err != nil {
+		log.WithField("error", err).Fatal("Failed to save the packageInfoFile")
+	}
+
+	log.Info("Finished CreatePackageSummaryFile()")
+}
+
 func SaveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.ProcessingInfo) {
 
 	log.Info("Entered SaveProcessingInfo()")
 
 	processingInfoBytes, err := json.Marshal(processingInfoStruct)
 	if err != nil {
-		log.Fatal("Failed to marshal processingInfo that is used to create processing.log: ", err)
+		log.WithField("error", err).Fatal("Failed to marshal processingInfoStruct that is used to create processing.log")
 	}
 	_, err = processingInfoFile.Write(processingInfoBytes)
 	if err != nil {
-		log.Fatal("Failed to save the processingInfoFile: ", err)
+		log.WithField("error", err).Fatal("Failed to save the processingInfoFile")
 	}
+
 	log.Info("Finished SaveProcessingInfo()")
 
 }
@@ -72,7 +91,7 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 
 	localizedMapping := make(map[string]interface{})
 
-	if !unmarshalFile(pathToMappingFile, &localizedMapping) {
+	if !unmarshalLocaleFile(pathToMappingFile, &localizedMapping) {
 		log.WithField("pathToMappingFile", pathToMappingFile).Error("Failed to open and unmarshal the mapping file!")
 		return localizedMapping
 	}
@@ -82,20 +101,7 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 	return localizedMapping
 }
 
-// TODO: Verify if this is required:
-func unmarshalPersistentAnonymizedNicknames(pathToMappingFile string) map[string]interface{} {
-
-	persistentPlayerMapping := make(map[string]interface{})
-
-	if !unmarshalFile(pathToMappingFile, &persistentPlayerMapping) {
-		log.WithField("pathToMappingFile", pathToMappingFile).Error("Failed to open and unmarshal the mapping file!")
-		return persistentPlayerMapping
-	}
-
-	return persistentPlayerMapping
-}
-
-func unmarshalFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
+func unmarshalLocaleFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
 
 	log.Info("Entered unmarshalFile()")
 

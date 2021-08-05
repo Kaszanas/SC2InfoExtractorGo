@@ -103,11 +103,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			}
 			log.Info("Added file to zip archive.")
 
-			// Writing the zip archive to drive:
-			writer.Close()
-			packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
-			_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
-
 			processedCounter++
 			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 
@@ -119,7 +114,10 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 	// TODO: Write packageSummary to drive!!!
 
-	// TODO: Save the ZIP archive:
+	// Writing the zip archive to drive:
+	writer.Close()
+	packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
+	_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 
 	// Logging error information:
 	if readErrorCounter > 0 {
