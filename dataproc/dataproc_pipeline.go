@@ -58,7 +58,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
-	// TODO: Create logging file:
+	// Create ProcessingInfoFile:
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
 	defer processingInfoFile.Close()
 
@@ -112,7 +112,8 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 		}
 	}
 
-	// TODO: Write packageSummary to drive!!!
+	// Writing PackageSummaryFile to drive:
+	utils.CreatePackageSummaryFile(packageSummary, chunkIndex)
 
 	// Writing the zip archive to drive:
 	writer.Close()

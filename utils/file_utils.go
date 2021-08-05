@@ -29,6 +29,7 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 	return *createdOrReadFile, byteValue
 }
 
+// CreateProcessingInfoFile receives a fileNumber and
 func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 
 	log.Info("Entered CreateProcessingInfoFile()")
@@ -50,6 +51,7 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 	return &processingInfoFile, processingInfoStruct
 }
 
+// CreatePackageSummaryFile receives packageSummaryStruct and fileNumber and saves the package summary file onto the drive.
 func CreatePackageSummaryFile(packageSummaryStruct data.PackageSummary, fileNumber int) {
 	log.Info("Entered CreatePackageSummaryFile()")
 
@@ -68,6 +70,7 @@ func CreatePackageSummaryFile(packageSummaryStruct data.PackageSummary, fileNumb
 	log.Info("Finished CreatePackageSummaryFile()")
 }
 
+// SaveProcessingInfo receives a file and marshals/writes processingInfoStruct into the file.
 func SaveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.ProcessingInfo) {
 
 	log.Info("Entered SaveProcessingInfo()")
