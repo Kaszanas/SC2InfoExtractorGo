@@ -9,37 +9,36 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 
 	log.Info("Entered AddReplaySummToPackageSumm()")
 
-	// Adding GameVersion information to PackageSummary
+	// Adding GameVersion information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.GameVersions, &packageSummary.Summary.GameVersions)
 	log.Info("Finished collapsing GameVersions")
 
-	// Adding GameTimes information to PackageSummary
+	// Adding GameTimes information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.GameTimes, &packageSummary.Summary.GameTimes)
 	log.Info("Finished collapsing GameTimes")
 
-	// Adding Maps information to PackageSummary
+	// Adding Maps information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Maps, &replaySummary.Summary.Maps)
 	log.Info("Finished collapsing Maps")
 
-	// Adding Races information to PackageSummary
+	// Adding Races information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Races, &packageSummary.Summary.Races)
 	log.Info("Finished collapsing Races")
 
-	// Adding Units information to PackageSummary
+	// Adding Units information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Units, &packageSummary.Summary.Units)
 	log.Info("Finished collapsing Units")
 
-	// Adding Dates information to PackageSummary
+	// Adding Dates information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
 	log.Info("Finished collapsing Dates")
 
-	// Adding Servers information to PackageSummary
+	// Adding Servers information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Servers, &packageSummary.Summary.Servers)
 	log.Info("Finished collapsing Servers")
 
-	// Adding matchup information to the PackageSummary
+	// Adding matchup information to the PackageSummary:
 	// TODO: Check if this is working?
-
 	collapseMapToMap(&replaySummary.Summary.MatchupHistograms, &packageSummary.Summary.MatchupHistograms)
 	log.Info("Finished collapsing matchup information")
 
@@ -68,6 +67,8 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 // collapseMapToMap adds the keys and values of one map to another.
 func collapseMapToMap(mapToCollapse *map[string]int64, collapseInto *map[string]int64) {
 
+	log.Info("Entered collapseMapToMap()")
+
 	for key, value := range *mapToCollapse {
 		collapseValue, ok := (*collapseInto)[key]
 		if ok {
@@ -76,6 +77,8 @@ func collapseMapToMap(mapToCollapse *map[string]int64, collapseInto *map[string]
 			(*collapseInto)[key] = value
 		}
 	}
+
+	log.Info("Finished collapseMapToMap()")
 }
 
 // PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
