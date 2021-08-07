@@ -22,7 +22,7 @@ func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 
 	// If the file doesn't exist, create it or append to the file
-	logFile, err := os.OpenFile("logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	logFile, err := os.OpenFile("./logs/program_logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,6 +57,8 @@ func main() {
 	log.WithField("logLevel", *logLevelFlag).Info("Parsed flags, setting log level.")
 	log.SetLevel(log.Level(*logLevelFlag))
 	log.Info("Set logging level.")
+
+	log.Info(os.Args)
 
 	// Converting compression method flag:
 	compressionMethod := uint16(*compressionMethodFlag)

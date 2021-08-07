@@ -35,7 +35,7 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 	log.Info("Entered CreateProcessingInfoFile()")
 
 	// Formatting the processing info file name:
-	processingLogName := fmt.Sprintf("./logs/processed_failed_%v.log", fileNumber)
+	processingLogName := fmt.Sprintf("./logs/processed_files/processed_failed_%v.log", fileNumber)
 	processingInfoFile, _ := readOrCreateFile(processingLogName)
 
 	// This will hold: {"processedFiles": [path, path, path], "failedFiles": [path, path, path]}
@@ -43,7 +43,7 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 	processingInfoStruct = data.DefaultProcessingInfo()
 	SaveProcessingInfo(processingInfoFile, processingInfoStruct)
 
-	log.Infof("Created and saved the ./logs/processed_failed_%v.log", fileNumber)
+	log.Infof("Created and saved the ./logs/processed_files/processed_failed_%v.log", fileNumber)
 	log.Info("Finished CreateProcessingInfoFile()")
 
 	return &processingInfoFile, processingInfoStruct

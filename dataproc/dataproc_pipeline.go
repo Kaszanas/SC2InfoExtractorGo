@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"sync"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/Kaszanas/GoSC2Science/utils"
@@ -29,7 +30,10 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 		runtime.GOMAXPROCS(1)
 	}
 
+	var wg sync.WaitGroup
+
 	for index, chunk := range chunks {
+		wg.Add(1)
 		go MultiprocessingChunkPipeline(absolutePathOutputDirectory,
 			chunk,
 			integrityCheckBool,
@@ -39,8 +43,11 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 			localizeMapsBool,
 			localizedMapsMap,
 			compressionMethod,
-			index)
+			index,
+			&wg)
 	}
+
+	wg.Wait()
 
 	log.Info("Finished PipelineWrapper()")
 }
@@ -54,12 +61,16 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
-	chunkIndex int) {
+	chunkIndex int,
+	waitGroup *sync.WaitGroup) {
 
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
+	// TODO: Logger initialization for
+
 	// Create ProcessingInfoFile:
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
+	defer processingInfoFile.Close()
 
 	// Defining counters:
 	readErrorCounter := 0
@@ -110,7 +121,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			log.Info("Saved processing.log")
 		}
 
-		processingInfoFile.Close()
 	}
 
 	// Writing PackageSummaryFile to drive:
