@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"runtime/pprof"
 
 	// "github.com/icza/mpq"
 	// "github.com/icza/s2prot"
@@ -16,13 +17,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: The software should allow restarting processing from a package that errored out
 func main() {
 
 	log.SetFormatter(&log.JSONFormatter{})
 
 	// If the file doesn't exist, create it or append to the file
-	logFile, err := os.OpenFile("./logs/program_logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	logFile, err := os.OpenFile("./logs/main_log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,13 +52,25 @@ func main() {
 	processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", true, "Provide if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
+	performCPUProfilingFlag := flag.String("with_cpu_profiler", "", "Set path to the file where pprof cpu profiler will save its information. If this is empty no profiling is performed.")
 
 	flag.Parse()
 	log.WithField("logLevel", *logLevelFlag).Info("Parsed flags, setting log level.")
 	log.SetLevel(log.Level(*logLevelFlag))
 	log.Info("Set logging level.")
 
-	log.Info(os.Args)
+	performCPUProfilingPath := *performCPUProfilingFlag
+	if performCPUProfilingPath != "" {
+		// Creating profiler file:
+		profilerFile, err := os.Create(performCPUProfilingPath)
+		if err != nil {
+			log.WithField("error", err).Fatal("Could not create a profiling file. Exiting program.")
+			os.Exit(1)
+		}
+		// Starting profiling:
+		pprof.StartCPUProfile(profilerFile)
+		defer pprof.StopCPUProfile()
+	}
 
 	// Converting compression method flag:
 	compressionMethod := uint16(*compressionMethodFlag)
