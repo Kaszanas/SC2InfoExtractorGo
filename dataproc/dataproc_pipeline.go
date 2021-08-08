@@ -22,11 +22,11 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
-	noMultiprocessing bool) {
+	withMultiprocessing bool) {
 
 	log.Info("Entered PipelineWrapper()")
 
-	if noMultiprocessing {
+	if !withMultiprocessing {
 		runtime.GOMAXPROCS(1)
 	}
 
@@ -46,7 +46,6 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 			index,
 			&wg)
 	}
-
 	wg.Wait()
 
 	log.Info("Finished PipelineWrapper()")
@@ -66,7 +65,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
-	// TODO: Logger initialization for
+	// TODO: Logger initialization
 
 	// Create ProcessingInfoFile:
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
@@ -116,12 +115,13 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			processedCounter++
 			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 
-			// Saving contents of the persistent player nickname map and additional information about which package was processed:
-			utils.SaveProcessingInfo(*processingInfoFile, processingInfoStruct)
-			log.Info("Saved processing.log")
 		}
 
 	}
+
+	// Saving processingInfo to know which files failed to process:
+	utils.SaveProcessingInfo(processingInfoFile, processingInfoStruct)
+	log.Info("Saved processing.log")
 
 	// Writing PackageSummaryFile to drive:
 	utils.CreatePackageSummaryFile(packageSummary, chunkIndex)

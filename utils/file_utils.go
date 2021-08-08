@@ -14,7 +14,7 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 
 	log.Info("Entered readOrCreateFile()")
 
-	createdOrReadFile, err := os.OpenFile(filePath, os.O_TRUNC|os.O_CREATE|os.O_RDWR, 0666)
+	createdOrReadFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Fatal("Failed to create or open the processing.log: ", err)
 		os.Exit(1)
@@ -39,9 +39,8 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 	processingInfoFile, _ := readOrCreateFile(processingLogName)
 
 	// This will hold: {"processedFiles": [path, path, path], "failedFiles": [path, path, path]}
-	var processingInfoStruct data.ProcessingInfo
-	processingInfoStruct = data.DefaultProcessingInfo()
-	SaveProcessingInfo(processingInfoFile, processingInfoStruct)
+	processingInfoStruct := data.DefaultProcessingInfo()
+	// SaveProcessingInfo(&processingInfoFile, processingInfoStruct)
 
 	log.Infof("Created and saved the ./logs/processed_files/processed_failed_%v.log", fileNumber)
 	log.Info("Finished CreateProcessingInfoFile()")
@@ -69,7 +68,7 @@ func CreatePackageSummaryFile(packageSummaryStruct data.PackageSummary, fileNumb
 }
 
 // SaveProcessingInfo receives a file and marshals/writes processingInfoStruct into the file.
-func SaveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.ProcessingInfo) {
+func SaveProcessingInfo(processingInfoFile *os.File, processingInfoStruct data.ProcessingInfo) {
 
 	log.Info("Entered SaveProcessingInfo()")
 
@@ -77,6 +76,8 @@ func SaveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.Pr
 	if err != nil {
 		log.WithField("error", err).Fatal("Failed to marshal processingInfoStruct that is used to create processing.log")
 	}
+
+	// Writing processingInfo to the file:
 	_, err = processingInfoFile.Write(processingInfoBytes)
 	if err != nil {
 		log.WithField("error", err).Fatal("Failed to save the processingInfoFile")
@@ -86,6 +87,7 @@ func SaveProcessingInfo(processingInfoFile os.File, processingInfoStruct data.Pr
 
 }
 
+// UnmarshalLocaleMapping wraps around unmarshalLocaleFile and returns and empty map[string]interface{} if it fails to unmarshal the original locale mapping file.
 func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 
 	log.Info("Entered unmarshalLocaleMapping()")
@@ -102,6 +104,7 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 	return localizedMapping
 }
 
+// unmarshalLocaleFile deals with every possible opening and unmarshalling problem that might occur when unmarshalling a localization file supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func unmarshalLocaleFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
 
 	log.Info("Entered unmarshalFile()")
