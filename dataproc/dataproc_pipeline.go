@@ -63,9 +63,9 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	chunkIndex int,
 	waitGroup *sync.WaitGroup) {
 
+	// Letting the orchestrator know that this processing task was finished:
+	defer waitGroup.Done()
 	log.Info("Entered MultiprocessingChunkPipeline()")
-
-	// TODO: Logger initialization
 
 	// Create ProcessingInfoFile:
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
