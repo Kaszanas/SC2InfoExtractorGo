@@ -15,7 +15,7 @@ import (
 
 func PipelineWrapper(absolutePathOutputDirectory string,
 	chunks [][]string,
-	integrityCheckBool bool,
+	performIntegrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
@@ -36,7 +36,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 		wg.Add(1)
 		go MultiprocessingChunkPipeline(absolutePathOutputDirectory,
 			chunk,
-			integrityCheckBool,
+			performIntegrityCheckBool,
 			gameModeCheckFlag,
 			performAnonymizationBool,
 			performCleanupBool,
@@ -53,7 +53,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 
 func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	listOfFiles []string,
-	integrityCheckBool bool,
+	performIntegrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
@@ -87,7 +87,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 		// Checking if the file was previously processed:
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
 			didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(replayFile,
-				integrityCheckBool,
+				performIntegrityCheckBool,
 				gameModeCheckFlag,
 				performAnonymizationBool,
 				performCleanupBool,
@@ -145,7 +145,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 // Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
 func FileProcessingPipeline(replayFile string,
-	integrityCheckBool bool,
+	performIntegrityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
@@ -163,10 +163,10 @@ func FileProcessingPipeline(replayFile string,
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
 	// Performing integrity checks
-	integrityOk := checkIntegrity(replayData, integrityCheckBool, gameModeCheckFlag)
+	integrityOk := checkIntegrity(replayData, performIntegrityCheckBool, gameModeCheckFlag)
 	if !integrityOk {
 		log.WithField("file", replayData).Error("Integrity check failed in file.")
-		if integrityCheckBool {
+		if performIntegrityCheckBool {
 			return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
 		}
 	}
@@ -186,7 +186,7 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Anonimize replay:
-	if !performAnonymizationBool {
+	if performAnonymizationBool {
 		log.Info("Detected bypassAnonymizationBool, performing anonymization.")
 		if !anonymizeReplay(&cleanReplayStructure) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")

@@ -36,7 +36,7 @@ func main() {
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
 	numberOfPackagesFlag := flag.Int("number_of_packaged_files", 100, "Provide a number of files to be packaged to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
 
-	integrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
+	performIntegrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 
 	// TODO: Write the docs for other game modes:
 	gameModeCheckFlag := flag.Int("game_mode", 0xFFFFFFFF, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0xFFFFFFFF")
@@ -46,8 +46,8 @@ func main() {
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
 
-	bypassCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
-	bypassAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
+	performCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
+	performAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
 
 	processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", true, "Provide if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 
@@ -80,7 +80,7 @@ func main() {
 	// absolutePathInterDirectory, _ := filepath.Abs(*interDirectory)
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 
-	integrityCheckBool := *integrityCheckFlag
+	performIntegrityCheckBool := *performIntegrityCheckFlag
 	// gameModeCheckInt := *gameModeCheckFlag
 
 	// Filter game modes:
@@ -90,8 +90,8 @@ func main() {
 	localizeMapsBool := *localizeMapsBoolFlag
 	localizationMappingJSONFile := *localizationMappingFileFlag
 
-	performAnonymizationBool := *bypassAnonymizationFlag
-	performCleanupBool := *bypassCleanupFlag
+	performAnonymizationBool := *performAnonymizationFlag
+	performCleanupBool := *performCleanupFlag
 	processWithMultiprocessingBool := *processWithMultiprocessingFlag
 
 	numberOfPackages := *numberOfPackagesFlag
@@ -120,7 +120,7 @@ func main() {
 
 	dataproc.PipelineWrapper(absolutePathOutputDirectory,
 		listOfChunksFiles,
-		integrityCheckBool,
+		performIntegrityCheckBool,
 		filterGameModeFlag,
 		performAnonymizationBool,
 		performCleanupBool,
