@@ -92,6 +92,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	return true
 }
 
+// anonymizeMessageEvents checks against settings.UnusedMessageEvents and creates a new clean version without specified events.
 func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entered anonimizeMessageEvents().")
@@ -109,6 +110,8 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 	return true
 }
 
+// TODO: This could be deleted?
+// anonymizeToonDescMap is a deprecated version that was used for a single threaded approach in ToonDescMap anonymization.
 func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap *map[string]*rep.PlayerDesc, anonymizedID string) {
 
 	log.Info("Entered anonymizeToonDescMap().")

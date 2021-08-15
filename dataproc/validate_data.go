@@ -35,6 +35,7 @@ var gameModeList = []int{
 	CustomFFA,
 }
 
+// gameModeFiltersMapping contains information about different game modes and how to verify them.
 var gameModeFiltersMapping = map[int]VerifyGameInfo{
 	Ranked1v1:    {isAutoMatchMaking: true, maxPlayers: 2, isCompetitiveOrRanked: true},
 	Ranked2v2:    {isAutoMatchMaking: true, maxPlayers: 4, isCompetitiveOrRanked: true},
@@ -55,6 +56,7 @@ type VerifyGameInfo struct {
 }
 
 // Integrity
+// checkIntegrity verifies if the internal saved state of the replayData matches against structures with redundant information.
 func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeInt int) bool {
 
 	log.Info("Entered checkIntegrity()")
@@ -143,6 +145,7 @@ func validateData(replayData *rep.Rep) bool {
 }
 
 // Filtering
+// checkGameMode performs the check against a HEX 0xFFFFFFFF getGameModeFlag to verify if the currently processed replay game mode is correct.
 func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
 	log.Info("Entered checkGameMode()")
 	result := false
@@ -194,6 +197,7 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 
 }
 
+// checkNumberOfPlayers verifies and checks if the number of players is correct for a given game mode.
 func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 
 	log.Info("Entered checkNumberOfPlayers()")
@@ -210,6 +214,7 @@ func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 	return true
 }
 
+// checkBlizzardMap verifies if the currently processed replay was played using a Blizzard official map.
 func checkBlizzardMap(replayData *rep.Rep) bool {
 
 	log.Info("Entered checkBlizzardMap()")

@@ -6,11 +6,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Kaszanas/GoSC2Science/datastruct"
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	"github.com/Kaszanas/GoSC2Science/settings"
 )
 
-func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}, performCleanupBool bool) (bool, data.CleanedReplay) {
+func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}, performCleanupBool bool) (bool, datastruct.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
@@ -18,14 +17,14 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 	structuredReplayData, redefOk := redifineReplayStructure(replayData, localizeMapsBool, localizedMapsMap)
 	if !redefOk {
 		log.Error("Error in redefining replay structure.")
-		return false, data.CleanedReplay{}
+		return false, datastruct.CleanedReplay{}
 	}
 
 	if !performCleanupBool {
 		log.Info("Detected bypassCleanupBool, performing cleanup of defined unused events.")
 		if !cleanUnusedGameEvents(&structuredReplayData) {
 			log.Error("Error in cleaning the replay structure.")
-			return false, data.CleanedReplay{}
+			return false, datastruct.CleanedReplay{}
 		}
 	}
 

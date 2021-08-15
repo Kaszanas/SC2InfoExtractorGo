@@ -47,17 +47,18 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Servers")
 
-	// Amount of different units created (histogram of units used). Is this needed?
-	// TODO: verify if this is needed it seems like too much information that is going to be generated:
-	for _, event := range replayData.GameEvents {
-		// TODO: Add another check not to include geisers, mineral fields and other unescessary information:
-		if event["evtTypeName"].(string) == "UnitBorn" {
-			keyExistsIncrementValue(event["unitTypeName"].(string), summaryStruct.Summary.Units)
+	// Counting different units that were spawned in a game:
+	for _, event := range replayData.TrackerEvents {
+		// Counting the number of UnitBorn events to create histograms:
+		eventType := event["evtTypeName"].(string)
+		if eventType == "UnitBorn" {
+			unitName := event["unitTypeName"].(string)
+			keyExistsIncrementValue(unitName, summaryStruct.Summary.Units)
 		}
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Units")
 
-	// // Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
+	// TODO: Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
 
 	// Creating matchup histograms:
 	matchupString := replayData.Details.PlayerList[0].Race + replayData.Details.PlayerList[1].Race
@@ -74,37 +75,37 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool {
 	log.Info("Entered checkMatchup()")
 
-	if matchupString == "TT" {
+	if matchupString == "TerranTerran" {
 		log.Info("Found matchup to be TvT")
 		keyExistsIncrementValue("TvT", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if matchupString == "PP" {
+	if matchupString == "ProtossProtoss" {
 		log.Debug("Found matchup to be PvP")
 		keyExistsIncrementValue("PvP", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if matchupString == "ZZ" {
+	if matchupString == "ZergZerg" {
 		log.Debug("Found matchup to be ZvZ")
 		keyExistsIncrementValue("ZvZ", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if strings.ContainsAny(matchupString, "P & T") {
+	if strings.Contains(matchupString, "Protoss") && strings.Contains(matchupString, "Terran") {
 		log.Debug("Found matchup to be PvT")
 		keyExistsIncrementValue("PvT", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if strings.ContainsAny(matchupString, "Z & T") {
+	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Terran") {
 		log.Debug("Found matchup to be ZvT")
 		keyExistsIncrementValue("ZvT", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if strings.ContainsAny(matchupString, "Z & P") {
+	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Protoss") {
 		log.Debug("Found matchup to be ZvP")
 		keyExistsIncrementValue("ZvP", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
