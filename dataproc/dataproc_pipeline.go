@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// PipelineWrapper is an orchestrator that distributes work among available workers (threads)
 func PipelineWrapper(absolutePathOutputDirectory string,
 	chunks [][]string,
 	performIntegrityCheckBool bool,
@@ -51,6 +52,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	log.Info("Finished PipelineWrapper()")
 }
 
+// MultiprocessingChunkPipeline is a single instance of processing that is meant to be spawned by the orchestrator in order to speed up the process of data extraction.
 func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	listOfFiles []string,
 	performIntegrityCheckBool bool,
@@ -143,7 +145,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 
 }
 
-// Pipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
+// FileProcessingPipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
 func FileProcessingPipeline(replayFile string,
 	performIntegrityCheckBool bool,
 	gameModeCheckFlag int,

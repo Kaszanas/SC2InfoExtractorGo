@@ -9,6 +9,7 @@ import (
 	"github.com/Kaszanas/GoSC2Science/settings"
 )
 
+// cleanReplay gathers functions that perform redefining "cleaning" of replay structure and cleans up events that are unused.
 func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}, performCleanupBool bool) (bool, datastruct.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
@@ -32,6 +33,7 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 	return true, structuredReplayData
 }
 
+// cleanUnusedGameEvents checks against settings.UnusedGameEvents and creates new GameEvents structure without certain events.
 func cleanUnusedGameEvents(replayData *datastruct.CleanedReplay) bool {
 	log.Info("Entered cleanUnusedGameEvents()")
 

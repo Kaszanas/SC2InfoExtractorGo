@@ -46,8 +46,8 @@ func main() {
 	localizeMapsBoolFlag := flag.Bool("localize_maps", true, "Set to false if You want to keep the original (possibly foreign) map names.")
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specify a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
 
-	performCleanupFlag := flag.Bool("bypass_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
-	performAnonymizationFlag := flag.Bool("bypass_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
+	performCleanupFlag := flag.Bool("perform_cleanup", true, "Provide if the tool is supposed to bypass the cleaning functions within the processing pipeline.")
+	performAnonymizationFlag := flag.Bool("perform_anonymization", true, "Provide if the tool is supposed to bypass the anonymization functions within the processing pipeline.")
 
 	processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", true, "Provide if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 
