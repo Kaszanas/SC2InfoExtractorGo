@@ -37,6 +37,7 @@ func main() {
 	numberOfPackagesFlag := flag.Int("number_of_packaged_files", 100, "Provide a number of files to be packaged to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
 
 	performIntegrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
+	performValidityCheckFlag := flag.Bool("validity_check", true, "Provide if the tool is supposed to use hardcoded validity checks and verify if the replay file variables are within 'common sense' ranges.")
 
 	// TODO: Write the docs for other game modes:
 	gameModeCheckFlag := flag.Int("game_mode", 0xFFFFFFFF, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0xFFFFFFFF")
@@ -81,7 +82,7 @@ func main() {
 	absolutePathOutputDirectory, _ := filepath.Abs(*outputDirectory)
 
 	performIntegrityCheckBool := *performIntegrityCheckFlag
-	// gameModeCheckInt := *gameModeCheckFlag
+	performValidityCheckBool := *performValidityCheckFlag
 
 	// Filter game modes:
 	filterGameModeFlag := *gameModeCheckFlag
@@ -121,6 +122,7 @@ func main() {
 	dataproc.PipelineWrapper(absolutePathOutputDirectory,
 		listOfChunksFiles,
 		performIntegrityCheckBool,
+		performValidityCheckBool,
 		filterGameModeFlag,
 		performAnonymizationBool,
 		performCleanupBool,

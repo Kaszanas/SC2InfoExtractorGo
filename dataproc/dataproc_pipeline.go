@@ -17,6 +17,7 @@ import (
 func PipelineWrapper(absolutePathOutputDirectory string,
 	chunks [][]string,
 	performIntegrityCheckBool bool,
+	performValidityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
@@ -38,6 +39,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 		go MultiprocessingChunkPipeline(absolutePathOutputDirectory,
 			chunk,
 			performIntegrityCheckBool,
+			performValidityCheckBool,
 			gameModeCheckFlag,
 			performAnonymizationBool,
 			performCleanupBool,
@@ -56,6 +58,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	listOfFiles []string,
 	performIntegrityCheckBool bool,
+	performValidityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
@@ -90,6 +93,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
 			didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(replayFile,
 				performIntegrityCheckBool,
+				performValidityCheckBool,
 				gameModeCheckFlag,
 				performAnonymizationBool,
 				performCleanupBool,
@@ -148,6 +152,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 // FileProcessingPipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
 func FileProcessingPipeline(replayFile string,
 	performIntegrityCheckBool bool,
+	performValidityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
@@ -165,12 +170,30 @@ func FileProcessingPipeline(replayFile string,
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
 	// Performing integrity checks
-	integrityOk := checkIntegrity(replayData, performIntegrityCheckBool, gameModeCheckFlag)
-	if !integrityOk {
-		log.WithField("file", replayData).Error("Integrity check failed in file.")
-		if performIntegrityCheckBool {
-			return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
+	if performIntegrityCheckBool {
+		integrityOk := checkIntegrity(replayData)
+		if !integrityOk {
+			log.WithField("file", replayData).Error("Integrity check failed in file.")
+			if performIntegrityCheckBool {
+				return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
+			}
 		}
+	}
+
+	// Performing validity checks:
+	// TODO: Add validity check flag to the CLI
+	if performValidityCheckBool {
+		if gameModeCheckFlag&Ranked1v1 != 0 && gameIs1v1Ranked(replayData) {
+			// Perform Validity check
+			if !validateReplay(replayData) {
+				return false, "", data.ReplaySummary{}, "validateReplay() failed"
+			}
+		}
+	}
+
+	// Filtering
+	if !checkGameMode(replayData, gameModeCheckFlag) {
+		return false, "", data.ReplaySummary{}, "checkGameMode() failed"
 	}
 
 	// Clean replay structure:
@@ -209,4 +232,13 @@ func FileProcessingPipeline(replayFile string,
 	log.Info("Finished FileProcessingPipeline()")
 
 	return true, finalReplayString, summarizedReplay, ""
+}
+
+// gameis1v1Ranked
+func gameIs1v1Ranked(replayData *rep.Rep) bool {
+
+	isAmm := replayData.InitData.GameDescription.GameOptions.Amm()
+	isCompetitive := replayData.InitData.GameDescription.GameOptions.CompetitiveOrRanked()
+	isTwoPlayers := len(replayData.Metadata.Players()) == 2
+	return isAmm && isCompetitive && isTwoPlayers
 }

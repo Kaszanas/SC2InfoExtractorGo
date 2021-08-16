@@ -57,7 +57,7 @@ type VerifyGameInfo struct {
 
 // Integrity
 // checkIntegrity verifies if the internal saved state of the replayData matches against structures with redundant information.
-func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeInt int) bool {
+func checkIntegrity(replayData *rep.Rep) bool {
 
 	log.Info("Entered checkIntegrity()")
 	maxPlayers := replayData.InitData.GameDescription.MaxPlayers()
@@ -111,7 +111,8 @@ func checkIntegrity(replayData *rep.Rep, checkIntegrityBool bool, checkGameModeI
 }
 
 // Validity
-func validateData(replayData *rep.Rep) bool {
+// validateReplay performs programmatically hardcoded checks in order to verify if the file is within "common sense" values.
+func validateReplay(replayData *rep.Rep) bool {
 
 	log.Info("Entered validateData()")
 	playerList := replayData.Metadata.Players()

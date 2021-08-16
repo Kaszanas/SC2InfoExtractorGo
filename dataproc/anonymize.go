@@ -48,9 +48,9 @@ func grpcConnectAnonymize(toonString string) string {
 	c := pb.NewAnonymizeServiceClient(conn)
 
 	// Contact the server and print out its response:
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
-	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{})
+	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{Nickname: toonString})
 	if err != nil {
 		log.WithField("error", err).Fatalf("Could not receive anonymized information from grpc service!")
 	}
