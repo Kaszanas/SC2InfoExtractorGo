@@ -152,7 +152,6 @@ func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
 	result := false
 
 	for _, value := range gameModeList {
-
 		if getGameModeFlag&value != 0 {
 			result = result || checkGameParameters(replayData, gameModeFiltersMapping[value])
 		}

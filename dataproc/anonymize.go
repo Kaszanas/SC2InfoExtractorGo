@@ -64,7 +64,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entererd anonymizePlayers().")
 
-	var newToonDescMap = make(map[string]*rep.PlayerDesc)
+	var newToonDescMap = make(map[string]data.EnhancedToonDescMap)
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
