@@ -70,7 +70,7 @@ func checkUint8Float(floatToCheck float64) (uint8, bool) {
 	}
 }
 
-// Helper function checking if a slice contains a string.
+// contains is a helper function checking if a slice contains a string.
 func contains(s []string, str string) bool {
 	log.Info("Entered contains()")
 

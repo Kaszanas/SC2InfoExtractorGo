@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// stringifyReplay performs marshaling of all of CleanedReplay information into a string.
 func stringifyReplay(replayData *data.CleanedReplay) (bool, string) {
 
 	log.Info("Entered stringifyReplay()")

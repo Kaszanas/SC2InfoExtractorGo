@@ -12,6 +12,7 @@ import (
 )
 
 // TODO: Commented out pieces of code need to be verified for redundant information.
+// redefineReplayStructure moves arbitrary data into different data structures.
 func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
@@ -335,6 +336,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 // Using mapping from a separate tool for map name extraction
 // Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
+// verifyLocalizedMapName attempts to read a English map name and return it.
 func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}) (string, bool) {
 	log.Info("Entered verifyLocalizedMapName()")
 

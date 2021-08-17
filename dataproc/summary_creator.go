@@ -9,6 +9,7 @@ import (
 )
 
 // TODO: Add Error handling, as currently there is absolutely no information about if the operations are correct or not.
+// generateReplaySummary accesses the data that is within cleaned replay and extracts information for visualization purposes.
 func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.ReplaySummary) {
 
 	log.Info("Entered generateReplaySummary()")
@@ -66,12 +67,11 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 		log.Error("Failed to increment matchup information!")
 	}
 
-	// How many unique accounts were found:
-
 	log.Info("Finished generateReplaySummary()")
 
 }
 
+// checkMatchup verifies the matchup string, increments the value of a counter of the matching matchup and returns a boolean that specifies if a matchup was matched.
 func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool {
 	log.Info("Entered checkMatchup()")
 
@@ -116,6 +116,7 @@ func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool 
 	return false
 }
 
+// keyExistsIncrementValue verifies if a key exists in a map and increments the value of a counter that is within a specific key.
 func keyExistsIncrementValue(key string, mapToCheck map[string]int64) {
 	log.Info("Entered keyExistsIncrementValue()")
 

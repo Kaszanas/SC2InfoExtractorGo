@@ -66,6 +66,7 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	log.Info("Checking if the map included is marked as isBlizzardMap!")
 	if gameDescIsBlizzardMap == detailsIsBlizzardMap {
 		log.Error("Integrity failed! isBlizzardMap information is inconsistent within a processed file!")
+		return false
 	}
 
 	log.Info("Integrity checks passed! Returning from checkIntegrity()")

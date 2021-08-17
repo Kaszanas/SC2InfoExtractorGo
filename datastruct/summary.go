@@ -42,26 +42,7 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	collapseMapToMap(&replaySummary.Summary.MatchupHistograms, &packageSummary.Summary.MatchupHistograms)
 	log.Info("Finished collapsing matchup information")
 
-	// packageSummary.Summary.MatchupHistograms["PvP"] = packageSummary.Summary.MatchupHistograms["PvP"] + replaySummary.Summary.MatchupHistograms.PvPMatchup
-	// log.Info("Finished collapsing PvPMatchup")
-
-	// packageSummary.Summary.MatchupHistograms["TvT"] = packageSummary.Summary.MatchupHistograms.["TvT"] + replaySummary.Summary.MatchupHistograms.TvTMatchup
-	// log.Info("Finished collapsing TvTMatchup")
-
-	// packageSummary.Summary.MatchupHistograms["ZvZ"] = packageSummary.Summary.MatchupHistograms["ZvZ"] + replaySummary.Summary.MatchupHistograms.ZvZMatchup
-	// log.Info("Finished collapsing ZvZMatchup")
-
-	// packageSummary.Summary.MatchupHistograms["PvZ"] = packageSummary.Summary.MatchupHistograms.PvZMatchup + replaySummary.Summary.MatchupHistograms.PvZMatchup
-	// log.Info("Finished collapsing PvZMatchup")
-
-	// packageSummary.Summary.MatchupHistograms["PvT"] = packageSummary.Summary.MatchupHistograms.PvTMatchup + replaySummary.Summary.MatchupHistograms.PvTMatchup
-	// log.Info("Finished collapsing PvTMatchup")
-
-	// packageSummary.Summary.MatchupHistograms.TvTMatchup = packageSummary.Summary.MatchupHistograms.TvTMatchup + replaySummary.Summary.MatchupHistograms.TvZMatchup
-	// log.Info("Finished collapsing PvTMatchup")
-
 	log.Info("Finished AddReplaySummToPackageSumm()")
-
 }
 
 // collapseMapToMap adds the keys and values of one map to another.
@@ -137,17 +118,3 @@ type MatchupHistograms struct {
 	PvTMatchup int64 `json:"PvTMatchup"`
 	TvZMatchup int64 `json:"TvZMatchup"`
 }
-
-// DefaultMatchupHistograms ...
-// func DefaultMatchupHistograms() MatchupHistograms {
-
-// 	return MatchupHistograms{
-// 		PvPMatchup: make(int64),
-// 		TvTMatchup: make(map[int64]int64),
-// 		ZvZMatchup: make(map[int64]int64),
-// 		PvZMatchup: make(map[int64]int64),
-// 		PvTMatchup: make(map[int64]int64),
-// 		TvZMatchup: make(map[int64]int64),
-// 	}
-
-// }
