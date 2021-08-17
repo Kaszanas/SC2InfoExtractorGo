@@ -116,7 +116,6 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 	var detailsPlayerList []data.CleanedPlayerListStruct
 	for _, initPlayer := range cleanedUserInitDataList {
-
 		for _, player := range details.Players() {
 
 			// TODO: VERY IMPORTANT!!!!!!!!!!!!!!!!!
@@ -271,6 +270,29 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	dirtyGameEvents := replayData.GameEvts
 	dirtyTrackerEvents := replayData.TrackerEvts.Evts
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
+
+	// TODO: Add some information to dirtyToonPlayerDescMap
+	cleanToonDescMap := make(map[string]data.EnhancedToonDescMap)
+	for key, playerDescription := range dirtyToonPlayerDescMap {
+		for _, player := range metadata.Players() {
+			if player.PlayerID() == playerDescription.PlayerID {
+				cleanToonDescMap[key] = data.EnhancedToonDescMap{
+					PlayerID:            playerDescription.PlayerID,
+					UserID:              playerDescription.UserID,
+					SQ:                  playerDescription.SQ,
+					SupplyCappedPercent: playerDescription.SupplyCappedPercent,
+					StartDir:            playerDescription.StartDir,
+					StartLocX:           playerDescription.StartLocX,
+					StartLocY:           playerDescription.StartLocY,
+					Race:                player.AssignedRace(),
+					APM:                 player.APM(),
+					MMR:                 player.MMR(),
+					Result:              player.Result(),
+				}
+			}
+		}
+	}
+
 	justGameEvtsErr := replayData.GameEvtsErr
 
 	var messageEventsStructs []s2prot.Struct
@@ -299,7 +321,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		MessageEvents:     messageEventsStructs,
 		GameEvents:        gameEventsStructs,
 		TrackerEvents:     trackerEventsStructs,
-		ToonPlayerDescMap: dirtyToonPlayerDescMap,
+		ToonPlayerDescMap: cleanToonDescMap,
 		GameEvtsErr:       justGameEvtsErr,
 		MessageEvtsErr:    justMessageEvtsErr,
 		TrackerEvtsErr:    justTrackerEvtsErr,

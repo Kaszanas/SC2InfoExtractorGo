@@ -34,10 +34,13 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 
 // grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
 func grpcConnectAnonymize(toonString string) string {
+
+	log.Info("Entered grpcConnectAnonymize()")
+
 	// Set up a connection to the server:
 	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.WithField("error", err).Fatal("Failed to connect to grpc anonymization service")
 	}
 	defer conn.Close()
 
@@ -45,13 +48,15 @@ func grpcConnectAnonymize(toonString string) string {
 	c := pb.NewAnonymizeServiceClient(conn)
 
 	// Contact the server and print out its response:
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
-	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{})
+	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{Nickname: toonString})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.WithField("error", err).Fatalf("Could not receive anonymized information from grpc service!")
 	}
 	log.WithField("gRPC_response", result.AnonymizedID).Debug("Received anonymized ID for a player.")
+
+	log.Info("Finished grpcConnectAnonymize()")
 	return result.AnonymizedID
 }
 
@@ -59,7 +64,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entererd anonymizePlayers().")
 
-	var newToonDescMap = make(map[string]*rep.PlayerDesc)
+	var newToonDescMap = make(map[string]data.EnhancedToonDescMap)
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
@@ -87,6 +92,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	return true
 }
 
+// anonymizeMessageEvents checks against settings.UnusedMessageEvents and creates a new clean version without specified events.
 func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entered anonimizeMessageEvents().")
@@ -104,6 +110,8 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 	return true
 }
 
+// TODO: This could be deleted?
+// anonymizeToonDescMap is a deprecated version that was used for a single threaded approach in ToonDescMap anonymization.
 func anonymizeToonDescMap(playerDesc *rep.PlayerDesc, toonDescMap *map[string]*rep.PlayerDesc, anonymizedID string) {
 
 	log.Info("Entered anonymizeToonDescMap().")

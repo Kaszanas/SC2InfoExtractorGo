@@ -1,4 +1,4 @@
-package dataproc
+package utils
 
 import (
 	"archive/zip"
@@ -9,18 +9,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func initBufferWriter() (*bytes.Buffer, *zip.Writer) {
+func InitBufferWriter() (*bytes.Buffer, *zip.Writer) {
 
 	log.Info("Entered initBufferWriter()")
+
 	// Create a buffer to write our archive to:
 	buf := new(bytes.Buffer)
 	// Create a new zip archive:
 	w := zip.NewWriter(buf)
 
+	log.Info("Finished initBufferWriter()")
+
 	return buf, w
 }
 
-func saveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) bool {
+func SaveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) bool {
 
 	log.Info("Entered saveFileToArchive()")
 
@@ -56,6 +59,8 @@ func saveFileToArchive(replayString string, replayFile string, compressionMethod
 			"compressionError": true}).Error("Got error when adding a file header to the archive.")
 		return false
 	}
+
+	log.Info("Finished SaveFileToArchive()")
 
 	return true
 }
