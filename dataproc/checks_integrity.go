@@ -51,20 +51,21 @@ func checkIntegrity(replayData *rep.Rep) bool {
 		return false
 	}
 
-	gameOptions := replayData.InitData.GameDescription.GameOptions
-	gameOptionsAmm := gameOptions.Amm()
-	gameOptionsBattleNet := gameOptions.BattleNet()
-	if gameOptionsAmm != gameOptionsBattleNet {
-		log.WithFields(log.Fields{"gameOptionsAmm": gameOptionsAmm, "gameOptionsBattleNet": gameOptionsBattleNet}).Error("Integrity check failed! Amm and Battle.net mismatch")
-		return false
-	}
+	// TODO: This is a bad integrity check! Verify please!!!!
+	// gameOptions := replayData.InitData.GameDescription.GameOptions
+	// gameOptionsAmm := gameOptions.Amm()
+	// gameOptionsBattleNet := gameOptions.BattleNet()
+	// if gameOptionsAmm != gameOptionsBattleNet {
+	// 	log.WithFields(log.Fields{"gameOptionsAmm": gameOptionsAmm, "gameOptionsBattleNet": gameOptionsBattleNet}).Error("Integrity check failed! Amm and Battle.net mismatch")
+	// 	return false
+	// }
 
 	gameDescIsBlizzardMap := replayData.InitData.GameDescription.IsBlizzardMap()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
 
 	// Checking if isBlizzardMap is the same in both of the available places:
 	log.Info("Checking if the map included is marked as isBlizzardMap!")
-	if gameDescIsBlizzardMap == detailsIsBlizzardMap {
+	if gameDescIsBlizzardMap != detailsIsBlizzardMap {
 		log.Error("Integrity failed! isBlizzardMap information is inconsistent within a processed file!")
 		return false
 	}

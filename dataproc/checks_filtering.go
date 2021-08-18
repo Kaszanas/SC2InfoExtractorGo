@@ -27,7 +27,7 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 	log.Info("Entered checkGameParameters()")
 
 	if !checkNumberOfPlayers(replayData, gameInfoFilter.maxPlayers) {
-		log.Error("Game parameters mismatch! returning from checkGameParameters()")
+		log.Info("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
@@ -36,19 +36,25 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 	gameOptionsAmm := gameOptions.Amm()
 
 	if gameOptionsAmm != gameInfoFilter.isAutoMatchMaking {
-		log.WithFields(log.Fields{"gameOptionsAmm": gameOptionsAmm, "isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).Error("Game parameters mismatch! returning from checkGameParameters()")
+		log.WithFields(log.Fields{
+			"gameOptionsAmm":    gameOptionsAmm,
+			"isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).Info("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
 	competitiveOrRanked := gameOptions.CompetitiveOrRanked()
 	if competitiveOrRanked != gameInfoFilter.isCompetitiveOrRanked {
-		log.WithFields(log.Fields{"competitiveOrRanked": competitiveOrRanked, "isCompetitiveOrRanked": gameInfoFilter.isCompetitiveOrRanked}).Error("Game parameters mismatch! returning from checkGameParameters()")
+		log.WithFields(log.Fields{
+			"competitiveOrRanked":   competitiveOrRanked,
+			"isCompetitiveOrRanked": gameInfoFilter.isCompetitiveOrRanked}).Info("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
 	maxPlayers := gameDescription.MaxPlayers()
 	if maxPlayers != int64(gameInfoFilter.maxPlayers) {
-		log.WithFields(log.Fields{"maxPlayers": maxPlayers, "gameInfoFilter.maxPlayers": gameInfoFilter.maxPlayers}).Error("Game parameters mismatch! returning from checkGameParameters()")
+		log.WithFields(log.Fields{
+			"maxPlayers":                maxPlayers,
+			"gameInfoFilter.maxPlayers": gameInfoFilter.maxPlayers}).Info("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
@@ -66,7 +72,9 @@ func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 	numberOfPlayers := len(playerList)
 
 	if numberOfPlayers != requiredNumber {
-		log.WithFields(log.Fields{"len(playerList)": numberOfPlayers, "requiredNumber": requiredNumber}).Error("Integrity check failed number of players is not right!")
+		log.WithFields(log.Fields{
+			"len(playerList)": numberOfPlayers,
+			"requiredNumber":  requiredNumber}).Info("Different number of players than required number")
 		return false
 	}
 

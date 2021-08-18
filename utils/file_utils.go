@@ -15,7 +15,7 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 
 	log.Info("Entered readOrCreateFile()")
 
-	createdOrReadFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	createdOrReadFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0666)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":      err,
