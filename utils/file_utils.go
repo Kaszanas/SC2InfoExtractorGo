@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	data "github.com/Kaszanas/GoSC2Science/datastruct"
 	log "github.com/sirupsen/logrus"
@@ -16,12 +17,18 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 
 	createdOrReadFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		log.Fatal("Failed to create or open the processing.log: ", err)
+		log.WithFields(log.Fields{
+			"err":      err,
+			"filePath": filePath,
+		}).Fatal("Failed to create or open the file!")
 		os.Exit(1)
 	}
 	byteValue, err := ioutil.ReadAll(createdOrReadFile)
 	if err != nil {
-		log.Fatal("Failed to read bytes from processing.log: ", err)
+		log.WithFields(log.Fields{
+			"err":      err,
+			"filePath": filePath,
+		}).Fatal("Failed to read bytes from file!")
 		os.Exit(1)
 	}
 
@@ -49,11 +56,12 @@ func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
 }
 
 // CreatePackageSummaryFile receives packageSummaryStruct and fileNumber and saves the package summary file onto the drive.
-func CreatePackageSummaryFile(packageSummaryStruct data.PackageSummary, fileNumber int) {
+func CreatePackageSummaryFile(absolutePathOutputDirectory string, packageSummaryStruct data.PackageSummary, fileNumber int) {
 	log.Info("Entered CreatePackageSummaryFile()")
 
-	packageSummaryFilename := fmt.Sprintf("./DEMOS/Output/package_summary_%v.json", fileNumber)
-	packageSummaryFile, _ := readOrCreateFile(packageSummaryFilename)
+	packageSummaryFilename := fmt.Sprintf("package_summary_%v.json", fileNumber)
+	packageAbsolutePath := filepath.Join(absolutePathOutputDirectory, packageSummaryFilename)
+	packageSummaryFile, _ := readOrCreateFile(packageAbsolutePath)
 
 	packageSummaryBytes, err := json.Marshal(packageSummaryStruct)
 	if err != nil {

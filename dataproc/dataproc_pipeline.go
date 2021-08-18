@@ -130,7 +130,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	log.Info("Saved processing.log")
 
 	// Writing PackageSummaryFile to drive:
-	utils.CreatePackageSummaryFile(packageSummary, chunkIndex)
+	utils.CreatePackageSummaryFile(absolutePathOutputDirectory, packageSummary, chunkIndex)
 
 	// Writing the zip archive to drive:
 	writer.Close()
