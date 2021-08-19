@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"os"
 	"runtime/pprof"
 
@@ -34,7 +35,7 @@ func main() {
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	// interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed bzip2 packages will be stored.")
-	numberOfFilesInPackageFlag := flag.Int("number_of_packaged_files", 100, "Provide a number of files to be packaged to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
+	numberOfPackagesFlag := flag.Int("number_of_packaged_files", 100, "Provide a number of files to be packaged to be compressed into a zip archive. Please remember that this number need to be lower than the number of processed files.")
 
 	performIntegrityCheckFlag := flag.Bool("integrity_check", true, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 	performValidityCheckFlag := flag.Bool("validity_check", true, "Provide if the tool is supposed to use hardcoded validity checks and verify if the replay file variables are within 'common sense' ranges.")
@@ -95,12 +96,12 @@ func main() {
 	performCleanupBool := *performCleanupFlag
 	processWithMultiprocessingBool := *processWithMultiprocessingFlag
 
-	numberOfFilesInPackage := *numberOfFilesInPackageFlag
+	numberOfPackages := *numberOfPackagesFlag
 
 	log.WithFields(log.Fields{
 		"inputDirectory":                 absolutePathInputDirectory,
 		"outputDirectory":                absolutePathOutputDirectory,
-		"numberOfFilesInPackage":         numberOfFilesInPackage,
+		"numberOfPackages":               numberOfPackages,
 		"compressionMethod":              compressionMethod,
 		"filterGameModeFlag":             filterGameModeFlag,
 		"localizeMapsBool":               localizeMapsBool,
@@ -111,6 +112,7 @@ func main() {
 
 	// Getting list of absolute paths for files from input directory:
 	listOfInputFiles := utils.ListFiles(absolutePathInputDirectory, ".SC2Replay")
+	numberOfFilesInPackage := int(math.Ceil(float64(len(listOfInputFiles)) / float64(numberOfPackages)))
 	listOfChunksFiles := chunkSlice(listOfInputFiles, numberOfFilesInPackage)
 
 	// Register a custom compressor:

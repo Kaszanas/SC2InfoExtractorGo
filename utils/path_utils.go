@@ -7,7 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ListFiles(inputPath string, fileExtension string) []string {
+// ListFiles creates a slice of filepaths from a give input directory based filtering supplied fileExtension
+func ListFiles(inputPath string, filterFileExtension string) []string {
 
 	log.Info("Entered ListFiles()")
 
@@ -20,15 +21,12 @@ func ListFiles(inputPath string, fileExtension string) []string {
 	for _, file := range files {
 		filename := file.Name()
 		fileExtension := filepath.Ext(filename)
-		if fileExtension != fileExtension {
-		} else {
+		if fileExtension == filterFileExtension {
 			absoluteReplayPath := filepath.Join(inputPath, filename)
 			listOfReplayFiles = append(listOfReplayFiles, absoluteReplayPath)
 		}
 	}
 
 	log.Info("Finished ListFiles()")
-
 	return listOfReplayFiles
-
 }

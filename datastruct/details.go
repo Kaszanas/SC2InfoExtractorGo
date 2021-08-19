@@ -15,7 +15,7 @@ type CleanedDetails struct {
 // CleanedPlayerListStruct is a nested structure that lies within CleanedDetails derived from s2prot.Rep.Details.PlayerList
 type CleanedPlayerListStruct struct {
 	Name               string          `json:"name"`
-	Race               string          `json:"race"`
+	Race               rune            `json:"race"`
 	Result             string          `json:"result"`
 	IsInClan           bool            `json:"isInClan"`
 	HighestLeague      string          `json:"highestLeague"`

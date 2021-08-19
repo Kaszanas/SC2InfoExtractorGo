@@ -62,7 +62,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	// TODO: Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
 
 	// Creating matchup histograms:
-	matchupString := replayData.Details.PlayerList[0].Race + replayData.Details.PlayerList[1].Race
+	matchupString := replayData.Metadata.Players[0].AssignedRace + replayData.Metadata.Players[1].AssignedRace
 	if !checkMatchup(matchupString, summaryStruct) {
 		log.Error("Failed to increment matchup information!")
 	}
@@ -75,13 +75,13 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool {
 	log.Info("Entered checkMatchup()")
 
-	if matchupString == "TerranTerran" {
+	if matchupString == "TerrTerr" {
 		log.Info("Found matchup to be TvT")
 		keyExistsIncrementValue("TvT", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if matchupString == "ProtossProtoss" {
+	if matchupString == "ProtProt" {
 		log.Debug("Found matchup to be PvP")
 		keyExistsIncrementValue("PvP", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
@@ -93,19 +93,19 @@ func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool 
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if strings.Contains(matchupString, "Protoss") && strings.Contains(matchupString, "Terran") {
+	if strings.Contains(matchupString, "Prot") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be PvT")
 		keyExistsIncrementValue("PvT", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Terran") {
+	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be ZvT")
 		keyExistsIncrementValue("ZvT", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")
 		return true
 	}
-	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Protoss") {
+	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Prot") {
 		log.Debug("Found matchup to be ZvP")
 		keyExistsIncrementValue("ZvP", summaryStruct.Summary.MatchupHistograms)
 		log.Info("Finished checkMatchup()")

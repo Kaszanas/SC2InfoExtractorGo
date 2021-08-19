@@ -136,7 +136,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 				handicap := uint8(player.Handicap())
 				name := player.Name
-				race := player.RaceString()
+				race := player.Race().Letter
 
 				result := player.Result().String()
 
