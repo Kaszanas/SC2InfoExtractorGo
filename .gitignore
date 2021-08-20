@@ -20,3 +20,5 @@ post_processing.py
 
 cpu_profiler.prof
 profile001.callgraph.out
+
+command

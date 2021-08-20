@@ -1,7 +1,6 @@
 package dataproc
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -147,40 +146,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 					return data.CleanedReplay{}, false
 				}
 
-				// TODO: Check if this cannot be done easier?
-				// Accessing toon data by Golang magic:
-				toon := player.Struct["toon"]
-				intermediateJSON, err := json.Marshal(&toon)
-				if err != nil {
-					log.WithField("error", err).Error("Encountered error while json marshaling")
-					return data.CleanedReplay{}, false
-				}
-				var unmarshalledData interface{}
-				err = json.Unmarshal(intermediateJSON, &unmarshalledData)
-
-				if err != nil {
-					log.WithField("error", err).Error("Encountered error while json unmarshaling")
-					return data.CleanedReplay{}, false
-				}
-				toonMap := unmarshalledData.(map[string]interface{})
-
-				regionChecked, regionOk := checkUint8Float(toonMap["region"].(float64))
-				if !regionOk {
-					log.Error("Found that value of region exceeds uint8")
-					return data.CleanedReplay{}, false
-				}
-
-				realmChecked, realmOk := checkUint8Float(toonMap["realm"].(float64))
-				if !realmOk {
-					log.Error("Found that value of realm exceeds uint8")
-					return data.CleanedReplay{}, false
-				}
-
 				// Checking the region and realm strings for the players:
-				region := rep.Regions[int(regionChecked)]
-				regionString := region.String()
-				realm := region.Realm(int64(realmChecked))
-				realmString := realm.String()
+				regionNameString := player.Toon.Region().Name
+				realmString := player.Toon.Realm().Name
 
 				cleanedPlayerStruct := data.CleanedPlayerListStruct{
 					Name:               name,
@@ -190,7 +158,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 					HighestLeague:      initPlayer.HighestLeague,
 					Handicap:           handicap,
 					TeamID:             teamIDChecked,
-					Region:             regionString,
+					Region:             regionNameString,
 					Realm:              realmString,
 					CombinedRaceLevels: initPlayer.CombinedRaceLevels,
 					Color:              playerColor,
