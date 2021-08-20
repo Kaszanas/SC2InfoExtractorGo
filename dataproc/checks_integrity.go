@@ -60,16 +60,6 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	// 	return false
 	// }
 
-	for _, player := range replayData.Details.Players() {
-		toonMap, toonMapOk := accessToonMap(player)
-		if !toonMapOk {
-			log.Error("Error while parsing, failed accessToonMap()")
-			return false
-		}
-		if toonMap
-
-	}
-
 	gameDescIsBlizzardMap := replayData.InitData.GameDescription.IsBlizzardMap()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
 
