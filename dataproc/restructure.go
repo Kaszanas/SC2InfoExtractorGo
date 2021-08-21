@@ -241,25 +241,42 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 
 	// TODO: Add some information to dirtyToonPlayerDescMap
+	// TODO: VERIFY IF THIS WILL BE CORRECT AND DELETE OLD CODE THAT MIGHT BE UNNECESSARY!
 	cleanToonDescMap := make(map[string]data.EnhancedToonDescMap)
-	for key, playerDescription := range dirtyToonPlayerDescMap {
+	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
+
+		var initializedEnhancedToonDescMap data.EnhancedToonDescMap
 		for _, player := range metadata.Players() {
 			if player.PlayerID() == playerDescription.PlayerID {
-				cleanToonDescMap[key] = data.EnhancedToonDescMap{
-					PlayerID:            playerDescription.PlayerID,
-					UserID:              playerDescription.UserID,
-					SQ:                  playerDescription.SQ,
-					SupplyCappedPercent: playerDescription.SupplyCappedPercent,
-					StartDir:            playerDescription.StartDir,
-					StartLocX:           playerDescription.StartLocX,
-					StartLocY:           playerDescription.StartLocY,
-					Race:                player.AssignedRace(),
-					APM:                 player.APM(),
-					MMR:                 player.MMR(),
-					Result:              player.Result(),
-				}
+
+				// Filling out struct fields:
+				initializedEnhancedToonDescMap.PlayerID = playerDescription.PlayerID
+				initializedEnhancedToonDescMap.UserID = playerDescription.UserID
+				initializedEnhancedToonDescMap.SQ = playerDescription.SQ
+				initializedEnhancedToonDescMap.SupplyCappedPercent = playerDescription.SupplyCappedPercent
+				initializedEnhancedToonDescMap.StartDir = playerDescription.StartDir
+				initializedEnhancedToonDescMap.StartLocX = playerDescription.StartLocX
+				initializedEnhancedToonDescMap.StartLocY = playerDescription.StartLocY
+				initializedEnhancedToonDescMap.Race = player.AssignedRace()
+				initializedEnhancedToonDescMap.APM = player.APM()
+				initializedEnhancedToonDescMap.MMR = player.MMR()
+				initializedEnhancedToonDescMap.Result = player.Result()
 			}
 		}
+		for _, player := range details.Players() {
+			if player.Toon.String() == toonKey {
+				initializedEnhancedToonDescMap.Region = player.Toon.Region().Name
+				initializedEnhancedToonDescMap.Realm = player.Toon.Realm().Name
+				initializedEnhancedToonDescMap.Color.A = player.Color[0]
+				initializedEnhancedToonDescMap.Color.B = player.Color[1]
+				initializedEnhancedToonDescMap.Color.G = player.Color[2]
+				initializedEnhancedToonDescMap.Color.R = player.Color[3]
+				// initializedEnhancedToonDescMap.HighestLeague
+				// initializedEnhancedToonDescMap.IsInClan
+				initializedEnhancedToonDescMap.Handicap = player.Handicap()
+			}
+		}
+		cleanToonDescMap[toonKey] = initializedEnhancedToonDescMap
 	}
 
 	justGameEvtsErr := replayData.GameEvtsErr

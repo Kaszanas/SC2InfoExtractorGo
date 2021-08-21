@@ -21,15 +21,21 @@ type CleanedReplay struct {
 
 // EnhancedToonDescMap is a structure that provides more information that standard map[string]*rep.PlayerDesc
 type EnhancedToonDescMap struct {
-	PlayerID            int64   `json:"playerID"`
-	UserID              int64   `json:"userID"`
-	SQ                  int32   `json:"SQ"`
-	SupplyCappedPercent int32   `json:"supplyCappedPercent"`
-	StartDir            int32   `json:"startDir"`
-	StartLocX           int64   `json:"startLocX"`
-	StartLocY           int64   `json:"startLocY"`
-	Race                string  `json:"race"`
-	APM                 float64 `json:"APM"`
-	MMR                 float64 `json:"MMR"`
-	Result              string  `json:"result"`
+	PlayerID            int64           `json:"playerID"`
+	UserID              int64           `json:"userID"`
+	SQ                  int32           `json:"SQ"`
+	SupplyCappedPercent int32           `json:"supplyCappedPercent"`
+	StartDir            int32           `json:"startDir"`
+	StartLocX           int64           `json:"startLocX"`
+	StartLocY           int64           `json:"startLocY"`
+	Race                string          `json:"race"`
+	APM                 float64         `json:"APM"`
+	MMR                 float64         `json:"MMR"`
+	Result              string          `json:"result"`
+	Region              string          `json:"region"`
+	Realm               string          `json:"realm"`
+	HighestLeague       string          `json:"highestLeague"`
+	IsInClan            bool            `json:"isInClan"`
+	Handicap            int64           `json:"handicap"`
+	Color               PlayerListColor `json:"color"`
 }
