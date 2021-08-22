@@ -28,7 +28,8 @@ type EnhancedToonDescMap struct {
 	StartDir            int32           `json:"startDir"`
 	StartLocX           int64           `json:"startLocX"`
 	StartLocY           int64           `json:"startLocY"`
-	Race                string          `json:"race"`
+	AssignedRace        string          `json:"race"`
+	SelectedRace        string          `json:"selectedRace"`
 	APM                 float64         `json:"APM"`
 	MMR                 float64         `json:"MMR"`
 	Result              string          `json:"result"`

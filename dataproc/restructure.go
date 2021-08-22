@@ -114,62 +114,6 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	detailsGameSpeed := details.GameSpeed().String()
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
-	var detailsPlayerList []data.CleanedPlayerListStruct
-	for _, initPlayer := range cleanedUserInitDataList {
-		for _, player := range details.Players() {
-
-			// TODO: VERY IMPORTANT!!!!!!!!!!!!!!!!!
-			// TODO: It is not sure that there cannot be names that are similar enough so that they will pass this test:
-			if strings.Contains(player.Name, initPlayer.Name) {
-
-				colorA := uint8(player.Color[0])
-				colorB := uint8(player.Color[1])
-				colorG := uint8(player.Color[2])
-				colorR := uint8(player.Color[3])
-				playerColor := data.PlayerListColor{
-					A: colorA,
-					B: colorB,
-					G: colorG,
-					R: colorR,
-				}
-
-				handicap := uint8(player.Handicap())
-				name := player.Name
-				race := player.Race().Letter
-
-				result := player.Result().String()
-
-				teamID := player.TeamID()
-				teamIDChecked, okTeamID := checkUint8(teamID)
-				if !okTeamID {
-					log.WithField("teamID", teamID).Error("Found that value of result exceeds uint8")
-					return data.CleanedReplay{}, false
-				}
-
-				// Checking the region and realm strings for the players:
-				regionNameString := player.Toon.Region().Name
-				realmString := player.Toon.Realm().Name
-
-				cleanedPlayerStruct := data.CleanedPlayerListStruct{
-					Name:               name,
-					Race:               race,
-					Result:             result,
-					IsInClan:           initPlayer.IsInClan,
-					HighestLeague:      initPlayer.HighestLeague,
-					Handicap:           handicap,
-					TeamID:             teamIDChecked,
-					Region:             regionNameString,
-					Realm:              realmString,
-					CombinedRaceLevels: initPlayer.CombinedRaceLevels,
-					Color:              playerColor,
-				}
-
-				detailsPlayerList = append(detailsPlayerList, cleanedPlayerStruct)
-
-			}
-		}
-	}
-
 	// timeLocalOffset := details.TimeLocalOffset()
 	timeUTC := details.TimeUTC()
 	// mapNameString := details.Title()
@@ -177,7 +121,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	cleanDetails := data.CleanedDetails{
 		GameSpeed:     detailsGameSpeed,
 		IsBlizzardMap: detailsIsBlizzardMap,
-		PlayerList:    detailsPlayerList,
+		// PlayerList:    detailsPlayerList,
 		// TimeLocalOffset: timeLocalOffset,
 		TimeUTC: timeUTC,
 		// MapName: mapNameString,
@@ -191,28 +135,6 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	metadataDuration := metadata.DurationSec()
 	// metadataDuration := time.Duration(metadata.Struct["Duration"].(float64))
 	metadataGameVersion := metadata.GameVersion()
-
-	var metadataCleanedPlayersList []data.CleanedPlayer
-	for _, player := range metadata.Players() {
-
-		playerID := uint8(player.PlayerID())
-		apm := uint16(player.APM())
-		mmr := uint16(player.MMR())
-		result := player.Result()
-		assignedRace := player.AssignedRace()
-		selectedRace := player.SelectedRace()
-
-		cleanedPlayerStruct := data.CleanedPlayer{
-			PlayerID:     playerID,
-			APM:          apm,
-			MMR:          mmr,
-			Result:       result,
-			AssignedRace: assignedRace,
-			SelectedRace: selectedRace,
-		}
-		metadataCleanedPlayersList = append(metadataCleanedPlayersList, cleanedPlayerStruct)
-	}
-
 	metadataMapName := metadata.Title()
 
 	// Verifying if it is possible to localize the map and localizing if possible:
@@ -230,8 +152,8 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		DataBuild:   metadataDataBuild,
 		Duration:    metadataDuration,
 		GameVersion: metadataGameVersion,
-		Players:     metadataCleanedPlayersList,
-		MapName:     metadataMapName,
+		// Players:     metadataCleanedPlayersList, // Delete this stuff!!!!
+		MapName: metadataMapName,
 	}
 	log.Info("Defined cleanMetadata struct")
 
@@ -242,41 +164,56 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 	// TODO: Add some information to dirtyToonPlayerDescMap
 	// TODO: VERIFY IF THIS WILL BE CORRECT AND DELETE OLD CODE THAT MIGHT BE UNNECESSARY!
-	cleanToonDescMap := make(map[string]data.EnhancedToonDescMap)
+	enhancedToonDescMap := make(map[string]data.EnhancedToonDescMap)
 	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
-
-		var initializedEnhancedToonDescMap data.EnhancedToonDescMap
+		var initializedToonDescMap data.EnhancedToonDescMap
+		enhancedToonDescMap[toonKey] = initializedToonDescMap
 		for _, player := range metadata.Players() {
 			if player.PlayerID() == playerDescription.PlayerID {
-
+				metadataToonDescMap := enhancedToonDescMap[toonKey]
 				// Filling out struct fields:
-				initializedEnhancedToonDescMap.PlayerID = playerDescription.PlayerID
-				initializedEnhancedToonDescMap.UserID = playerDescription.UserID
-				initializedEnhancedToonDescMap.SQ = playerDescription.SQ
-				initializedEnhancedToonDescMap.SupplyCappedPercent = playerDescription.SupplyCappedPercent
-				initializedEnhancedToonDescMap.StartDir = playerDescription.StartDir
-				initializedEnhancedToonDescMap.StartLocX = playerDescription.StartLocX
-				initializedEnhancedToonDescMap.StartLocY = playerDescription.StartLocY
-				initializedEnhancedToonDescMap.Race = player.AssignedRace()
-				initializedEnhancedToonDescMap.APM = player.APM()
-				initializedEnhancedToonDescMap.MMR = player.MMR()
-				initializedEnhancedToonDescMap.Result = player.Result()
+				metadataToonDescMap.PlayerID = playerDescription.PlayerID
+				metadataToonDescMap.UserID = playerDescription.UserID
+				metadataToonDescMap.SQ = playerDescription.SQ
+				metadataToonDescMap.SupplyCappedPercent = playerDescription.SupplyCappedPercent
+				metadataToonDescMap.StartDir = playerDescription.StartDir
+				metadataToonDescMap.StartLocX = playerDescription.StartLocX
+				metadataToonDescMap.StartLocY = playerDescription.StartLocY
+				metadataToonDescMap.AssignedRace = player.AssignedRace()
+				metadataToonDescMap.SelectedRace = player.SelectedRace()
+				metadataToonDescMap.APM = player.APM()
+				metadataToonDescMap.MMR = player.MMR()
+				metadataToonDescMap.Result = player.Result()
+				enhancedToonDescMap[toonKey] = metadataToonDescMap
 			}
 		}
 		for _, player := range details.Players() {
 			if player.Toon.String() == toonKey {
-				initializedEnhancedToonDescMap.Region = player.Toon.Region().Name
-				initializedEnhancedToonDescMap.Realm = player.Toon.Realm().Name
-				initializedEnhancedToonDescMap.Color.A = player.Color[0]
-				initializedEnhancedToonDescMap.Color.B = player.Color[1]
-				initializedEnhancedToonDescMap.Color.G = player.Color[2]
-				initializedEnhancedToonDescMap.Color.R = player.Color[3]
-				// initializedEnhancedToonDescMap.HighestLeague
-				// initializedEnhancedToonDescMap.IsInClan
-				initializedEnhancedToonDescMap.Handicap = player.Handicap()
+
+				detailsEnhancedToonDescMap := enhancedToonDescMap[toonKey]
+
+				// Filling out struct fields:
+				detailsEnhancedToonDescMap.Region = player.Toon.Region().Name
+				detailsEnhancedToonDescMap.Realm = player.Toon.Realm().Name
+				detailsEnhancedToonDescMap.Color.A = player.Color[0]
+				detailsEnhancedToonDescMap.Color.B = player.Color[1]
+				detailsEnhancedToonDescMap.Color.G = player.Color[2]
+				detailsEnhancedToonDescMap.Color.R = player.Color[3]
+				detailsEnhancedToonDescMap.Handicap = player.Handicap()
+				enhancedToonDescMap[toonKey] = detailsEnhancedToonDescMap
+			}
+
+			for _, initPlayer := range cleanedUserInitDataList {
+				if strings.HasSuffix(player.Name, initPlayer.Name) {
+					initEnhancedToonDescMap := enhancedToonDescMap[toonKey]
+					initEnhancedToonDescMap.HighestLeague = initPlayer.HighestLeague
+					initEnhancedToonDescMap.IsInClan = initPlayer.IsInClan
+					enhancedToonDescMap[toonKey] = initEnhancedToonDescMap
+				}
 			}
 		}
-		cleanToonDescMap[toonKey] = initializedEnhancedToonDescMap
+
+		// cleanToonDescMap[toonKey] = enhancedToonDescMap
 	}
 
 	justGameEvtsErr := replayData.GameEvtsErr
@@ -307,7 +244,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		MessageEvents:     messageEventsStructs,
 		GameEvents:        gameEventsStructs,
 		TrackerEvents:     trackerEventsStructs,
-		ToonPlayerDescMap: cleanToonDescMap,
+		ToonPlayerDescMap: enhancedToonDescMap,
 		GameEvtsErr:       justGameEvtsErr,
 		MessageEvtsErr:    justMessageEvtsErr,
 		TrackerEvtsErr:    justTrackerEvtsErr,

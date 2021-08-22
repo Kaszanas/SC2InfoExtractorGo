@@ -20,7 +20,7 @@ type CleanedPlayerListStruct struct {
 	IsInClan           bool            `json:"isInClan"`
 	HighestLeague      string          `json:"highestLeague"`
 	Handicap           uint8           `json:"handicap"`
-	TeamID             uint8           `json:"teamID"`
+	TeamID             int64           `json:"teamID"`
 	Region             string          `json:"region"`
 	Realm              string          `json:"realm"`
 	CombinedRaceLevels uint64          `json:"combinedRaceLevels"`
