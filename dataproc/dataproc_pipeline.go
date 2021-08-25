@@ -174,9 +174,7 @@ func FileProcessingPipeline(replayFile string,
 		integrityOk := checkIntegrity(replayData)
 		if !integrityOk {
 			log.WithField("file", replayFile).Error("Integrity check failed in file.")
-			if performIntegrityCheckBool {
-				return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
-			}
+			return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
 		}
 	}
 

@@ -30,7 +30,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Finished incrementing summaryStruct.Summary.Maps")
 
 	// Races used histogram:
-	for _, player := range replayMetadata.Players {
+	for _, player := range replayData.ToonPlayerDescMap {
 		playerRace := player.AssignedRace
 		keyExistsIncrementValue(playerRace, summaryStruct.Summary.Races)
 	}
@@ -43,7 +43,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Finished incrementing summaryStruct.Summary.Dates")
 
 	// Server information histogram:
-	for _, player := range replayData.Details.PlayerList {
+	for _, player := range replayData.ToonPlayerDescMap {
 		keyExistsIncrementValue(player.Region, summaryStruct.Summary.Servers)
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Servers")
@@ -61,8 +61,11 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 
 	// TODO: Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
 
-	// Creating matchup histograms:
-	matchupString := replayData.Metadata.Players[0].AssignedRace + replayData.Metadata.Players[1].AssignedRace
+	var matchupString string
+	for _, player := range replayData.ToonPlayerDescMap {
+		matchupString += player.AssignedRace
+	}
+
 	if !checkMatchup(matchupString, summaryStruct) {
 		log.Error("Failed to increment matchup information!")
 	}

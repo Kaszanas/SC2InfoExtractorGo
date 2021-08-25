@@ -17,16 +17,16 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	log.Info("Entered redefineReplayStructure()")
 
 	// Constructing a clean replay header without unescessary fields:
-	elapsedGameLoops := replayData.Header.Struct["elapsedGameLoops"].(int64)
-	duration := replayData.Header.Duration()
-	useScaledTime := replayData.Header.UseScaledTime()
+	elapsedGameLoops := replayData.Header.Loops()
+	duration := replayData.Header.Duration().Nanoseconds()
+	// useScaledTime := replayData.Header.UseScaledTime()
 	version := replayData.Header.Struct["version"].(s2prot.Struct)
 
 	cleanHeader := data.CleanedHeader{
 		ElapsedGameLoops: uint64(elapsedGameLoops),
 		Duration:         duration,
-		UseScaledTime:    useScaledTime,
-		Version:          version,
+		// UseScaledTime:    useScaledTime,
+		Version: version,
 	}
 	log.Info("Defined cleanHeader struct")
 
@@ -99,6 +99,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 			HighestLeague:      highestLeague,
 			Name:               name,
 			IsInClan:           isInClan,
+			ClanTag:            clanTag,
 		}
 
 		cleanedUserInitDataList = append(cleanedUserInitDataList, userInitDataStruct)
@@ -139,12 +140,24 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 
 	// Verifying if it is possible to localize the map and localizing if possible:
 	if localizeMapsBool {
-		localizedMap, ok := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
-		if !ok {
-			log.WithField("metadataMapName", metadataMapName).Error("Not possible to localize the map!")
+		detailsMapName := details.Title()
+		localizedDetailsMap, detailsOk := verifyLocalizedMapName(detailsMapName, localizedMapsMap)
+
+		localizedMetadataMap, metadataOk := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
+
+		if metadataOk && detailsOk {
+			metadataMapName = localizedMetadataMap
+		}
+		if metadataOk && !detailsOk {
+			metadataMapName = localizedMetadataMap
+		}
+		if !metadataOk && detailsOk {
+			metadataMapName = localizedDetailsMap
+		}
+		if !metadataOk && !detailsOk {
+			log.WithFields(log.Fields{"metadataMapName": metadataMapName, "detailsMapName": detailsMapName}).Error("Not possible to localize the map!")
 			return data.CleanedReplay{}, false
 		}
-		metadataMapName = localizedMap
 	}
 
 	cleanMetadata := data.CleanedMetadata{
@@ -189,8 +202,26 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		}
 		for _, player := range details.Players() {
 			if player.Toon.String() == toonKey {
-
 				detailsEnhancedToonDescMap := enhancedToonDescMap[toonKey]
+
+				detailsEnhancedToonDescMap.Name = player.Name
+
+				// Checking if previously ran loop populated the Race information
+				if detailsEnhancedToonDescMap.AssignedRace == "" {
+					raceLetter := player.Race().Letter
+					if raceLetter == 'T' {
+						detailsEnhancedToonDescMap.AssignedRace = "Terr"
+					}
+					if raceLetter == 'P' {
+						detailsEnhancedToonDescMap.AssignedRace = "Prot"
+					}
+					if raceLetter == 'Z' {
+						detailsEnhancedToonDescMap.AssignedRace = "Zerg"
+					}
+				}
+				if detailsEnhancedToonDescMap.Result == "" {
+					detailsEnhancedToonDescMap.Result = player.Result().String()
+				}
 
 				// Filling out struct fields:
 				detailsEnhancedToonDescMap.Region = player.Toon.Region().Name
@@ -206,8 +237,15 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 			for _, initPlayer := range cleanedUserInitDataList {
 				if strings.HasSuffix(player.Name, initPlayer.Name) {
 					initEnhancedToonDescMap := enhancedToonDescMap[toonKey]
+
+					if initEnhancedToonDescMap.Name == "" {
+						initEnhancedToonDescMap.Name = initPlayer.Name
+					}
+
 					initEnhancedToonDescMap.HighestLeague = initPlayer.HighestLeague
 					initEnhancedToonDescMap.IsInClan = initPlayer.IsInClan
+					initEnhancedToonDescMap.ClanTag = initPlayer.ClanTag
+
 					enhancedToonDescMap[toonKey] = initEnhancedToonDescMap
 				}
 			}
@@ -264,7 +302,7 @@ func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}
 
 	value, ok := localizedMaps[mapName]
 	if !ok {
-		log.Error("Cannot localize map! English map name was not found!")
+		log.Debug("Cannot localize map! English map name was not found!")
 		return "", false
 	}
 	stringEngMapName := fmt.Sprintf("%v", value)

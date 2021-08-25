@@ -26,5 +26,6 @@ type CleanedUserInitData struct {
 	CombinedRaceLevels uint64 `json:"combinedRaceLevels"`
 	HighestLeague      string `json:"highestLeague"`
 	Name               string `json:"name"`
+	ClanTag            string `json:"clanTag"`
 	IsInClan           bool   `json:"isInClan"`
 }

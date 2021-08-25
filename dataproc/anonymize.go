@@ -68,16 +68,17 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
-	for _, playerData := range replayData.Metadata.Players {
-		// Iterate over Toon description map:
-		for toon, playerDesc := range replayData.ToonPlayerDescMap {
-			// Checking if the SlotID and TeamID matches:
-			if playerDesc.PlayerID == int64(playerData.PlayerID) {
-				// Using gRPC for anonymization:
-				anonymizedID := grpcConnectAnonymize(toon)
-				newToonDescMap[anonymizedID] = playerDesc
-			}
-		}
+
+	// Iterate over Toon description map:
+	for toon, playerDesc := range replayData.ToonPlayerDescMap {
+
+		// Using gRPC for anonymization:
+		anonymizedID := grpcConnectAnonymize(toon)
+		anonymizedPlayerDesc := playerDesc
+		anonymizedPlayerDesc.Name = "redacted"
+
+		newToonDescMap[anonymizedID] = anonymizedPlayerDesc
+
 	}
 
 	// Replacing Toon desc map with anonymmized version containing a persistent anonymized ID of the player:

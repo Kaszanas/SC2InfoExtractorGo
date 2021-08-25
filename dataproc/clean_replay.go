@@ -21,7 +21,7 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 		return false, datastruct.CleanedReplay{}
 	}
 
-	if !performCleanupBool {
+	if performCleanupBool {
 		log.Info("Detected bypassCleanupBool, performing cleanup of defined unused events.")
 		if !cleanUnusedGameEvents(&structuredReplayData) {
 			log.Error("Error in cleaning the replay structure.")

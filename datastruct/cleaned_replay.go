@@ -21,6 +21,7 @@ type CleanedReplay struct {
 
 // EnhancedToonDescMap is a structure that provides more information that standard map[string]*rep.PlayerDesc
 type EnhancedToonDescMap struct {
+	Name                string          `json:"nickname"`
 	PlayerID            int64           `json:"playerID"`
 	UserID              int64           `json:"userID"`
 	SQ                  int32           `json:"SQ"`
@@ -37,6 +38,7 @@ type EnhancedToonDescMap struct {
 	Realm               string          `json:"realm"`
 	HighestLeague       string          `json:"highestLeague"`
 	IsInClan            bool            `json:"isInClan"`
+	ClanTag             string          `json:"clanTag"`
 	Handicap            int64           `json:"handicap"`
 	Color               PlayerListColor `json:"color"`
 }
