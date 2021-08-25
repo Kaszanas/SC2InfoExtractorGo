@@ -76,6 +76,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 		anonymizedID := grpcConnectAnonymize(toon)
 		anonymizedPlayerDesc := playerDesc
 		anonymizedPlayerDesc.Name = "redacted"
+		anonymizedPlayerDesc.ClanTag = "redacted"
 
 		newToonDescMap[anonymizedID] = anonymizedPlayerDesc
 

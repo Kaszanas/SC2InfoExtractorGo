@@ -24,7 +24,8 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
-	withMultiprocessing bool) {
+	withMultiprocessing bool,
+	logsFilepath string) {
 
 	log.Info("Entered PipelineWrapper()")
 
@@ -46,6 +47,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 			localizeMapsBool,
 			localizedMapsMap,
 			compressionMethod,
+			logsFilepath,
 			index,
 			&wg)
 	}
@@ -65,6 +67,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
+	logsFilepath string,
 	chunkIndex int,
 	waitGroup *sync.WaitGroup) {
 
@@ -73,7 +76,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// Create ProcessingInfoFile:
-	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(chunkIndex)
+	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(logsFilepath, chunkIndex)
 	defer processingInfoFile.Close()
 
 	// Defining counters:

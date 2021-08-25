@@ -37,12 +37,12 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 }
 
 // CreateProcessingInfoFile receives a fileNumber and
-func CreateProcessingInfoFile(fileNumber int) (*os.File, data.ProcessingInfo) {
+func CreateProcessingInfoFile(logsFilepath string, fileNumber int) (*os.File, data.ProcessingInfo) {
 
 	log.Info("Entered CreateProcessingInfoFile()")
 
 	// Formatting the processing info file name:
-	processingLogName := fmt.Sprintf("./logs/processed_files/processed_failed_%v.log", fileNumber)
+	processingLogName := fmt.Sprintf(logsFilepath+"processed_failed_%v.log", fileNumber)
 	processingInfoFile, _ := readOrCreateFile(processingLogName)
 
 	// This will hold: {"processedFiles": [path, path, path], "failedFiles": [path, path, path]}

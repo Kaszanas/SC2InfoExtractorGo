@@ -20,17 +20,6 @@ import (
 
 func main() {
 
-	log.SetFormatter(&log.JSONFormatter{})
-
-	// If the file doesn't exist, create it or append to the file
-	logFile, err := os.OpenFile("./logs/main_log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.SetOutput(logFile)
-	log.Info("Set logging format, defined log file.")
-
 	// Command line arguments:
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	// interDirectory := flag.String("inter", "./Demos/Intermediate", "Intermediate directory where .json files will be stored before bzip2 compression.")
@@ -56,7 +45,23 @@ func main() {
 	logLevelFlag := flag.Int("log_level", 4, "Provide a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
 	performCPUProfilingFlag := flag.String("with_cpu_profiler", "", "Set path to the file where pprof cpu profiler will save its information. If this is empty no profiling is performed.")
 
+	logDirectoryFlag := flag.String("log_dir", "./logs/", "Provide directory which will hold the logging information.")
+
 	flag.Parse()
+
+	logDirectoryString := *logDirectoryFlag
+	log.SetFormatter(&log.JSONFormatter{})
+
+	// If the file doesn't exist, create it or append to the file
+	logFileFilepath := logDirectoryString + "main_log.log"
+	logFile, err := os.OpenFile(logFileFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.SetOutput(logFile)
+	log.Info("Set logging format, defined log file.")
+
 	log.WithField("logLevel", *logLevelFlag).Info("Parsed flags, setting log level.")
 	log.SetLevel(log.Level(*logLevelFlag))
 	log.Info("Set logging level.")
@@ -144,7 +149,8 @@ func main() {
 		localizeMapsBool,
 		localizedMapsMap,
 		compressionMethod,
-		processWithMultiprocessingBool)
+		processWithMultiprocessingBool,
+		logDirectoryString)
 
 	// Closing the log file:
 	logFile.Close()
