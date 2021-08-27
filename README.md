@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5296788.svg)](https://doi.org/10.5281/zenodo.5296788)
+
 # SC2InfoExtractorGo
 
 This tool is meant to allow for quick data extraction from SC2 replay files ".SC2Replay".
@@ -49,3 +51,18 @@ Our working solution was built by using ```go build``` command on 64 bit version
 This repository is licensed under GNU GPL v3 license. If You would like to acquire a different license please contact me directly.
 
 ## Cite Us!
+
+```
+@software{Bialecki_2021_5296789,
+  author       = {Białecki, Andrzej and
+                  Białecki, Piotr},
+  title        = {{Kaszanas/SC2InfoExtractorGo: 0.5.0 
+                   SC2InfoExtractorGo Release}},
+  month        = aug,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {0.5.0},
+  doi          = {10.5281/zenodo.5296788},
+  url          = {https://doi.org/10.5281/zenodo.5296788}
+}
+```
