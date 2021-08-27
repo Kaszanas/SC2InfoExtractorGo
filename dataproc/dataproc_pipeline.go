@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"sync"
 
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
-	"github.com/Kaszanas/GoSC2Science/utils"
+	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )

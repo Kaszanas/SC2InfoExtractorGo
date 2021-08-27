@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	log "github.com/sirupsen/logrus"
 )
 

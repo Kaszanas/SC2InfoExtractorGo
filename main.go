@@ -10,8 +10,8 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/Kaszanas/GoSC2Science/dataproc"
-	"github.com/Kaszanas/GoSC2Science/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/larzconwell/bzip2"
 	log "github.com/sirupsen/logrus"
 )

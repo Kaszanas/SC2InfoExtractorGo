@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
-	pb "github.com/Kaszanas/GoSC2Science/proto"
-	settings "github.com/Kaszanas/GoSC2Science/settings"
+	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	pb "github.com/Kaszanas/SC2InfoExtractorGo/proto"
+	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"

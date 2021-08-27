@@ -3,7 +3,7 @@ package dataproc
 import (
 	"encoding/json"
 
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/icza/s2prot"
 	log "github.com/sirupsen/logrus"
 )

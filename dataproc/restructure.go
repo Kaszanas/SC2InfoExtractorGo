@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	data "github.com/Kaszanas/GoSC2Science/datastruct"
+	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"

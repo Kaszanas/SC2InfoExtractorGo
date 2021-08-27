@@ -1,4 +1,4 @@
-module github.com/Kaszanas/GoSC2Science
+module github.com/Kaszanas/SC2InfoExtractorGo
 
 go 1.15
 
