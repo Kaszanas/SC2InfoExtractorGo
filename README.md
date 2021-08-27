@@ -46,4 +46,6 @@ Our working solution was built by using ```go build``` command on 64 bit version
 
 ## License
 
+This repository is licensed under GNU GPL v3 license. If You would like to acquire a different license please contact me directly.
+
 ## Cite Us!
