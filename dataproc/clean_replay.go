@@ -22,7 +22,10 @@ func cleanReplay(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap ma
 	}
 
 	// Converting coordinates to fit the original map x, y ranges:
-	convertCoordinates(&structuredReplayData)
+	if !convertCoordinates(&structuredReplayData) {
+		log.Error("Error when converting coordinates.")
+		return false, datastruct.CleanedReplay{}
+	}
 
 	// Cleaning unused game events
 	if performCleanupBool {

@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// convertCoordinates accesses the data from GameEvents and recalculates the x,y,z coordinates of events
 func convertCoordinates(replayData *data.CleanedReplay) bool {
 	log.Info("Entered convertCoordinates()")
 
@@ -24,12 +25,13 @@ func convertCoordinates(replayData *data.CleanedReplay) bool {
 		}
 
 		if val, ok := structInInterface["target"]; ok {
-			// Check if the target contains x,y,z
+			// Check if target struct is not empty to avoid panics
 			if val == nil {
 				continue
 			}
 			assertedTarget := val.(map[string]interface{})
 
+			// Check if the target contains x,y,z
 			if val, ok := assertedTarget["x"]; ok {
 				assertedTarget["x"] = val.(float64) / 8192.
 			}
@@ -42,7 +44,7 @@ func convertCoordinates(replayData *data.CleanedReplay) bool {
 			structInInterface["target"] = assertedTarget
 			// If not check if the target contains snapshotPoint with x,y,z inside
 			if val, ok := assertedTarget["snapshotPoint"]; ok {
-
+				// Check if the field is not nil in order to avoid panics
 				if val == nil {
 					continue
 				}
