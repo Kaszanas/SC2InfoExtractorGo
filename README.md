@@ -1,6 +1,5 @@
 # SC2InfoExtractorGo
 
-
 This tool is meant to allow for quick data extraction from SC2 replay files ".SC2Replay".
 
 ## Usage
@@ -42,6 +41,8 @@ In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the c
 
 
 ## Build from source
+
+Our working solution was built by using ```go build``` command on 64 bit version of Windows 10
 
 ## License
 
