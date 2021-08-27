@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Commented out pieces of code need to be verified for redundant information.
 // redefineReplayStructure moves arbitrary data into different data structures.
 func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
@@ -19,14 +18,12 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Loops()
 	duration := replayData.Header.Duration().Nanoseconds()
-	// useScaledTime := replayData.Header.UseScaledTime()
 	version := replayData.Header.Struct["version"].(s2prot.Struct)
 
 	cleanHeader := data.CleanedHeader{
 		ElapsedGameLoops: uint64(elapsedGameLoops),
 		Duration:         duration,
-		// UseScaledTime:    useScaledTime,
-		Version: version,
+		Version:          version,
 	}
 	log.Info("Defined cleanHeader struct")
 
@@ -115,17 +112,16 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	detailsGameSpeed := details.GameSpeed().String()
 	detailsIsBlizzardMap := details.IsBlizzardMap()
 
-	// timeLocalOffset := details.TimeLocalOffset()
 	timeUTC := details.TimeUTC()
 	// mapNameString := details.Title()
 
 	cleanDetails := data.CleanedDetails{
 		GameSpeed:     detailsGameSpeed,
 		IsBlizzardMap: detailsIsBlizzardMap,
-		// PlayerList:    detailsPlayerList,
-		// TimeLocalOffset: timeLocalOffset,
+		// PlayerList:    detailsPlayerList, // Information from that part is merged with ToonDescMap
+		// TimeLocalOffset: timeLocalOffset, // This is unused
 		TimeUTC: timeUTC,
-		// MapName: mapNameString,
+		// MapName: mapNameString, // This is unused
 	}
 	log.Info("Defined cleanDetails struct")
 
@@ -134,7 +130,6 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	metadataBaseBuild := metadata.BaseBuild()
 	metadataDataBuild := metadata.DataBuild()
 	metadataDuration := metadata.DurationSec()
-	// metadataDuration := time.Duration(metadata.Struct["Duration"].(float64))
 	metadataGameVersion := metadata.GameVersion()
 	metadataMapName := metadata.Title()
 
@@ -165,7 +160,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		DataBuild:   metadataDataBuild,
 		Duration:    metadataDuration,
 		GameVersion: metadataGameVersion,
-		// Players:     metadataCleanedPlayersList, // Delete this stuff!!!!
+		// Players:     metadataCleanedPlayersList, // This is unused.
 		MapName: metadataMapName,
 	}
 	log.Info("Defined cleanMetadata struct")
@@ -175,12 +170,13 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	dirtyTrackerEvents := replayData.TrackerEvts.Evts
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 
-	// TODO: Add some information to dirtyToonPlayerDescMap
-	// TODO: VERIFY IF THIS WILL BE CORRECT AND DELETE OLD CODE THAT MIGHT BE UNNECESSARY!
+	// Merging data-structures to data.EnhancedToonDescMap
 	enhancedToonDescMap := make(map[string]data.EnhancedToonDescMap)
 	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
 		var initializedToonDescMap data.EnhancedToonDescMap
 		enhancedToonDescMap[toonKey] = initializedToonDescMap
+
+		// Merging information held in metadata.Players into data.EnhancedToonDescMap
 		for _, player := range metadata.Players() {
 			if player.PlayerID() == playerDescription.PlayerID {
 				metadataToonDescMap := enhancedToonDescMap[toonKey]
@@ -200,6 +196,8 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 				enhancedToonDescMap[toonKey] = metadataToonDescMap
 			}
 		}
+
+		// Merging information contained in the details part of the replay:
 		for _, player := range details.Players() {
 			if player.Toon.String() == toonKey {
 				detailsEnhancedToonDescMap := enhancedToonDescMap[toonKey]
@@ -234,6 +232,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 				enhancedToonDescMap[toonKey] = detailsEnhancedToonDescMap
 			}
 
+			// Merging cleanedUserInitDataList information into data.EnhancedToonDescMap:
 			for _, initPlayer := range cleanedUserInitDataList {
 				if strings.HasSuffix(player.Name, initPlayer.Name) {
 					initEnhancedToonDescMap := enhancedToonDescMap[toonKey]
@@ -251,7 +250,6 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 			}
 		}
 
-		// cleanToonDescMap[toonKey] = enhancedToonDescMap
 	}
 
 	justGameEvtsErr := replayData.GameEvtsErr

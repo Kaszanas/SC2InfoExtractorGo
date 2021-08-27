@@ -182,7 +182,6 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Performing validity checks:
-	// TODO: Add validity check flag to the CLI
 	if performValidityCheckBool {
 		if gameModeCheckFlag&Ranked1v1 != 0 && gameIs1v1Ranked(replayData) {
 			// Perform Validity check
