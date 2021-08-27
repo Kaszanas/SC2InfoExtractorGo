@@ -10,7 +10,7 @@ In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the c
   -compression_method int
     	Provide a compression method number, default is 8 'Deflate', other compression methods need to be registered manually in code. (default 8)
   -game_mode int
-    	Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0xFFFFFFFF (default 1023)
+    	Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0x1111111111 (default 1023)
   -input string
     	Input directory where .SC2Replay files are held. (default "./DEMOS/Input")
   -integrity_check
