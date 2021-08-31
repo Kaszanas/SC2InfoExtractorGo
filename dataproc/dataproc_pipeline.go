@@ -93,39 +93,40 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	// Processing file:
 	for _, replayFile := range listOfFiles {
 		// Checking if the file was previously processed:
-		if !contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(replayFile,
-				performIntegrityCheckBool,
-				performValidityCheckBool,
-				gameModeCheckFlag,
-				performAnonymizationBool,
-				performCleanupBool,
-				localizeMapsBool,
-				localizedMapsMap)
-
-			if !didWork {
-				readErrorCounter++
-				processingInfoStruct.FailedToProcess = append(processingInfoStruct.FailedToProcess, map[string]string{replayFile: failureReason})
-				continue
-			}
-
-			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
-			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
-			log.Info("Added replaySummary to packageSummary")
-
-			// Saving output to zip archive:
-			savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
-			if !savedSuccess {
-				compressionErrorCounter++
-				continue
-			}
-			log.Info("Added file to zip archive.")
-
-			processedCounter++
-			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
-
+		if contains(processingInfoStruct.ProcessedFiles, replayFile) {
+			continue
 		}
 
+		didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(
+			replayFile,
+			performIntegrityCheckBool,
+			performValidityCheckBool,
+			gameModeCheckFlag,
+			performAnonymizationBool,
+			performCleanupBool,
+			localizeMapsBool,
+			localizedMapsMap)
+
+		if !didWork {
+			readErrorCounter++
+			processingInfoStruct.FailedToProcess = append(processingInfoStruct.FailedToProcess, map[string]string{replayFile: failureReason})
+			continue
+		}
+
+		// Append it to a list and when a package is created create a package summary and clear the list for next iterations
+		data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
+		log.Info("Added replaySummary to packageSummary")
+
+		// Saving output to zip archive:
+		savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
+		if !savedSuccess {
+			compressionErrorCounter++
+			continue
+		}
+		log.Info("Added file to zip archive.")
+
+		processedCounter++
+		processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 	}
 
 	// Saving processingInfo to know which files failed to process:
@@ -173,12 +174,9 @@ func FileProcessingPipeline(replayFile string,
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 
 	// Performing integrity checks
-	if performIntegrityCheckBool {
-		integrityOk := checkIntegrity(replayData)
-		if !integrityOk {
-			log.WithField("file", replayFile).Error("Integrity check failed in file.")
-			return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
-		}
+	if performIntegrityCheckBool && !checkIntegrity(replayData) {
+		log.WithField("file", replayFile).Error("Integrity check failed in file.")
+		return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
 	}
 
 	// Performing validity checks:
@@ -192,7 +190,7 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Filtering
-	if !checkGameMode(replayData, gameModeCheckFlag) {
+	if !filterGameModes(replayData, gameModeCheckFlag) {
 		return false, "", data.ReplaySummary{}, "checkGameMode() failed"
 	}
 
@@ -211,12 +209,9 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Anonimize replay:
-	if performAnonymizationBool {
-		log.Info("Detected bypassAnonymizationBool, performing anonymization.")
-		if !anonymizeReplay(&cleanReplayStructure) {
-			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
-			return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
-		}
+	if performAnonymizationBool && !anonymizeReplay(&cleanReplayStructure) {
+		log.WithField("file", replayFile).Error("Failed to anonymize replay.")
+		return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
 	}
 
 	// Create final replay string:

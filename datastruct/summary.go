@@ -38,7 +38,6 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	log.Info("Finished collapsing Servers")
 
 	// Adding matchup information to the PackageSummary:
-	// TODO: Check if this is working?
 	collapseMapToMap(&replaySummary.Summary.MatchupHistograms, &packageSummary.Summary.MatchupHistograms)
 	log.Info("Finished collapsing matchup information")
 

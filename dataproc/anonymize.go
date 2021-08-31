@@ -32,6 +32,9 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 	return true
 }
 
+// Create new class, AnonymizerClient, that wraps the gRPC client (pb.NewAnonymizeServiceClient(conn) should happen once).
+// The class will store the gRPC connection and can store a local cache of responses.
+
 // grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
 func grpcConnectAnonymize(toonString string) string {
 

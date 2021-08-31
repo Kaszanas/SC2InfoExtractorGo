@@ -179,6 +179,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		// Merging information held in metadata.Players into data.EnhancedToonDescMap
 		for _, player := range metadata.Players() {
 			if player.PlayerID() == playerDescription.PlayerID {
+				// TODO: can this be a reference?
 				metadataToonDescMap := enhancedToonDescMap[toonKey]
 				// Filling out struct fields:
 				metadataToonDescMap.PlayerID = playerDescription.PlayerID
@@ -193,6 +194,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 				metadataToonDescMap.APM = player.APM()
 				metadataToonDescMap.MMR = player.MMR()
 				metadataToonDescMap.Result = player.Result()
+				// TODO: if using a reference, this is not needed:
 				enhancedToonDescMap[toonKey] = metadataToonDescMap
 			}
 		}

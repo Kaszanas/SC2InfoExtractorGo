@@ -37,12 +37,12 @@ func checkIntegrity(replayData *rep.Rep) bool {
 		return false
 	}
 
-	metadatBaseBuildString := strings.Replace(replayData.Metadata.BaseBuild(), "Base", "", -1)
-	metadataBaseBuildInt, err := strconv.Atoi(metadatBaseBuildString)
-	if err != nil {
-		log.Info("Integrity check failed! Cannot convert replayData.Metadata.BaseBuild() to integer!")
+	metadataBaseBuildInt, conversionOk := convertBaseBuild(replayData.Metadata.BaseBuild())
+	if !conversionOk {
+		log.WithField("baseBuild", replayData.Metadata.BaseBuild()).Error("Failed to convert metadata.BaseBuild()")
 		return false
 	}
+
 	// Checking if game version contained in header fits the one that is in metadata:
 	metadataBaseBuildInt64 := int64(metadataBaseBuildInt)
 	headerBaseBuild := replayData.Header.BaseBuild()
@@ -50,15 +50,6 @@ func checkIntegrity(replayData *rep.Rep) bool {
 		log.WithFields(log.Fields{"metadataBaseBuildInt64": metadataBaseBuildInt64, "headerBaseBuild": headerBaseBuild}).Error("Integrity check failed! Build version mismatch!")
 		return false
 	}
-
-	// TODO: This is a bad integrity check! Verify please!!!!
-	// gameOptions := replayData.InitData.GameDescription.GameOptions
-	// gameOptionsAmm := gameOptions.Amm()
-	// gameOptionsBattleNet := gameOptions.BattleNet()
-	// if gameOptionsAmm != gameOptionsBattleNet {
-	// 	log.WithFields(log.Fields{"gameOptionsAmm": gameOptionsAmm, "gameOptionsBattleNet": gameOptionsBattleNet}).Error("Integrity check failed! Amm and Battle.net mismatch")
-	// 	return false
-	// }
 
 	gameDescIsBlizzardMap := replayData.InitData.GameDescription.IsBlizzardMap()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
@@ -72,4 +63,16 @@ func checkIntegrity(replayData *rep.Rep) bool {
 
 	log.Info("Integrity checks passed! Returning from checkIntegrity()")
 	return true
+}
+
+func convertBaseBuild(metadataBaseBuild string) (int, bool) {
+
+	metadatBaseBuildString := strings.Replace(metadataBaseBuild, "Base", "", -1)
+	metadataBaseBuildInt, err := strconv.Atoi(metadatBaseBuildString)
+	if err != nil {
+		log.Info("Integrity check failed! Cannot convert replayData.Metadata.BaseBuild() to integer!")
+		return 0, false
+	}
+
+	return metadataBaseBuildInt, true
 }
