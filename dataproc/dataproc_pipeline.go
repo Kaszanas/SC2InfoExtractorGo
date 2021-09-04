@@ -21,7 +21,6 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
-	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
 	withMultiprocessing bool,
@@ -44,7 +43,6 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 			gameModeCheckFlag,
 			performAnonymizationBool,
 			performCleanupBool,
-			localizeMapsBool,
 			localizedMapsMap,
 			compressionMethod,
 			logsFilepath,
@@ -64,7 +62,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
-	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
 	logsFilepath string,
@@ -104,7 +101,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			gameModeCheckFlag,
 			performAnonymizationBool,
 			performCleanupBool,
-			localizeMapsBool,
 			localizedMapsMap)
 
 		if !didWork {
@@ -160,7 +156,6 @@ func FileProcessingPipeline(replayFile string,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performCleanupBool bool,
-	localizeMapsBool bool,
 	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary, string) {
 
 	log.Info("Entered FileProcessingPipeline()")
@@ -195,7 +190,7 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Clean replay structure:
-	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizeMapsBool, localizedMapsMap, performCleanupBool)
+	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizedMapsMap, performCleanupBool)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
 		return false, "", data.ReplaySummary{}, "cleanReplay() failed"

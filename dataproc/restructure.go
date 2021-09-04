@@ -11,7 +11,7 @@ import (
 )
 
 // redefineReplayStructure moves arbitrary data into different data structures.
-func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
+func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
 
@@ -134,7 +134,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	metadataMapName := metadata.Title()
 
 	// Verifying if it is possible to localize the map and localizing if possible:
-	if localizeMapsBool {
+	if localizedMapsMap != nil {
 		detailsMapName := details.Title()
 		localizedDetailsMap, detailsOk := verifyLocalizedMapName(detailsMapName, localizedMapsMap)
 
