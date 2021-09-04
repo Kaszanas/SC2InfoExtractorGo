@@ -28,7 +28,7 @@ In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the c
   -log_level int
     	Specifies a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7 (default 4)
   -game_mode int
-    	Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b1111111111 (default 1023)
+    	Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111 (default 256)
   -localized_maps_file string
     	Specifies a path to localization file containing {'ForeignName': 'EnglishName'} of maps. (default "./operation_files/output.json")
   -with_cpu_profiler string
@@ -43,6 +43,21 @@ In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the c
 2. Run ```SC2InfoExtractorGo.exe``` with default flags.
 3. Verify the output packages in ```./DEMOS/Output```
 4. If The output packages do not contain any processed replays, proceed to verify ```./logs/```.
+
+### Filtering Capabilities
+
+Currently the software supports some game mode filtering capabilities which can be used with ```-game_mode``` flag.
+The flag itself is a binary flag where ```0b11111111``` is all game modes which is the default.
+
+Other ways to set the flag:
+- ```0b00000001```: 1v1 Ranked Games
+- ```0b00000010```: 2v2 Ranked Games
+- ```0b00000100```: 3v3 Ranked Games
+- ```0b00001000```: 4v4 Ranked Games
+- ```0b00010000```: 1v1 Custom Games
+- ```0b00100000```: 2v2 Custom Games
+- ```0b01000000```: 3v3 Custom Games
+- ```0b10000000```: 4v4 Custom Games
 
 ## Build from source
 

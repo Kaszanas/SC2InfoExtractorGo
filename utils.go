@@ -40,7 +40,7 @@ func parseFlags() (CLIFlags, bool) {
 	performAnonymizationFlag := flag.Bool("perform_anonymization", false, "Provide if the tool is supposed to perform the anonymization functions within the processing pipeline. If set to true please remember to download and run an anonymization server: https://doi.org/10.5281/zenodo.5138313")
 
 	// TODO: Write the docs for other game modes:
-	gameModeFilterFlag := flag.Int("game_mode", 0b1111111111, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b1111111111")
+	gameModeFilterFlag := flag.Int("game_mode", 0b11111111, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111")
 
 	// Other compression methods than Deflate need to be registered further down in the code:
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specifies a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
