@@ -83,7 +83,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	compressionErrorCounter := 0
 	processedCounter := 0
 
-	// Helper method returning bytes buffer and zip writer:
+	// Helper method returning bytes buffer and zip writer which will be used to save the processing results into:
 	buffer, writer := utils.InitBufferWriter()
 	log.Info("Initialized buffer and writer.")
 
@@ -138,7 +138,12 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	// Writing the zip archive to drive:
 	writer.Close()
 	packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
-	_ = ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+	err := ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"packageAbsolutePath": packageAbsPath,
+			"packageNumber":       chunkIndex}).Error("Failed to save package to drive!")
+	}
 
 	// Logging error information:
 	if readErrorCounter > 0 {
@@ -181,7 +186,7 @@ func FileProcessingPipeline(replayFile string,
 	if performValidityCheckBool {
 		if gameModeCheckFlag&Ranked1v1 != 0 && gameIs1v1Ranked(replayData) {
 			// Perform Validity check
-			if !validateReplay(replayData) {
+			if !validate1v1Replay(replayData) {
 				return false, "", data.ReplaySummary{}, "validateReplay() failed"
 			}
 		}
@@ -193,7 +198,7 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Clean replay structure:
-	cleanOk, cleanReplayStructure := cleanReplay(replayData, localizedMapsMap, performCleanupBool)
+	cleanOk, cleanReplayStructure := extractReplayData(replayData, localizedMapsMap, performCleanupBool)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
 		return false, "", data.ReplaySummary{}, "cleanReplay() failed"

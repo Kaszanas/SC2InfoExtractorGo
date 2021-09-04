@@ -128,7 +128,7 @@ func setProfiling(profilingPath string) bool {
 	return true
 }
 
-func chunkSlice(slice []string, chunkSize int) [][]string {
+func getChunksOfFiles(slice []string, chunkSize int) [][]string {
 
 	log.Info("Entered chunkSlice()")
 

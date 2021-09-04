@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// initBufferWriter initializes a bytes buffer that is used to hold all of the information that writer will write to the archive
 func InitBufferWriter() (*bytes.Buffer, *zip.Writer) {
 
 	log.Info("Entered initBufferWriter()")
@@ -23,6 +24,7 @@ func InitBufferWriter() (*bytes.Buffer, *zip.Writer) {
 	return buf, w
 }
 
+// SaveFileToArchive creates a file header and saves replayString (JSON) bytes into the zip writer
 func SaveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) bool {
 
 	log.Info("Entered saveFileToArchive()")
