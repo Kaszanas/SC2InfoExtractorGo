@@ -8,7 +8,7 @@
 
 *__debug_bin
 
-/DEMOS
+DEMOS/Output/*.json
 
 *.log
 
