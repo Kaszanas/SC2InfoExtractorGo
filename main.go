@@ -20,35 +20,21 @@ func main() {
 	flags, okFlags := parseFlags()
 	if !okFlags {
 		log.Fatal("Failed parseFlags()")
-	}
-
-	logDirectoryString := flags.LogPath
-	log.SetFormatter(&log.JSONFormatter{})
-
-	// If the file doesn't exist, create it or append to the file
-	logFileFilepath := logDirectoryString + "main_log.log"
-	logFile, err := os.OpenFile(logFileFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
 		os.Exit(1)
 	}
 
-	log.SetOutput(logFile)
-	log.Info("Set logging format, defined log file.")
+	logFile, okLogging := setLogging(flags.LogPath, flags.LogLevel)
+	if !okLogging {
+		log.Fatal("Failed to setLogging()")
+		os.Exit(1)
+	}
 
-	log.SetLevel(log.Level(flags.LogLevel))
-	log.Info("Set logging level.")
-
-	performCPUProfilingPath := flags.CPUProfilingPath
-	if performCPUProfilingPath != "" {
-		// Creating profiler file:
-		profilerFile, err := os.Create(performCPUProfilingPath)
-		if err != nil {
-			log.WithField("error", err).Fatal("Could not create a profiling file. Exiting program.")
+	if flags.CPUProfilingPath != "" {
+		okProfiling := setProfiling(flags.CPUProfilingPath)
+		if !okProfiling {
+			log.Fatal("Failed to setProfiling()")
 			os.Exit(1)
 		}
-		// Starting profiling:
-		pprof.StartCPUProfile(profilerFile)
 		defer pprof.StopCPUProfile()
 	}
 
