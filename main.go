@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 	numberOfFilesInPackage := int(math.Ceil(float64(lenListOfInputFiles) / float64(flags.NumberOfPackages)))
-	listOfChunksFiles := chunkSlice(listOfInputFiles, numberOfFilesInPackage)
+	listOfChunksFiles := getChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
