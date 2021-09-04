@@ -5,12 +5,8 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"archive/zip"
-	"io"
-
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
-	"github.com/larzconwell/bzip2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -64,11 +60,6 @@ func main() {
 	}
 	numberOfFilesInPackage := int(math.Ceil(float64(lenListOfInputFiles) / float64(flags.NumberOfPackages)))
 	listOfChunksFiles := chunkSlice(listOfInputFiles, numberOfFilesInPackage)
-
-	// Register a custom compressor:
-	zip.RegisterCompressor(12, func(out io.Writer) (io.WriteCloser, error) {
-		return bzip2.NewWriterLevel(out, 9)
-	})
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
