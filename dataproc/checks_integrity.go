@@ -65,6 +65,7 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	return true
 }
 
+// convertBaseBuild is accessing the metadataBaseBuild and converting it from string to integer.
 func convertBaseBuild(metadataBaseBuild string) (int, bool) {
 
 	metadatBaseBuildString := strings.Replace(metadataBaseBuild, "Base", "", -1)

@@ -19,12 +19,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Logging initialization to be able to provide further troubleshooting for users:
 	logFile, okLogging := setLogging(flags.LogPath, flags.LogLevel)
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
 		os.Exit(1)
 	}
 
+	// Profiling capabilities to verify if the program can be optimized any further:
 	if flags.CPUProfilingPath != "" {
 		okProfiling := setProfiling(flags.CPUProfilingPath)
 		if !okProfiling {
@@ -49,7 +51,7 @@ func main() {
 		"CPUProfilingPath":      flags.CPUProfilingPath,
 		"LogPath":               flags.LogPath}).Info("Parsed command line flags")
 
-	// Getting list of absolute paths for files from input directory:
+	// Getting list of absolute paths for files from input directory filtering them by file extension to be able to extract the data:
 	listOfInputFiles := utils.ListFiles(flags.InputDirectory, ".SC2Replay")
 	lenListOfInputFiles := len(listOfInputFiles)
 	if lenListOfInputFiles < flags.NumberOfPackages {
@@ -71,6 +73,7 @@ func main() {
 		}
 	}
 
+	// Initializing the processing:
 	dataproc.PipelineWrapper(flags.OutputDirectory,
 		listOfChunksFiles,
 		flags.PerformIntegrityCheck,
@@ -83,6 +86,6 @@ func main() {
 		flags.WithMultiprocessing,
 		flags.LogPath)
 
-	// Closing the log file:
+	// Closing the log file manually:
 	logFile.Close()
 }

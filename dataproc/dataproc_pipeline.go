@@ -28,12 +28,14 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 
 	log.Info("Entered PipelineWrapper()")
 
+	// If it is specified by the user to perform the processing without multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
 	if !withMultiprocessing {
 		runtime.GOMAXPROCS(1)
 	}
 
 	var wg sync.WaitGroup
 
+	// Adding a task for each of the supplied chunks to speed up the processing:
 	for index, chunk := range chunks {
 		wg.Add(1)
 		go MultiprocessingChunkPipeline(absolutePathOutputDirectory,
@@ -94,6 +96,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			continue
 		}
 
+		// Running all of the processing logic and verifying if it worked:
 		didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(
 			replayFile,
 			performIntegrityCheckBool,

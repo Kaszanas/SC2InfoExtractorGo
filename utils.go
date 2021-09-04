@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// CLIFlags is a structure which holds all of the information that was supplied by user in CLI.
 type CLIFlags struct {
 	InputDirectory        string
 	OutputDirectory       string
@@ -25,6 +26,7 @@ type CLIFlags struct {
 	LogPath               string
 }
 
+// parseFlags contains logic which is responsible for user input.
 func parseFlags() (CLIFlags, bool) {
 	// Command line arguments:
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
@@ -79,12 +81,13 @@ func parseFlags() (CLIFlags, bool) {
 		LogPath:               *logDirectoryFlag,
 	}
 
-	flag.Usage()
+	// flag.Usage()
 
 	return flags, true
 
 }
 
+// setLogging contains logic that is used to initialize logging to a specified file with a specified level.
 func setLogging(logPath string, logLevel int) (*os.File, bool) {
 
 	logDirectoryString := logPath
@@ -108,6 +111,7 @@ func setLogging(logPath string, logLevel int) (*os.File, bool) {
 
 }
 
+// setProfiling sets up pprof profiling to a supplied filepath.
 func setProfiling(profilingPath string) bool {
 
 	performCPUProfilingPath := profilingPath

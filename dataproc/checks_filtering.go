@@ -29,6 +29,7 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 
 	log.Info("Entered checkGameParameters()")
 
+	// Verifying if the number of players matches:
 	if !checkNumberOfPlayers(replayData, gameInfoFilter.maxPlayers) {
 		log.Error("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
