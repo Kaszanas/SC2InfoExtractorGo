@@ -11,7 +11,7 @@ import (
 )
 
 // redefineReplayStructure moves arbitrary data into different data structures.
-func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
+func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
 
@@ -134,7 +134,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 	metadataMapName := metadata.Title()
 
 	// Verifying if it is possible to localize the map and localizing if possible:
-	if localizeMapsBool {
+	if localizedMapsMap != nil {
 		detailsMapName := details.Title()
 		localizedDetailsMap, detailsOk := verifyLocalizedMapName(detailsMapName, localizedMapsMap)
 
@@ -179,6 +179,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 		// Merging information held in metadata.Players into data.EnhancedToonDescMap
 		for _, player := range metadata.Players() {
 			if player.PlayerID() == playerDescription.PlayerID {
+				// TODO: can this be a reference?
 				metadataToonDescMap := enhancedToonDescMap[toonKey]
 				// Filling out struct fields:
 				metadataToonDescMap.PlayerID = playerDescription.PlayerID
@@ -193,6 +194,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizeMapsBool bool, localiz
 				metadataToonDescMap.APM = player.APM()
 				metadataToonDescMap.MMR = player.MMR()
 				metadataToonDescMap.Result = player.Result()
+				// TODO: if using a reference, this is not needed:
 				enhancedToonDescMap[toonKey] = metadataToonDescMap
 			}
 		}

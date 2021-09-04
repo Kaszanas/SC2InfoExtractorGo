@@ -10,8 +10,6 @@ func summarizeReplay(replayData *data.CleanedReplay) (bool, data.ReplaySummary) 
 
 	log.Info("Entered summarizeReplay()")
 
-	successFlag := true
-
 	initSummary := data.DefaultReplaySummary()
 
 	generateReplaySummary(replayData, &initSummary)
@@ -19,6 +17,6 @@ func summarizeReplay(replayData *data.CleanedReplay) (bool, data.ReplaySummary) 
 	// fmt.Println(initSummary.Summary.MatchupHistograms, initSummary.Summary.Races)
 
 	log.Info("Finished summarizeReplay()")
-	return successFlag, initSummary
+	return true, initSummary
 
 }

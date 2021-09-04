@@ -11,14 +11,13 @@ import (
 func stringifyReplay(replayData *data.CleanedReplay) (bool, string) {
 
 	log.Info("Entered stringifyReplay()")
-	successFlag := true
 
 	replayDataString, marshalErr := json.MarshalIndent(replayData, "", "  ")
 	if marshalErr != nil {
 		log.Error("Error while marshaling the string representation of cleanReplayData.")
-		return !successFlag, ""
+		return false, ""
 	}
 
 	log.Info("Finished stringifyReplay()")
-	return successFlag, string(replayDataString)
+	return true, string(replayDataString)
 }

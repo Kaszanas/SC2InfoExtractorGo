@@ -6,19 +6,22 @@ import (
 )
 
 // Filtering
-// checkGameMode performs the check against a binary 0b1111111 getGameModeFlag to verify if the currently processed replay game mode is correct.
-func checkGameMode(replayData *rep.Rep, getGameModeFlag int) bool {
+// filterGameModes performs the check against a binary 0b1111111 getGameModeFlag to verify if the currently processed replay game mode is correct.
+func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 	log.Info("Entered checkGameMode()")
-	result := false
 
 	for _, value := range gameModeList {
-		if getGameModeFlag&value != 0 {
-			result = result || checkGameParameters(replayData, gameModeFiltersMapping[value])
+		// If we want to include games with game mode `value`, and the game matches the requirements
+		// of the game mode, then it matches the filter => return true.
+		if getGameModeFlag&value != 0 && checkGameParameters(replayData, gameModeFiltersMapping[value]) {
+			return true
 		}
 	}
 
 	log.Info("Finished checkGameMode()")
-	return result
+
+	// The game did not match any active filters, return false.
+	return false
 }
 
 // checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
@@ -26,8 +29,9 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 
 	log.Info("Entered checkGameParameters()")
 
+	// Verifying if the number of players matches:
 	if !checkNumberOfPlayers(replayData, gameInfoFilter.maxPlayers) {
-		log.Info("Filtering game parameters mismatch! returning from checkGameParameters()")
+		log.Error("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
@@ -66,18 +70,16 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 // checkNumberOfPlayers verifies and checks if the number of players is correct for a given game mode.
 func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 
-	log.Info("Entered checkNumberOfPlayers()")
-
 	playerList := replayData.Metadata.Players()
 	numberOfPlayers := len(playerList)
 
+	log.WithFields(log.Fields{
+		"len(playerList)": numberOfPlayers,
+		"requiredNumber":  requiredNumber}).Debug("checkNumberOfPlayers()")
+
 	if numberOfPlayers != requiredNumber {
-		log.WithFields(log.Fields{
-			"len(playerList)": numberOfPlayers,
-			"requiredNumber":  requiredNumber}).Info("Different number of players than required number")
 		return false
 	}
 
-	log.Info("Finished checkNumberOfPlayers(), returning")
 	return true
 }

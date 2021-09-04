@@ -8,43 +8,42 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Add Error handling, as currently there is absolutely no information about if the operations are correct or not.
 // generateReplaySummary accesses the data that is within cleaned replay and extracts information for visualization purposes.
 func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.ReplaySummary) {
 
 	log.Info("Entered generateReplaySummary()")
 
 	// GameVersion information:
-	keyExistsIncrementValue(replayData.Metadata.GameVersion, summaryStruct.Summary.GameVersions)
+	incrementIfKeyExists(replayData.Metadata.GameVersion, summaryStruct.Summary.GameVersions)
 	log.Info("Finished incrementing replayData.Metadata.GameVersion")
 
 	replayMetadata := replayData.Metadata
 	// GameDuration histogram:
 	replayDuration := strconv.Itoa(int(replayMetadata.Duration))
-	keyExistsIncrementValue(replayDuration, summaryStruct.Summary.GameTimes)
+	incrementIfKeyExists(replayDuration, summaryStruct.Summary.GameTimes)
 	log.Info("Finished incrementing summaryStruct.Summary.GameTimes")
 
 	// MapsUsed histogram:
 	replayMap := replayMetadata.MapName
-	keyExistsIncrementValue(replayMap, summaryStruct.Summary.Maps)
+	incrementIfKeyExists(replayMap, summaryStruct.Summary.Maps)
 	log.Info("Finished incrementing summaryStruct.Summary.Maps")
 
 	// Races used histogram:
 	for _, player := range replayData.ToonPlayerDescMap {
 		playerRace := player.AssignedRace
-		keyExistsIncrementValue(playerRace, summaryStruct.Summary.Races)
+		incrementIfKeyExists(playerRace, summaryStruct.Summary.Races)
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Races")
 
 	// Dates of replays histogram:
 	replayYear, replayMonth, replayDay := replayData.Details.TimeUTC.Date()
 	dateString := strconv.Itoa(replayYear) + "-" + strconv.Itoa(int(replayMonth)) + "-" + strconv.Itoa(replayDay)
-	keyExistsIncrementValue(dateString, summaryStruct.Summary.Dates)
+	incrementIfKeyExists(dateString, summaryStruct.Summary.Dates)
 	log.Info("Finished incrementing summaryStruct.Summary.Dates")
 
 	// Server information histogram:
 	for _, player := range replayData.ToonPlayerDescMap {
-		keyExistsIncrementValue(player.Region, summaryStruct.Summary.Servers)
+		incrementIfKeyExists(player.Region, summaryStruct.Summary.Servers)
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Servers")
 
@@ -54,7 +53,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 		eventType := event["evtTypeName"].(string)
 		if eventType == "UnitBorn" {
 			unitName := event["unitTypeName"].(string)
-			keyExistsIncrementValue(unitName, summaryStruct.Summary.Units)
+			incrementIfKeyExists(unitName, summaryStruct.Summary.Units)
 		}
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Units")
@@ -80,38 +79,32 @@ func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool 
 
 	if matchupString == "TerrTerr" {
 		log.Info("Found matchup to be TvT")
-		keyExistsIncrementValue("TvT", summaryStruct.Summary.MatchupHistograms)
-		log.Info("Finished checkMatchup()")
+		incrementIfKeyExists("TvT", summaryStruct.Summary.MatchupHistograms)
 		return true
 	}
 	if matchupString == "ProtProt" {
 		log.Debug("Found matchup to be PvP")
-		keyExistsIncrementValue("PvP", summaryStruct.Summary.MatchupHistograms)
-		log.Info("Finished checkMatchup()")
+		incrementIfKeyExists("PvP", summaryStruct.Summary.MatchupHistograms)
 		return true
 	}
 	if matchupString == "ZergZerg" {
 		log.Debug("Found matchup to be ZvZ")
-		keyExistsIncrementValue("ZvZ", summaryStruct.Summary.MatchupHistograms)
-		log.Info("Finished checkMatchup()")
+		incrementIfKeyExists("ZvZ", summaryStruct.Summary.MatchupHistograms)
 		return true
 	}
 	if strings.Contains(matchupString, "Prot") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be PvT")
-		keyExistsIncrementValue("PvT", summaryStruct.Summary.MatchupHistograms)
-		log.Info("Finished checkMatchup()")
+		incrementIfKeyExists("PvT", summaryStruct.Summary.MatchupHistograms)
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be ZvT")
-		keyExistsIncrementValue("ZvT", summaryStruct.Summary.MatchupHistograms)
-		log.Info("Finished checkMatchup()")
+		incrementIfKeyExists("ZvT", summaryStruct.Summary.MatchupHistograms)
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Prot") {
 		log.Debug("Found matchup to be ZvP")
-		keyExistsIncrementValue("ZvP", summaryStruct.Summary.MatchupHistograms)
-		log.Info("Finished checkMatchup()")
+		incrementIfKeyExists("ZvP", summaryStruct.Summary.MatchupHistograms)
 		return true
 	}
 
@@ -119,15 +112,15 @@ func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool 
 	return false
 }
 
-// keyExistsIncrementValue verifies if a key exists in a map and increments the value of a counter that is within a specific key.
-func keyExistsIncrementValue(key string, mapToCheck map[string]int64) {
+// incrementIfKeyExists verifies if a key exists in a map and increments the value of a counter that is within a specific key.
+func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
 	log.Info("Entered keyExistsIncrementValue()")
 
 	if val, ok := mapToCheck[key]; ok {
 		mapToCheck[key] = val + 1
-		log.Info("Finished keyExistsIncrementValue()")
+		log.Info("Finished keyExistsIncrementValue(), value incremented")
 	} else {
 		mapToCheck[key] = 1
-		log.Info("Finished keyExistsIncrementValue()")
+		log.Info("Finished keyExistsIncrementValue(), new value added")
 	}
 }
