@@ -78,6 +78,18 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(logsFilepath, chunkIndex)
 	defer processingInfoFile.Close()
 
+	// Initializing grpc connection if the user chose to perform anonymization.
+	var grpcAnonymizer *GRPCAnonymizer
+	if performAnonymizationBool {
+		grpcAnonymizer := GRPCAnonymizer{}
+		if !grpcAnonymizer.grpcConnect() {
+			log.Error("Could not connect to the gRPC server!")
+		}
+
+		defer grpcAnonymizer.Connection.Close()
+
+	}
+
 	// Defining counters:
 	readErrorCounter := 0
 	compressionErrorCounter := 0
@@ -102,7 +114,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			performIntegrityCheckBool,
 			performValidityCheckBool,
 			gameModeCheckFlag,
-			performAnonymizationBool,
+			grpcAnonymizer,
 			performCleanupBool,
 			localizedMapsMap)
 
@@ -162,7 +174,7 @@ func FileProcessingPipeline(replayFile string,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
 	gameModeCheckFlag int,
-	performAnonymizationBool bool,
+	grpcAnonymizer *GRPCAnonymizer,
 	performCleanupBool bool,
 	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary, string) {
 
@@ -212,7 +224,7 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Anonimize replay:
-	if performAnonymizationBool && !anonymizeReplay(&cleanReplayStructure) {
+	if grpcAnonymizer != nil && !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer) {
 		log.WithField("file", replayFile).Error("Failed to anonymize replay.")
 		return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
 	}
