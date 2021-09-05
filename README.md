@@ -44,6 +44,26 @@ In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the c
 3. Verify the output packages in ```./DEMOS/Output```
 4. If The output packages do not contain any processed replays, proceed to verify ```./logs/```.
 
+### Dataset Preparation
+
+If You have a pack of replays with nested directories and You would like to automatically flatten the directory structure, We have published a tool that can be used for that, please see SC2DatasetPreparator: https://doi.org/10.5281/zenodo.5296664
+
+Two scripts contained within that software can:
+1. Flatten directory structure of Your collected replays by looking for ```.SC2Replay``` files.
+2. Running Python multiprocessing package on multiple directories containing replays by calling them with ```-with-multiprocessing=false``` flag. This allows to have one package per directory created and speed up the processing.
+
+### Anonymization
+
+In order to anonymize the replays please make sure to download and run our open-source implementation of an anonymization server the SC2AnonServerPy: https://doi.org/10.5281/zenodo.5138313
+
+This is required because of the multiprocessing nature of our code that needs to perform synchronization with an existing database unique toons (player IDs) that are mapped to arbitrary incrementing integer.
+
+### Map Translation Support
+
+If the provided file ```output.json``` does not support map names that You require, You will have to either find it online or within the game documents. We are close to publishing a tool that will allow You to download StarCraft maps.
+
+If You already have a set of StarCraft II maps that You would like to create a ```.json``` file to be included within Our software, use Your own solution or SC2MapLocaleExtractor: https://doi.org/10.5281/zenodo.4733264
+
 ### Filtering Capabilities
 
 Currently the software supports some game mode filtering capabilities which can be used with ```-game_mode``` flag.

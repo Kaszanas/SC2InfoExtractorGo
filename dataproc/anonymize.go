@@ -18,11 +18,13 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entered anonymizeReplay()")
 
+	// Anonymization of Chat events that might contain sensitive information for research purposes:
 	if !anonimizeMessageEvents(replayData) {
 		log.Error("Failed to anonimize messageEvents.")
 		return false
 	}
 
+	// Anonymizing player information such as toon, nickname, and clan this is done in order to redact potentially sensitive information:
 	if !anonymizePlayers(replayData) {
 		log.Error("Failed to anonimize player information.")
 		return false
