@@ -81,13 +81,13 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	// Initializing grpc connection if the user chose to perform anonymization.
 	var grpcAnonymizer *GRPCAnonymizer
 	if performAnonymizationBool {
+		log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
 		grpcAnonymizer := GRPCAnonymizer{}
-		if !grpcAnonymizer.grpcConnect() {
+		if !grpcAnonymizer.grpcDialConnect() {
 			log.Error("Could not connect to the gRPC server!")
 		}
-
 		defer grpcAnonymizer.Connection.Close()
-
+		grpcAnonymizer.grpcInitializeClient()
 	}
 
 	// Defining counters:
