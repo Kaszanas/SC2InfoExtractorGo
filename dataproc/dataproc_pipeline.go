@@ -219,9 +219,11 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Anonimize replay:
-	if grpcAnonymizer != nil && !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer) {
-		log.WithField("file", replayFile).Error("Failed to anonymize replay.")
-		return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
+	if grpcAnonymizer != nil {
+		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer) {
+			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
+			return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
+		}
 	}
 
 	// Create final replay string:
@@ -232,7 +234,6 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	replayData.Close()
-	log.Info("Closed replayData")
 
 	log.Info("Finished FileProcessingPipeline()")
 
@@ -250,17 +251,17 @@ func gameIs1v1Ranked(replayData *rep.Rep) bool {
 
 // checkAnonymizationInitializeGRPC verifies if the anonymization should be performed and returns a pointer to GRPCAnonymizer.
 func checkAnonymizationInitializeGRPC(performAnonymizationBool bool) *GRPCAnonymizer {
-	if performAnonymizationBool {
-		log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
-		grpcAnonymizer := GRPCAnonymizer{}
-		if !grpcAnonymizer.grpcDialConnect() {
-			log.Error("Could not connect to the gRPC server!")
-		}
-		grpcAnonymizer.grpcInitializeClient()
-		grpcAnonymizer.Cache = make(map[string]string)
-		return &grpcAnonymizer
-	} else {
-		var grpcAnonymizer GRPCAnonymizer
-		return &grpcAnonymizer
+	if !performAnonymizationBool {
+		return nil
 	}
+
+	log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
+	grpcAnonymizer := GRPCAnonymizer{}
+	if !grpcAnonymizer.grpcDialConnect() {
+		log.Error("Could not connect to the gRPC server!")
+	}
+	grpcAnonymizer.grpcInitializeClient()
+	grpcAnonymizer.Cache = make(map[string]string)
+
+	return &grpcAnonymizer
 }
