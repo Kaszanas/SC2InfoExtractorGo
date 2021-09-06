@@ -50,12 +50,12 @@ type GRPCAnonymizer struct {
 }
 
 // grpcConnect initializes a connection to a specified in settings grpc server.
-func (anonymizer GRPCAnonymizer) grpcDialConnect() bool {
+func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 
 	log.Info("Entered GRPCAnonymizer.grpcDialConnect()")
 
 	// Set up a connection to the server:
-	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithKeepaliveParams(keepAliveParameters))
+	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.WithField("error", err).Fatal("Failed to connect to grpc anonymization service")
 		return false
@@ -68,12 +68,13 @@ func (anonymizer GRPCAnonymizer) grpcDialConnect() bool {
 
 }
 
-func (anonymizer GRPCAnonymizer) grpcInitializeClient() {
+func (anonymizer *GRPCAnonymizer) grpcInitializeClient() {
 	// Initialize a grpcClient
 	anonymizer.Client = pb.NewAnonymizeServiceClient(anonymizer.Connection)
 }
 
-func (anonymizer GRPCAnonymizer) anonymizeToon(toonString string) string {
+// anonymizeToon checks if the player toon is already in the cache and if it is not it calls grpcAnonymizeID.
+func (anonymizer *GRPCAnonymizer) anonymizeToon(toonString string) string {
 
 	log.Info("Entered GRPCAnonymizer.anonymizeToon()")
 
@@ -83,7 +84,7 @@ func (anonymizer GRPCAnonymizer) anonymizeToon(toonString string) string {
 		return val
 	}
 
-	anonymizedID := grpcAnonymize(toonString, anonymizer.Client, anonymizer.Connection)
+	anonymizedID := grpcGetAnonymizeID(toonString, anonymizer.Client, anonymizer.Connection)
 	anonymizer.Cache[toonString] = anonymizedID
 
 	log.Info("Finished GRPCAnonymizer.anonymizeToon()")
@@ -91,8 +92,8 @@ func (anonymizer GRPCAnonymizer) anonymizeToon(toonString string) string {
 	return anonymizedID
 }
 
-// grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
-func grpcAnonymize(toonString string, grpcClient pb.AnonymizeServiceClient, grpcConnection *grpc.ClientConn) string {
+// grpcGetAnonymizeID is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
+func grpcGetAnonymizeID(toonString string, grpcClient pb.AnonymizeServiceClient, grpcConnection *grpc.ClientConn) string {
 
 	log.Info("Entered grpcAnonymize()")
 

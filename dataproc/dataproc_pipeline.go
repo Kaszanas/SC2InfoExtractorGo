@@ -79,15 +79,10 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	defer processingInfoFile.Close()
 
 	// Initializing grpc connection if the user chose to perform anonymization.
-	var grpcAnonymizer *GRPCAnonymizer
-	if performAnonymizationBool {
-		log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
-		grpcAnonymizer := GRPCAnonymizer{}
-		if !grpcAnonymizer.grpcDialConnect() {
-			log.Error("Could not connect to the gRPC server!")
-		}
+	grpcAnonymizer := checkAnonymizationInitializeGRPC(performAnonymizationBool)
+	// In order to free up resources We are defering the connection closing when all of the files have been processed:
+	if grpcAnonymizer != nil {
 		defer grpcAnonymizer.Connection.Close()
-		grpcAnonymizer.grpcInitializeClient()
 	}
 
 	// Defining counters:
@@ -251,4 +246,21 @@ func gameIs1v1Ranked(replayData *rep.Rep) bool {
 	isCompetitive := replayData.InitData.GameDescription.GameOptions.CompetitiveOrRanked()
 	isTwoPlayers := len(replayData.Metadata.Players()) == 2
 	return isAmm && isCompetitive && isTwoPlayers
+}
+
+// checkAnonymizationInitializeGRPC verifies if the anonymization should be performed and returns a pointer to GRPCAnonymizer.
+func checkAnonymizationInitializeGRPC(performAnonymizationBool bool) *GRPCAnonymizer {
+	if performAnonymizationBool {
+		log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
+		grpcAnonymizer := GRPCAnonymizer{}
+		if !grpcAnonymizer.grpcDialConnect() {
+			log.Error("Could not connect to the gRPC server!")
+		}
+		grpcAnonymizer.grpcInitializeClient()
+		grpcAnonymizer.Cache = make(map[string]string)
+		return &grpcAnonymizer
+	} else {
+		var grpcAnonymizer GRPCAnonymizer
+		return &grpcAnonymizer
+	}
 }
