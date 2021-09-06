@@ -126,7 +126,10 @@ func anonymizePlayers(replayData *data.CleanedReplay, grpcAnonymizer *GRPCAnonym
 	for toon, playerDesc := range replayData.ToonPlayerDescMap {
 
 		// Using gRPC for anonymization:
-		anonymizedID := grpcAnonymizer.anonymizeToon(toon)
+		anonymizedID, anonymizeToonOk := grpcAnonymizer.anonymizeToon(toon)
+		if !anonymizeToonOk {
+			return false
+		}
 		anonymizedPlayerDesc := playerDesc
 		anonymizedPlayerDesc.Name = "redacted"
 		anonymizedPlayerDesc.ClanTag = "redacted"
