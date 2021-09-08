@@ -46,7 +46,7 @@ func main() {
 		"PerformAnonymization":  flags.PerformAnonymization,
 		"FilterGameMode":        flags.FilterGameMode,
 		"LocalizationMapFile":   flags.LocalizationMapFile,
-		"WithMultiprocessing":   flags.WithMultiprocessing,
+		"NumberOfThreads":       flags.NumberOfThreads,
 		"LogLevel":              flags.LogLevel,
 		"CPUProfilingPath":      flags.CPUProfilingPath,
 		"LogPath":               flags.LogPath}).Info("Parsed command line flags")
@@ -83,7 +83,7 @@ func main() {
 		flags.PerformCleanup,
 		localizedMapsMap,
 		8,
-		flags.WithMultiprocessing,
+		flags.NumberOfThreads,
 		flags.LogPath)
 
 	// Closing the log file manually:

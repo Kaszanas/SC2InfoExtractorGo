@@ -13,6 +13,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type ChannelContents struct {
+	Index int
+	Chunk []string
+}
+
 // PipelineWrapper is an orchestrator that distributes work among available workers (threads)
 func PipelineWrapper(absolutePathOutputDirectory string,
 	chunks [][]string,
@@ -23,34 +28,49 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	performCleanupBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
-	withMultiprocessing bool,
+	numberOfThreads int,
 	logsFilepath string) {
 
 	log.Info("Entered PipelineWrapper()")
 
 	// If it is specified by the user to perform the processing without multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
-	if !withMultiprocessing {
-		runtime.GOMAXPROCS(1)
-	}
+	runtime.GOMAXPROCS(numberOfThreads)
 
+	var channel = make(chan ChannelContents, numberOfThreads+1)
 	var wg sync.WaitGroup
 
 	// Adding a task for each of the supplied chunks to speed up the processing:
-	for index, chunk := range chunks {
-		wg.Add(1)
-		go MultiprocessingChunkPipeline(absolutePathOutputDirectory,
-			chunk,
-			performIntegrityCheckBool,
-			performValidityCheckBool,
-			gameModeCheckFlag,
-			performAnonymizationBool,
-			performCleanupBool,
-			localizedMapsMap,
-			compressionMethod,
-			logsFilepath,
-			index,
-			&wg)
+	wg.Add(numberOfThreads)
+
+	for i := 0; i < numberOfThreads; i++ {
+		go func() {
+			for {
+				channelContents, ok := <-channel
+				if !ok {
+					wg.Done()
+					return
+				}
+				MultiprocessingChunkPipeline(absolutePathOutputDirectory,
+					channelContents.Chunk,
+					performIntegrityCheckBool,
+					performValidityCheckBool,
+					gameModeCheckFlag,
+					performAnonymizationBool,
+					performCleanupBool,
+					localizedMapsMap,
+					compressionMethod,
+					logsFilepath,
+					channelContents.Index,
+					&wg)
+			}
+		}()
 	}
+
+	for index, chunk := range chunks {
+		channel <- ChannelContents{Index: index, Chunk: chunk}
+	}
+
+	close(channel)
 	wg.Wait()
 
 	log.Info("Finished PipelineWrapper()")

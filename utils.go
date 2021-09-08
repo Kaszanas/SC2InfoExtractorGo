@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/pprof"
 
 	log "github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ type CLIFlags struct {
 	PerformAnonymization  bool
 	FilterGameMode        int
 	LocalizationMapFile   string
-	WithMultiprocessing   bool
+	NumberOfThreads       int
 	LogLevel              int
 	CPUProfilingPath      string
 	LogPath               string
@@ -44,7 +45,8 @@ func parseFlags() (CLIFlags, bool) {
 
 	// Other compression methods than Deflate need to be registered further down in the code:
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specifies a path to localization file containing {'ForeignName': 'EnglishName'} of maps.")
-	processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", false, "Specifies if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
+	// processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", false, "Specifies if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
+	numberOfThreadsUsedFlag := flag.Int("max_procs", runtime.NumCPU(), "Specifies the number of logic cores of a processor that will be used for processing.")
 
 	// Misc flags:
 	logLevelFlag := flag.Int("log_level", 4, "Specifies a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
@@ -75,7 +77,7 @@ func parseFlags() (CLIFlags, bool) {
 		PerformAnonymization:  *performAnonymizationFlag,
 		FilterGameMode:        *gameModeFilterFlag,
 		LocalizationMapFile:   *localizationMappingFileFlag,
-		WithMultiprocessing:   *processWithMultiprocessingFlag,
+		NumberOfThreads:       *numberOfThreadsUsedFlag,
 		LogLevel:              *logLevelFlag,
 		CPUProfilingPath:      *performCPUProfilingFlag,
 		LogPath:               *logDirectoryFlag,

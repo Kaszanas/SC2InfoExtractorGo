@@ -35,9 +35,9 @@ func anonymizeReplay(replayData *data.CleanedReplay, grpcAnonymizer *GRPCAnonymi
 }
 
 var keepAliveParameters = keepalive.ClientParameters{
-	Time:                5 * time.Second, // send pings every 10 seconds if there is no activity
-	Timeout:             2 * time.Second, // wait 1 second for ping ack before considering the connection dead
-	PermitWithoutStream: true,            // send pings even without active streams
+	Time:                20 * time.Second, // send pings every 10 seconds if there is no activity
+	Timeout:             10 * time.Second, // wait 1 second for ping ack before considering the connection dead
+	PermitWithoutStream: true,             // send pings even without active streams
 }
 
 // Create new class, AnonymizerClient, that wraps the gRPC client (pb.NewAnonymizeServiceClient(conn) should happen once).
@@ -100,7 +100,7 @@ func grpcGetAnonymizeID(toonString string, grpcClient pb.AnonymizeServiceClient,
 	log.Info("Entered grpcAnonymize()")
 
 	// Contact the server and print out its response:
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	result, err := grpcClient.GetAnonymizedID(ctx, &pb.SendNickname{Nickname: toonString})
 	if err != nil {
