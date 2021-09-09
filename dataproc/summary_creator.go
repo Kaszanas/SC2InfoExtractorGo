@@ -24,7 +24,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Finished incrementing summaryStruct.Summary.GameTimes")
 
 	// MapsUsed histogram:
-	replayMap := replayMetadata.MapName
+	replayMap := replayData.Metadata.MapName
 	incrementIfKeyExists(replayMap, summaryStruct.Summary.Maps)
 	log.Info("Finished incrementing summaryStruct.Summary.Maps")
 
@@ -52,6 +52,9 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 		// Counting the number of UnitBorn events to create histograms:
 		eventType := event["evtTypeName"].(string)
 		if eventType == "UnitBorn" {
+
+			// If unit name is in settings exclude units summary then add to another structure in summaryStruct called UnitBornMiscellaneous.
+
 			unitName := event["unitTypeName"].(string)
 			incrementIfKeyExists(unitName, summaryStruct.Summary.Units)
 		}

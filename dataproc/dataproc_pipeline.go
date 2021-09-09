@@ -60,8 +60,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 					localizedMapsMap,
 					compressionMethod,
 					logsFilepath,
-					channelContents.Index,
-					&wg)
+					channelContents.Index)
 			}
 		}()
 	}
@@ -87,11 +86,10 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
 	logsFilepath string,
-	chunkIndex int,
-	waitGroup *sync.WaitGroup) {
+	chunkIndex int) {
 
 	// Letting the orchestrator know that this processing task was finished:
-	defer waitGroup.Done()
+	// defer waitGroup.Done()
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// Create ProcessingInfoFile:

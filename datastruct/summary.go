@@ -18,7 +18,7 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	log.Info("Finished collapsing GameTimes")
 
 	// Adding Maps information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Maps, &replaySummary.Summary.Maps)
+	collapseMapToMap(&replaySummary.Summary.Maps, &packageSummary.Summary.Maps)
 	log.Info("Finished collapsing Maps")
 
 	// Adding Races information to PackageSummary:
