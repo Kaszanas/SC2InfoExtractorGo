@@ -66,7 +66,7 @@ func main() {
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
 	if flags.LocalizationMapFile != "" {
-		localizedMapsMap := utils.UnmarshalLocaleMapping(flags.LocalizationMapFile)
+		localizedMapsMap = utils.UnmarshalLocaleMapping(flags.LocalizationMapFile)
 		if localizedMapsMap == nil {
 			log.Error("Could not read the JSON mapping file, closing the program.")
 			os.Exit(1)
