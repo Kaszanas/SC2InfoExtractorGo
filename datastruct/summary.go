@@ -29,6 +29,9 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	collapseMapToMap(&replaySummary.Summary.Units, &packageSummary.Summary.Units)
 	log.Info("Finished collapsing Units")
 
+	collapseMapToMap(&replaySummary.Summary.OtherUnits, &packageSummary.Summary.OtherUnits)
+	log.Info("Finished collapsing OtherUnits")
+
 	// Adding Dates information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
 	log.Info("Finished collapsing Dates")
