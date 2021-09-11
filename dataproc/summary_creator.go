@@ -61,6 +61,8 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 				continue
 			}
 
+			// If GhostAlternate -> change to Ghost
+
 			incrementIfKeyExists(unitName, summaryStruct.Summary.Units)
 		}
 	}
