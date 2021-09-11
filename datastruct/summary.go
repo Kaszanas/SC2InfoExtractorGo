@@ -88,6 +88,7 @@ type Summary struct {
 	Maps              map[string]int64 `json:"maps"`
 	Races             map[string]int64 `json:"races"`
 	Units             map[string]int64 `json:"units"`
+	OtherUnits        map[string]int64 `json:"otherUnits"`
 	Dates             map[string]int64 `json:"dates"`
 	Servers           map[string]int64 `json:"servers"`
 	MatchupHistograms map[string]int64 `json:"matchupHistograms"`
@@ -102,6 +103,7 @@ func DefaultSummary() Summary {
 		Maps:              make(map[string]int64),
 		Races:             make(map[string]int64),
 		Units:             make(map[string]int64),
+		OtherUnits:        make(map[string]int64),
 		Dates:             make(map[string]int64),
 		Servers:           make(map[string]int64),
 		MatchupHistograms: make(map[string]int64),

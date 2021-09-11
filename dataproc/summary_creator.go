@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,9 +54,13 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 		eventType := event["evtTypeName"].(string)
 		if eventType == "UnitBorn" {
 
-			// If unit name is in settings exclude units summary then add to another structure in summaryStruct called UnitBornMiscellaneous.
-
+			// If the unit is not recognized as player controllable unit it is put to OtherUnits
 			unitName := event["unitTypeName"].(string)
+			if contains(settings.ExcludeUnitsFromSummary, unitName) {
+				incrementIfKeyExists(unitName, summaryStruct.Summary.OtherUnits)
+				continue
+			}
+
 			incrementIfKeyExists(unitName, summaryStruct.Summary.Units)
 		}
 	}
