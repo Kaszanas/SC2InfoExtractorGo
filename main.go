@@ -37,19 +37,20 @@ func main() {
 	}
 
 	log.WithFields(log.Fields{
-		"InputDirectory":        flags.InputDirectory,
-		"OutputDirectory":       flags.OutputDirectory,
-		"NumberOfPackages":      flags.NumberOfPackages,
-		"PerformIntegrityCheck": flags.PerformIntegrityCheck,
-		"PerformValidityCheck":  flags.PerformValidityCheck,
-		"PerformCleanup":        flags.PerformCleanup,
-		"PerformAnonymization":  flags.PerformAnonymization,
-		"FilterGameMode":        flags.FilterGameMode,
-		"LocalizationMapFile":   flags.LocalizationMapFile,
-		"NumberOfThreads":       flags.NumberOfThreads,
-		"LogLevel":              flags.LogLevel,
-		"CPUProfilingPath":      flags.CPUProfilingPath,
-		"LogPath":               flags.LogPath}).Info("Parsed command line flags")
+		"InputDirectory":             flags.InputDirectory,
+		"OutputDirectory":            flags.OutputDirectory,
+		"NumberOfPackages":           flags.NumberOfPackages,
+		"PerformIntegrityCheck":      flags.PerformIntegrityCheck,
+		"PerformValidityCheck":       flags.PerformValidityCheck,
+		"PerformCleanup":             flags.PerformCleanup,
+		"PerformPlayerAnonymization": flags.PerformPlayerAnonymization,
+		"PerformChatAnonymization":   flags.PerformChatAnonymization,
+		"FilterGameMode":             flags.FilterGameMode,
+		"LocalizationMapFile":        flags.LocalizationMapFile,
+		"NumberOfThreads":            flags.NumberOfThreads,
+		"LogLevel":                   flags.LogLevel,
+		"CPUProfilingPath":           flags.CPUProfilingPath,
+		"LogPath":                    flags.LogPath}).Info("Parsed command line flags")
 
 	// Getting list of absolute paths for files from input directory filtering them by file extension to be able to extract the data:
 	listOfInputFiles := utils.ListFiles(flags.InputDirectory, ".SC2Replay")
@@ -79,7 +80,8 @@ func main() {
 		flags.PerformIntegrityCheck,
 		flags.PerformValidityCheck,
 		flags.FilterGameMode,
-		flags.PerformAnonymization,
+		flags.PerformPlayerAnonymization,
+		flags.PerformChatAnonymization,
 		flags.PerformCleanup,
 		localizedMapsMap,
 		8,

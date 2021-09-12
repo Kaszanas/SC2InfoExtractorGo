@@ -8,7 +8,7 @@ import (
 // Filtering
 // filterGameModes performs the check against a binary 0b1111111 getGameModeFlag to verify if the currently processed replay game mode is correct.
 func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
-	log.Info("Entered checkGameMode()")
+	log.Info("Entered filterGameModes()")
 
 	for _, value := range gameModeList {
 		// If we want to include games with game mode `value`, and the game matches the requirements
@@ -18,7 +18,7 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 		}
 	}
 
-	log.Info("Finished checkGameMode()")
+	log.Info("Finished filterGameModes()")
 
 	// The game did not match any active filters, return false.
 	return false

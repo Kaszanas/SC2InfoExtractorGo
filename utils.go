@@ -12,19 +12,20 @@ import (
 
 // CLIFlags is a structure which holds all of the information that was supplied by user in CLI.
 type CLIFlags struct {
-	InputDirectory        string
-	OutputDirectory       string
-	NumberOfPackages      int
-	PerformIntegrityCheck bool
-	PerformValidityCheck  bool
-	PerformCleanup        bool
-	PerformAnonymization  bool
-	FilterGameMode        int
-	LocalizationMapFile   string
-	NumberOfThreads       int
-	LogLevel              int
-	CPUProfilingPath      string
-	LogPath               string
+	InputDirectory             string
+	OutputDirectory            string
+	NumberOfPackages           int
+	PerformIntegrityCheck      bool
+	PerformValidityCheck       bool
+	PerformCleanup             bool
+	PerformPlayerAnonymization bool
+	PerformChatAnonymization   bool
+	FilterGameMode             int
+	LocalizationMapFile        string
+	NumberOfThreads            int
+	LogLevel                   int
+	CPUProfilingPath           string
+	LogPath                    string
 }
 
 // parseFlags contains logic which is responsible for user input.
@@ -38,7 +39,8 @@ func parseFlags() (CLIFlags, bool) {
 	performIntegrityCheckFlag := flag.Bool("perform_integrity_checks", false, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 	performValidityCheckFlag := flag.Bool("perform_validity_checks", false, "Provide if the tool is supposed to use hardcoded validity checks and verify if the replay file variables are within 'common sense' ranges.")
 	performCleanupFlag := flag.Bool("perform_cleanup", false, "Provide if the tool is supposed to perform the cleaning functions within the processing pipeline.")
-	performAnonymizationFlag := flag.Bool("perform_anonymization", false, "Provide if the tool is supposed to perform the anonymization functions within the processing pipeline. If set to true please remember to download and run an anonymization server: https://doi.org/10.5281/zenodo.5138313")
+	performPlayerAnonymizationFlag := flag.Bool("perform_player_anonymization", false, "Specifies if the tool is supposed to perform player anonymization functions within the processing pipeline. If set to true please remember to download and run an anonymization server: https://doi.org/10.5281/zenodo.5138313")
+	performChatAnonymizationFlag := flag.Bool("perform_chat_anonymization", false, "Specifies if the chat anonymization should be performed.")
 
 	// TODO: Write the docs for other game modes:
 	gameModeFilterFlag := flag.Int("game_mode", 0b11111111, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111")
@@ -68,19 +70,20 @@ func parseFlags() (CLIFlags, bool) {
 	}
 
 	flags := CLIFlags{
-		InputDirectory:        absoluteInputDirectory,
-		OutputDirectory:       absolutePathOutputDirectory,
-		NumberOfPackages:      *numberOfPackagesFlag,
-		PerformIntegrityCheck: *performIntegrityCheckFlag,
-		PerformValidityCheck:  *performValidityCheckFlag,
-		PerformCleanup:        *performCleanupFlag,
-		PerformAnonymization:  *performAnonymizationFlag,
-		FilterGameMode:        *gameModeFilterFlag,
-		LocalizationMapFile:   *localizationMappingFileFlag,
-		NumberOfThreads:       *numberOfThreadsUsedFlag,
-		LogLevel:              *logLevelFlag,
-		CPUProfilingPath:      *performCPUProfilingFlag,
-		LogPath:               *logDirectoryFlag,
+		InputDirectory:             absoluteInputDirectory,
+		OutputDirectory:            absolutePathOutputDirectory,
+		NumberOfPackages:           *numberOfPackagesFlag,
+		PerformIntegrityCheck:      *performIntegrityCheckFlag,
+		PerformValidityCheck:       *performValidityCheckFlag,
+		PerformCleanup:             *performCleanupFlag,
+		PerformPlayerAnonymization: *performPlayerAnonymizationFlag,
+		PerformChatAnonymization:   *performChatAnonymizationFlag,
+		FilterGameMode:             *gameModeFilterFlag,
+		LocalizationMapFile:        *localizationMappingFileFlag,
+		NumberOfThreads:            *numberOfThreadsUsedFlag,
+		LogLevel:                   *logLevelFlag,
+		CPUProfilingPath:           *performCPUProfilingFlag,
+		LogPath:                    *logDirectoryFlag,
 	}
 
 	// flag.Usage()

@@ -24,7 +24,8 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
 	gameModeCheckFlag int,
-	performAnonymizationBool bool,
+	performPlayerAnonymizationBool bool,
+	performChatAnonymizationBool bool,
 	performCleanupBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
@@ -55,7 +56,8 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 					performIntegrityCheckBool,
 					performValidityCheckBool,
 					gameModeCheckFlag,
-					performAnonymizationBool,
+					performPlayerAnonymizationBool,
+					performChatAnonymizationBool,
 					performCleanupBool,
 					localizedMapsMap,
 					compressionMethod,
@@ -82,6 +84,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	performValidityCheckBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
+	performChatAnonymizationBool bool,
 	performCleanupBool bool,
 	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
@@ -128,6 +131,7 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			performValidityCheckBool,
 			gameModeCheckFlag,
 			grpcAnonymizer,
+			performChatAnonymizationBool,
 			performCleanupBool,
 			localizedMapsMap)
 
@@ -188,6 +192,7 @@ func FileProcessingPipeline(replayFile string,
 	performValidityCheckBool bool,
 	gameModeCheckFlag int,
 	grpcAnonymizer *GRPCAnonymizer,
+	performChatAnonymizationBool bool,
 	performCleanupBool bool,
 	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary, string) {
 
@@ -219,7 +224,7 @@ func FileProcessingPipeline(replayFile string,
 
 	// Filtering
 	if !filterGameModes(replayData, gameModeCheckFlag) {
-		return false, "", data.ReplaySummary{}, "checkGameMode() failed"
+		return false, "", data.ReplaySummary{}, "filterGameModes() failed"
 	}
 
 	// Clean replay structure:
@@ -238,7 +243,7 @@ func FileProcessingPipeline(replayFile string,
 
 	// Anonimize replay:
 	if grpcAnonymizer != nil {
-		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer) {
+		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer, performChatAnonymizationBool) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
 			return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
 		}
