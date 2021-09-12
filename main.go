@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"os"
 	"runtime/pprof"
 
@@ -61,13 +60,12 @@ func main() {
 			"numberOfPackages":    flags.NumberOfPackages}).Error("Higher number of packages than input files, closing the program.")
 		os.Exit(1)
 	}
-	numberOfFilesInPackage := int(math.Ceil(float64(lenListOfInputFiles) / float64(flags.NumberOfPackages)))
-	listOfChunksFiles := getChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
 
-	PackageToZipBool := false
-	if flags.NumberOfPackages == 0 {
-		PackageToZipBool = true
-	}
+	listOfChunksFiles, packageToZipBool := getChunkListAndPackageBool(
+		listOfInputFiles,
+		flags.NumberOfPackages,
+		flags.NumberOfThreads,
+		lenListOfInputFiles)
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
@@ -83,7 +81,7 @@ func main() {
 	dataproc.PipelineWrapper(
 		flags.OutputDirectory,
 		listOfChunksFiles,
-		PackageToZipBool,
+		packageToZipBool,
 		flags.PerformIntegrityCheck,
 		flags.PerformValidityCheck,
 		flags.FilterGameMode,

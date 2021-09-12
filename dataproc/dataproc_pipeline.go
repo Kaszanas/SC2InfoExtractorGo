@@ -116,6 +116,7 @@ func MultiprocessingChunkPipeline(
 	pipelineErrorCounter := 0
 	compressionErrorCounter := 0
 	processedCounter := 0
+	saveErrorCounter := 0
 
 	// Helper method returning bytes buffer and zip writer which will be used to save the processing results into:
 	var buffer *bytes.Buffer
@@ -172,7 +173,22 @@ func MultiprocessingChunkPipeline(
 				}).Error("Failed to save file to archive! Skipping.")
 				continue
 			}
+			// TODO: This might be done easier. Currently this is duplicate code and seems to introduce bad practice!
+			processedCounter++
+			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
 			log.Info("Added file to zip archive.")
+			continue
+		}
+
+		okSaveToDrive := utils.SaveFileToDrive(replayString, replayFile, absolutePathOutputDirectory)
+		if !okSaveToDrive {
+			saveErrorCounter++
+			log.WithFields(log.Fields{
+				"replayFile":                  replayFile,
+				"absolutePathOutputDirectory": absolutePathOutputDirectory,
+				"saveErrorCounter":            saveErrorCounter,
+			}).Error("Failed to save .json to drive!")
+			continue
 		}
 
 		processedCounter++
@@ -183,17 +199,19 @@ func MultiprocessingChunkPipeline(
 	utils.SaveProcessingInfo(processingInfoFile, processingInfoStruct)
 	log.Info("Saved processing.log")
 
-	// Writing PackageSummaryFile to drive:
-	utils.CreatePackageSummaryFile(absolutePathOutputDirectory, packageSummary, chunkIndex)
+	if packageToZipBool {
+		// Writing PackageSummaryFile to drive:
+		utils.CreatePackageSummaryFile(absolutePathOutputDirectory, packageSummary, chunkIndex)
 
-	// Writing the zip archive to drive:
-	writer.Close()
-	packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
-	err := ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"packageAbsolutePath": packageAbsPath,
-			"packageNumber":       chunkIndex}).Error("Failed to save package to drive!")
+		// Writing the zip archive to drive:
+		writer.Close()
+		packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
+		err := ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"packageAbsolutePath": packageAbsPath,
+				"packageNumber":       chunkIndex}).Error("Failed to save package to drive!")
+		}
 	}
 
 	log.Info("Finished MultiprocessingChunkPipeline()")

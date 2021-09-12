@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -133,6 +134,7 @@ func setProfiling(profilingPath string) bool {
 	return true
 }
 
+// getChunksOfFiles returns chunks of files for processing.
 func getChunksOfFiles(slice []string, chunkSize int) [][]string {
 
 	log.Info("Entered chunkSlice()")
@@ -151,4 +153,32 @@ func getChunksOfFiles(slice []string, chunkSize int) [][]string {
 
 	log.Info("Finished chunkSlice(), returning")
 	return chunks
+}
+
+func getChunkListAndPackageBool(
+	listOfInputFiles []string,
+	numberOfPackages int, numberOfThreads int,
+	lenListOfInputFiles int) ([][]string, bool) {
+
+	log.Info("Entered getChunkListAndPackageBool()")
+
+	packageToZipBool := true
+	if numberOfPackages == 0 {
+		packageToZipBool = false
+	}
+
+	var numberOfFilesInPackage int
+	if packageToZipBool {
+		// If we package all of the replays into ZIP we use user specified number of packages. Number of chunks is n_files/n_user_provided_packages
+		numberOfFilesInPackage = int(math.Ceil(float64(lenListOfInputFiles) / float64(numberOfPackages)))
+		listOfChunksFiles := getChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
+		return listOfChunksFiles, packageToZipBool
+	}
+
+	// If we write stringified .json files of replays to drive without packaging the number of chunks will be n_files/n_threads
+	numberOfFilesInPackage = int(math.Ceil(float64(lenListOfInputFiles) / float64(numberOfThreads)))
+	listOfChunksFiles := getChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
+
+	return listOfChunksFiles, packageToZipBool
+
 }
