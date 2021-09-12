@@ -1,6 +1,8 @@
 package dataproc
 
 import (
+	"archive/zip"
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
@@ -21,6 +23,7 @@ type ChannelContents struct {
 // PipelineWrapper is an orchestrator that distributes work among available workers (threads)
 func PipelineWrapper(absolutePathOutputDirectory string,
 	chunks [][]string,
+	packageToZipBool bool,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
 	gameModeCheckFlag int,
@@ -51,8 +54,10 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 					wg.Done()
 					return
 				}
-				MultiprocessingChunkPipeline(absolutePathOutputDirectory,
+				MultiprocessingChunkPipeline(
+					absolutePathOutputDirectory,
 					channelContents.Chunk,
+					packageToZipBool,
 					performIntegrityCheckBool,
 					performValidityCheckBool,
 					gameModeCheckFlag,
@@ -78,8 +83,10 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 }
 
 // MultiprocessingChunkPipeline is a single instance of processing that is meant to be spawned by the orchestrator in order to speed up the process of data extraction.
-func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
+func MultiprocessingChunkPipeline(
+	absolutePathOutputDirectory string,
 	listOfFiles []string,
+	packageToZipBool bool,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
 	gameModeCheckFlag int,
@@ -92,7 +99,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	chunkIndex int) {
 
 	// Letting the orchestrator know that this processing task was finished:
-	// defer waitGroup.Done()
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// Create ProcessingInfoFile:
@@ -107,16 +113,22 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 	}
 
 	// Defining counters:
-	readErrorCounter := 0
+	pipelineErrorCounter := 0
 	compressionErrorCounter := 0
 	processedCounter := 0
 
 	// Helper method returning bytes buffer and zip writer which will be used to save the processing results into:
-	buffer, writer := utils.InitBufferWriter()
-	log.Info("Initialized buffer and writer.")
+	var buffer *bytes.Buffer
+	var writer *zip.Writer
+	var packageSummary data.PackageSummary
+	if packageToZipBool {
+		buffer, writer = utils.InitBufferWriter()
+		log.Info("Initialized buffer and writer.")
 
-	// Create package summary structure:
-	packageSummary := data.DefaultPackageSummary()
+		// Create package summary structure:
+		packageSummary = data.DefaultPackageSummary()
+	}
+
 	// Processing file:
 	for _, replayFile := range listOfFiles {
 		// Checking if the file was previously processed:
@@ -136,22 +148,32 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 			localizedMapsMap)
 
 		if !didWork {
-			readErrorCounter++
+			pipelineErrorCounter++
+			log.WithFields(log.Fields{
+				"pipelineErrorCounter": pipelineErrorCounter,
+				"replayFile":           replayFile,
+			}).Error("Failed to perform FileProcessingPipeline()!")
 			processingInfoStruct.FailedToProcess = append(processingInfoStruct.FailedToProcess, map[string]string{replayFile: failureReason})
 			continue
 		}
 
-		// Append it to a list and when a package is created create a package summary and clear the list for next iterations
-		data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
-		log.Info("Added replaySummary to packageSummary")
-
 		// Saving output to zip archive:
-		savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
-		if !savedSuccess {
-			compressionErrorCounter++
-			continue
+		if packageToZipBool {
+			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
+			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
+			log.Info("Added replaySummary to packageSummary")
+
+			savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
+			if !savedSuccess {
+				compressionErrorCounter++
+				log.WithFields(log.Fields{
+					"compressionErrorCounter": compressionErrorCounter,
+					"replayFile":              replayFile,
+				}).Error("Failed to save file to archive! Skipping.")
+				continue
+			}
+			log.Info("Added file to zip archive.")
 		}
-		log.Info("Added file to zip archive.")
 
 		processedCounter++
 		processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
@@ -172,14 +194,6 @@ func MultiprocessingChunkPipeline(absolutePathOutputDirectory string,
 		log.WithFields(log.Fields{
 			"packageAbsolutePath": packageAbsPath,
 			"packageNumber":       chunkIndex}).Error("Failed to save package to drive!")
-	}
-
-	// Logging error information:
-	if readErrorCounter > 0 {
-		log.WithField("readErrors", readErrorCounter).Info("Finished processing ", readErrorCounter)
-	}
-	if compressionErrorCounter > 0 {
-		log.WithField("compressionErrors", compressionErrorCounter).Info("Finished processing compressionErrors: ", compressionErrorCounter)
 	}
 
 	log.Info("Finished MultiprocessingChunkPipeline()")

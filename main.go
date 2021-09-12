@@ -64,6 +64,11 @@ func main() {
 	numberOfFilesInPackage := int(math.Ceil(float64(lenListOfInputFiles) / float64(flags.NumberOfPackages)))
 	listOfChunksFiles := getChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
 
+	PackageToZipBool := false
+	if flags.NumberOfPackages == 0 {
+		PackageToZipBool = true
+	}
+
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
 	if flags.LocalizationMapFile != "" {
@@ -75,8 +80,10 @@ func main() {
 	}
 
 	// Initializing the processing:
-	dataproc.PipelineWrapper(flags.OutputDirectory,
+	dataproc.PipelineWrapper(
+		flags.OutputDirectory,
 		listOfChunksFiles,
+		PackageToZipBool,
 		flags.PerformIntegrityCheck,
 		flags.PerformValidityCheck,
 		flags.FilterGameMode,
