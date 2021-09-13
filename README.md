@@ -43,7 +43,7 @@ In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the c
 
 1. Place ```.SC2Replay``` files in ```./DEMOS/Input```
 2. Run ```SC2InfoExtractorGo.exe``` with default flags.
-3. Verify the output packages in ```./DEMOS/Output```
+3. Verify the output in ```./DEMOS/Output```
 4. If The output packages do not contain any processed replays, proceed to verify ```./logs/```.
 
 ### Dataset Preparation
