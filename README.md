@@ -92,12 +92,12 @@ This repository is licensed under GNU GPL v3 license. If You would like to acqui
 ## Cite Us!
 
 ```
-@software{Bialecki_2021_5296789,
+@software{BialeckiExtractor2021,
   author       = {Białecki, Andrzej and
                   Białecki, Piotr},
-  title        = {{Kaszanas/SC2InfoExtractorGo: 0.5.0 
+  title        = {{Kaszanas/SC2InfoExtractorGo: 1.0.0 
                    SC2InfoExtractorGo Release}},
-  month        = aug,
+  month        = sep,
   year         = 2021,
   publisher    = {Zenodo},
   version      = {0.5.0},
