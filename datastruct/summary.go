@@ -18,7 +18,7 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	log.Info("Finished collapsing GameTimes")
 
 	// Adding Maps information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Maps, &replaySummary.Summary.Maps)
+	collapseMapToMap(&replaySummary.Summary.Maps, &packageSummary.Summary.Maps)
 	log.Info("Finished collapsing Maps")
 
 	// Adding Races information to PackageSummary:
@@ -28,6 +28,9 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	// Adding Units information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Units, &packageSummary.Summary.Units)
 	log.Info("Finished collapsing Units")
+
+	collapseMapToMap(&replaySummary.Summary.OtherUnits, &packageSummary.Summary.OtherUnits)
+	log.Info("Finished collapsing OtherUnits")
 
 	// Adding Dates information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
@@ -88,6 +91,7 @@ type Summary struct {
 	Maps              map[string]int64 `json:"maps"`
 	Races             map[string]int64 `json:"races"`
 	Units             map[string]int64 `json:"units"`
+	OtherUnits        map[string]int64 `json:"otherUnits"`
 	Dates             map[string]int64 `json:"dates"`
 	Servers           map[string]int64 `json:"servers"`
 	MatchupHistograms map[string]int64 `json:"matchupHistograms"`
@@ -102,6 +106,7 @@ func DefaultSummary() Summary {
 		Maps:              make(map[string]int64),
 		Races:             make(map[string]int64),
 		Units:             make(map[string]int64),
+		OtherUnits:        make(map[string]int64),
 		Dates:             make(map[string]int64),
 		Servers:           make(map[string]int64),
 		MatchupHistograms: make(map[string]int64),

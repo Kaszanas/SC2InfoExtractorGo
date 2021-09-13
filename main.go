@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"os"
 	"runtime/pprof"
 
@@ -37,19 +36,20 @@ func main() {
 	}
 
 	log.WithFields(log.Fields{
-		"InputDirectory":        flags.InputDirectory,
-		"OutputDirectory":       flags.OutputDirectory,
-		"NumberOfPackages":      flags.NumberOfPackages,
-		"PerformIntegrityCheck": flags.PerformIntegrityCheck,
-		"PerformValidityCheck":  flags.PerformValidityCheck,
-		"PerformCleanup":        flags.PerformCleanup,
-		"PerformAnonymization":  flags.PerformAnonymization,
-		"FilterGameMode":        flags.FilterGameMode,
-		"LocalizationMapFile":   flags.LocalizationMapFile,
-		"WithMultiprocessing":   flags.WithMultiprocessing,
-		"LogLevel":              flags.LogLevel,
-		"CPUProfilingPath":      flags.CPUProfilingPath,
-		"LogPath":               flags.LogPath}).Info("Parsed command line flags")
+		"InputDirectory":             flags.InputDirectory,
+		"OutputDirectory":            flags.OutputDirectory,
+		"NumberOfPackages":           flags.NumberOfPackages,
+		"PerformIntegrityCheck":      flags.PerformIntegrityCheck,
+		"PerformValidityCheck":       flags.PerformValidityCheck,
+		"PerformCleanup":             flags.PerformCleanup,
+		"PerformPlayerAnonymization": flags.PerformPlayerAnonymization,
+		"PerformChatAnonymization":   flags.PerformChatAnonymization,
+		"FilterGameMode":             flags.FilterGameMode,
+		"LocalizationMapFile":        flags.LocalizationMapFile,
+		"NumberOfThreads":            flags.NumberOfThreads,
+		"LogLevel":                   flags.LogLevel,
+		"CPUProfilingPath":           flags.CPUProfilingPath,
+		"LogPath":                    flags.LogPath}).Info("Parsed command line flags")
 
 	// Getting list of absolute paths for files from input directory filtering them by file extension to be able to extract the data:
 	listOfInputFiles := utils.ListFiles(flags.InputDirectory, ".SC2Replay")
@@ -60,13 +60,17 @@ func main() {
 			"numberOfPackages":    flags.NumberOfPackages}).Error("Higher number of packages than input files, closing the program.")
 		os.Exit(1)
 	}
-	numberOfFilesInPackage := int(math.Ceil(float64(lenListOfInputFiles) / float64(flags.NumberOfPackages)))
-	listOfChunksFiles := getChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
+
+	listOfChunksFiles, packageToZipBool := getChunkListAndPackageBool(
+		listOfInputFiles,
+		flags.NumberOfPackages,
+		flags.NumberOfThreads,
+		lenListOfInputFiles)
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
 	if flags.LocalizationMapFile != "" {
-		localizedMapsMap := utils.UnmarshalLocaleMapping(flags.LocalizationMapFile)
+		localizedMapsMap = utils.UnmarshalLocaleMapping(flags.LocalizationMapFile)
 		if localizedMapsMap == nil {
 			log.Error("Could not read the JSON mapping file, closing the program.")
 			os.Exit(1)
@@ -74,16 +78,19 @@ func main() {
 	}
 
 	// Initializing the processing:
-	dataproc.PipelineWrapper(flags.OutputDirectory,
+	dataproc.PipelineWrapper(
+		flags.OutputDirectory,
 		listOfChunksFiles,
+		packageToZipBool,
 		flags.PerformIntegrityCheck,
 		flags.PerformValidityCheck,
 		flags.FilterGameMode,
-		flags.PerformAnonymization,
+		flags.PerformPlayerAnonymization,
+		flags.PerformChatAnonymization,
 		flags.PerformCleanup,
 		localizedMapsMap,
 		8,
-		flags.WithMultiprocessing,
+		flags.NumberOfThreads,
 		flags.LogPath)
 
 	// Closing the log file manually:

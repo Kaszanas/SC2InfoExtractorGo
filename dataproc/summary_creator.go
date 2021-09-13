@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Finished incrementing summaryStruct.Summary.GameTimes")
 
 	// MapsUsed histogram:
-	replayMap := replayMetadata.MapName
+	replayMap := replayData.Metadata.MapName
 	incrementIfKeyExists(replayMap, summaryStruct.Summary.Maps)
 	log.Info("Finished incrementing summaryStruct.Summary.Maps")
 
@@ -52,7 +53,16 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 		// Counting the number of UnitBorn events to create histograms:
 		eventType := event["evtTypeName"].(string)
 		if eventType == "UnitBorn" {
+
+			// If the unit is not recognized as player controllable unit it is put to OtherUnits
 			unitName := event["unitTypeName"].(string)
+			if contains(settings.ExcludeUnitsFromSummary, unitName) {
+				incrementIfKeyExists(unitName, summaryStruct.Summary.OtherUnits)
+				continue
+			}
+
+			// If GhostAlternate -> change to Ghost
+
 			incrementIfKeyExists(unitName, summaryStruct.Summary.Units)
 		}
 	}

@@ -2,7 +2,6 @@ package dataproc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
@@ -12,20 +11,26 @@ import (
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
-func anonymizeReplay(replayData *data.CleanedReplay) bool {
+func anonymizeReplay(
+	replayData *data.CleanedReplay,
+	grpcAnonymizer *GRPCAnonymizer,
+	performChatAnonymizationBool bool) bool {
 
 	log.Info("Entered anonymizeReplay()")
 
 	// Anonymization of Chat events that might contain sensitive information for research purposes:
-	if !anonimizeMessageEvents(replayData) {
-		log.Error("Failed to anonimize messageEvents.")
-		return false
+	if performChatAnonymizationBool {
+		if !anonimizeMessageEvents(replayData) {
+			log.Error("Failed to anonimize messageEvents.")
+			return false
+		}
 	}
 
 	// Anonymizing player information such as toon, nickname, and clan this is done in order to redact potentially sensitive information:
-	if !anonymizePlayers(replayData) {
+	if !anonymizePlayers(replayData, grpcAnonymizer) {
 		log.Error("Failed to anonimize player information.")
 		return false
 	}
@@ -34,38 +39,86 @@ func anonymizeReplay(replayData *data.CleanedReplay) bool {
 	return true
 }
 
+var keepAliveParameters = keepalive.ClientParameters{
+	Time:                20 * time.Second, // send pings every 10 seconds if there is no activity
+	Timeout:             10 * time.Second, // wait 1 second for ping ack before considering the connection dead
+	PermitWithoutStream: true,             // send pings even without active streams
+}
+
 // Create new class, AnonymizerClient, that wraps the gRPC client (pb.NewAnonymizeServiceClient(conn) should happen once).
 // The class will store the gRPC connection and can store a local cache of responses.
+type GRPCAnonymizer struct {
+	Connection *grpc.ClientConn
+	Client     pb.AnonymizeServiceClient
+	Cache      map[string]string
+}
 
-// grpcConnectAnonymize is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
-func grpcConnectAnonymize(toonString string) string {
+// grpcConnect initializes a connection to a specified in settings grpc server.
+func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 
-	log.Info("Entered grpcConnectAnonymize()")
+	log.Info("Entered GRPCAnonymizer.grpcDialConnect()")
 
 	// Set up a connection to the server:
 	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.WithField("error", err).Fatal("Failed to connect to grpc anonymization service")
+		return false
 	}
-	defer conn.Close()
 
-	// Start-up a gRPC client:
-	c := pb.NewAnonymizeServiceClient(conn)
+	anonymizer.Connection = conn
+
+	log.Info("Finished GRPCAnonymizer.grpcDialConnect()")
+	return true
+
+}
+
+func (anonymizer *GRPCAnonymizer) grpcInitializeClient() {
+	// Initialize a grpcClient
+	anonymizer.Client = pb.NewAnonymizeServiceClient(anonymizer.Connection)
+}
+
+// anonymizeToon checks if the player toon is already in the cache and if it is not it calls grpcAnonymizeID.
+func (anonymizer *GRPCAnonymizer) anonymizeToon(toonString string) (string, bool) {
+
+	log.Info("Entered GRPCAnonymizer.anonymizeToon()")
+
+	// Check if the toon is already in cache not to spam the connection with requests:
+	val, ok := anonymizer.Cache[toonString]
+	if ok {
+		return val, true
+	}
+
+	// If the toonString is not within cache already we check if it is possible to obtain it from anonymization server:
+	anonymizedID, grpcAnonOk := grpcGetAnonymizeID(toonString, anonymizer.Client, anonymizer.Connection)
+	if !grpcAnonOk {
+		return "", false
+	}
+	anonymizer.Cache[toonString] = anonymizedID
+	log.Info("Finished GRPCAnonymizer.anonymizeToon()")
+
+	return anonymizedID, true
+}
+
+// grpcGetAnonymizeID is using https://github.com/Kaszanas/SC2AnonServerPy in order to anonymize users.
+func grpcGetAnonymizeID(toonString string, grpcClient pb.AnonymizeServiceClient, grpcConnection *grpc.ClientConn) (string, bool) {
+
+	log.Info("Entered grpcAnonymize()")
 
 	// Contact the server and print out its response:
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	result, err := c.GetAnonymizedID(ctx, &pb.SendNickname{Nickname: toonString})
+	result, err := grpcClient.GetAnonymizedID(ctx, &pb.SendNickname{Nickname: toonString})
 	if err != nil {
 		log.WithField("error", err).Fatalf("Could not receive anonymized information from grpc service!")
+		return "", false
 	}
 	log.WithField("gRPC_response", result.AnonymizedID).Debug("Received anonymized ID for a player.")
 
-	log.Info("Finished grpcConnectAnonymize()")
-	return result.AnonymizedID
+	log.Info("Finished grpcAnonymize()")
+	return result.AnonymizedID, true
 }
 
-func anonymizePlayers(replayData *data.CleanedReplay) bool {
+func anonymizePlayers(replayData *data.CleanedReplay, grpcAnonymizer *GRPCAnonymizer) bool {
 
 	log.Info("Entererd anonymizePlayers().")
 
@@ -78,7 +131,10 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 	for toon, playerDesc := range replayData.ToonPlayerDescMap {
 
 		// Using gRPC for anonymization:
-		anonymizedID := grpcConnectAnonymize(toon)
+		anonymizedID, anonymizeToonOk := grpcAnonymizer.anonymizeToon(toon)
+		if !anonymizeToonOk {
+			return false
+		}
 		anonymizedPlayerDesc := playerDesc
 		anonymizedPlayerDesc.Name = "redacted"
 		anonymizedPlayerDesc.ClanTag = "redacted"
@@ -93,7 +149,7 @@ func anonymizePlayers(replayData *data.CleanedReplay) bool {
 
 	log.WithField("toonDescMapAnonymized", replayData.ToonPlayerDescMap).Debug("Replaced toonDescMap with anonymized version")
 
-	fmt.Println(replayData.ToonPlayerDescMap)
+	// fmt.Println(replayData.ToonPlayerDescMap)
 
 	log.Info("Finished anonymizePlayers()")
 	return true
