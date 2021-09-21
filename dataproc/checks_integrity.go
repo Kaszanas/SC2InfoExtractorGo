@@ -16,6 +16,21 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	maxPlayers := replayData.InitData.GameDescription.MaxPlayers()
 	replayDetails := replayData.Details
 
+	// Checking that the duration of the game is not equal to 0:
+	if replayData.Header.Duration().Nanoseconds() == 0 && replayData.Metadata.DurationSec() == 0 {
+		log.WithFields(log.Fields{
+			"headerDurationNanoseconds": replayData.Header.Duration().Nanoseconds(),
+			"metadataDurationSeconds":   replayData.Metadata.DurationSec(),
+		}).Error("Integrity check failed! Detected the time of the game to be 0!")
+		return false
+	}
+
+	// Checking if the game version is not empty:
+	if replayData.Metadata.GameVersion() == "" {
+		log.WithField("gameVersion", replayData.Metadata.GameVersion()).Error("Integrity check failed! Detected game version to be empty!")
+		return false
+	}
+
 	// Technically there cannot be more than 15 human players!
 	// Based on: https://s2editor-tutorials.readthedocs.io/en/master/01_Introduction/009_Player_Properties.html
 	if maxPlayers > 16 || maxPlayers < 1 {

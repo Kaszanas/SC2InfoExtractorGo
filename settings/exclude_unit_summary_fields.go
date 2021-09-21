@@ -127,4 +127,12 @@ var ExcludeUnitsFromSummary = []string{
 	"LoadOutSpray@14",
 	"PointDefenseDrone",
 	"AutoTurret",
+	"Interceptor",
+	"ReleaseInterceptorsBeacon",
+	"ChangelingMarine",
+	"ChangelingMarineShield",
+	"ChangelingZealot",
+	"ChangelingZergling",
+	"ChangelingZerglingWings",
+	"RavenRepairDrone",
 }
