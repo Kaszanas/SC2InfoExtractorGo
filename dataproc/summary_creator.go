@@ -15,12 +15,22 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Entered generateReplaySummary()")
 
 	// GameVersion information:
-	incrementIfKeyExists(replayData.Metadata.GameVersion, summaryStruct.Summary.GameVersions)
+	gameVersionString := replayData.Metadata.GameVersion
+	if gameVersionString == "" {
+		// TODO: Build a version string here from header information:
+		gameVersionString = ""
+	}
+
+	incrementIfKeyExists(gameVersionString, summaryStruct.Summary.GameVersions)
 	log.Info("Finished incrementing replayData.Metadata.GameVersion")
 
 	replayMetadata := replayData.Metadata
 	// GameDuration histogram:
 	replayDuration := strconv.Itoa(int(replayMetadata.Duration))
+	// If the game duration from metadata doesn't exist use the one from Header:
+	if replayDuration == "" {
+		replayDuration = strconv.Itoa(int(replayData.Header.DurationSeconds))
+	}
 	incrementIfKeyExists(replayDuration, summaryStruct.Summary.GameTimes)
 	log.Info("Finished incrementing summaryStruct.Summary.GameTimes")
 

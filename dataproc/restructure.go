@@ -17,13 +17,15 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Loops()
-	duration := replayData.Header.Duration().Nanoseconds()
+	durationNanoseconds := replayData.Header.Duration().Nanoseconds()
+	durationSeconds := replayData.Header.Duration().Seconds()
 	version := replayData.Header.Struct["version"].(s2prot.Struct)
 
 	cleanHeader := data.CleanedHeader{
-		ElapsedGameLoops: uint64(elapsedGameLoops),
-		Duration:         duration,
-		Version:          version,
+		ElapsedGameLoops:    uint64(elapsedGameLoops),
+		DurationNanoseconds: durationNanoseconds,
+		DurationSeconds:     durationSeconds,
+		Version:             version,
 	}
 	log.Info("Defined cleanHeader struct")
 
