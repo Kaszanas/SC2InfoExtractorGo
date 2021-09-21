@@ -68,14 +68,12 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Units")
 
-	// TODO: Histograms for maximum game time in different matchups. PvP, ZvP, TvP, ZvT, TvT, ZvZ
-
 	var matchupString string
 	for _, player := range replayData.ToonPlayerDescMap {
 		matchupString += player.AssignedRace
 	}
-
-	if !checkMatchup(matchupString, summaryStruct) {
+	// Incrementing both the count of matchup and the game time that the matchup had:
+	if !checkMatchupIncrementCount(matchupString, summaryStruct, replayDuration) {
 		log.Error("Failed to increment matchup information!")
 	}
 
@@ -84,37 +82,43 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 }
 
 // checkMatchup verifies the matchup string, increments the value of a counter of the matching matchup and returns a boolean that specifies if a matchup was matched.
-func checkMatchup(matchupString string, summaryStruct *data.ReplaySummary) bool {
+func checkMatchupIncrementCount(matchupString string, summaryStruct *data.ReplaySummary, gameTimeString string) bool {
 	log.Info("Entered checkMatchup()")
 
 	if matchupString == "TerrTerr" {
 		log.Info("Found matchup to be TvT")
-		incrementIfKeyExists("TvT", summaryStruct.Summary.MatchupHistograms)
+		incrementIfKeyExists("TvT", summaryStruct.Summary.MatchupCount)
+		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.TvTMatchup)
 		return true
 	}
 	if matchupString == "ProtProt" {
 		log.Debug("Found matchup to be PvP")
-		incrementIfKeyExists("PvP", summaryStruct.Summary.MatchupHistograms)
+		incrementIfKeyExists("PvP", summaryStruct.Summary.MatchupCount)
+		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.PvPMatchup)
 		return true
 	}
 	if matchupString == "ZergZerg" {
 		log.Debug("Found matchup to be ZvZ")
-		incrementIfKeyExists("ZvZ", summaryStruct.Summary.MatchupHistograms)
+		incrementIfKeyExists("ZvZ", summaryStruct.Summary.MatchupCount)
+		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.ZvZMatchup)
 		return true
 	}
 	if strings.Contains(matchupString, "Prot") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be PvT")
-		incrementIfKeyExists("PvT", summaryStruct.Summary.MatchupHistograms)
+		incrementIfKeyExists("PvT", summaryStruct.Summary.MatchupCount)
+		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.PvTMatchup)
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be ZvT")
-		incrementIfKeyExists("ZvT", summaryStruct.Summary.MatchupHistograms)
+		incrementIfKeyExists("ZvT", summaryStruct.Summary.MatchupCount)
+		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.TvZMatchup)
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Prot") {
 		log.Debug("Found matchup to be ZvP")
-		incrementIfKeyExists("ZvP", summaryStruct.Summary.MatchupHistograms)
+		incrementIfKeyExists("ZvP", summaryStruct.Summary.MatchupCount)
+		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.PvZMatchup)
 		return true
 	}
 

@@ -40,10 +40,18 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	collapseMapToMap(&replaySummary.Summary.Servers, &packageSummary.Summary.Servers)
 	log.Info("Finished collapsing Servers")
 
-	// Adding matchup information to the PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.MatchupHistograms, &packageSummary.Summary.MatchupHistograms)
-	log.Info("Finished collapsing matchup information")
+	// Adding matchup count information to the PackageSummary:
+	collapseMapToMap(&replaySummary.Summary.MatchupCount, &packageSummary.Summary.MatchupCount)
 
+	// Collapsing all of the matchup game times:
+	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.PvPMatchup, &packageSummary.Summary.MatchupGameTimes.PvPMatchup)
+	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.PvTMatchup, &packageSummary.Summary.MatchupGameTimes.PvTMatchup)
+	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.PvZMatchup, &packageSummary.Summary.MatchupGameTimes.PvZMatchup)
+	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.TvTMatchup, &packageSummary.Summary.MatchupGameTimes.TvTMatchup)
+	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.TvZMatchup, &packageSummary.Summary.MatchupGameTimes.TvZMatchup)
+	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.ZvZMatchup, &packageSummary.Summary.MatchupGameTimes.ZvZMatchup)
+
+	log.Info("Finished collapsing matchup information")
 	log.Info("Finished AddReplaySummToPackageSumm()")
 }
 
@@ -86,39 +94,55 @@ func DefaultReplaySummary() ReplaySummary {
 
 // Summary is an abstract type used by both ReplaySummary and PackageSummary and contains fields that are used as descriptive statistics
 type Summary struct {
-	GameVersions      map[string]int64 `json:"gameVersions"`
-	GameTimes         map[string]int64 `json:"gameTimes"`
-	Maps              map[string]int64 `json:"maps"`
-	Races             map[string]int64 `json:"races"`
-	Units             map[string]int64 `json:"units"`
-	OtherUnits        map[string]int64 `json:"otherUnits"`
-	Dates             map[string]int64 `json:"dates"`
-	Servers           map[string]int64 `json:"servers"`
-	MatchupHistograms map[string]int64 `json:"matchupHistograms"`
+	GameVersions     map[string]int64 `json:"gameVersions"`
+	GameTimes        map[string]int64 `json:"gameTimes"`
+	Maps             map[string]int64 `json:"maps"`
+	Races            map[string]int64 `json:"races"`
+	Units            map[string]int64 `json:"units"`
+	OtherUnits       map[string]int64 `json:"otherUnits"`
+	Dates            map[string]int64 `json:"dates"`
+	Servers          map[string]int64 `json:"servers"`
+	MatchupCount     map[string]int64 `json:"matchupCount"`
+	MatchupGameTimes MatchupGameTimes `json:"matchupGameTimes"`
 }
 
-// DefaultSummary ...
+// DefaultSummary returns a Summary structure with initialized fiends
 func DefaultSummary() Summary {
 
 	return Summary{
-		GameVersions:      make(map[string]int64),
-		GameTimes:         make(map[string]int64),
-		Maps:              make(map[string]int64),
-		Races:             make(map[string]int64),
-		Units:             make(map[string]int64),
-		OtherUnits:        make(map[string]int64),
-		Dates:             make(map[string]int64),
-		Servers:           make(map[string]int64),
-		MatchupHistograms: make(map[string]int64),
+		GameVersions:     make(map[string]int64),
+		GameTimes:        make(map[string]int64),
+		Maps:             make(map[string]int64),
+		Races:            make(map[string]int64),
+		Units:            make(map[string]int64),
+		OtherUnits:       make(map[string]int64),
+		Dates:            make(map[string]int64),
+		Servers:          make(map[string]int64),
+		MatchupCount:     make(map[string]int64),
+		MatchupGameTimes: DefaultMatchupGameTimes(),
 	}
 }
 
 // MatchupHistograms aggregates the data that is required to prepare histograms of Matchup vs Game Length
-type MatchupHistograms struct {
-	PvPMatchup int64 `json:"PvPMatchup"`
-	TvTMatchup int64 `json:"TvTMatchup"`
-	ZvZMatchup int64 `json:"ZvZMatchup"`
-	PvZMatchup int64 `json:"PvZMatchup"`
-	PvTMatchup int64 `json:"PvTMatchup"`
-	TvZMatchup int64 `json:"TvZMatchup"`
+type MatchupGameTimes struct {
+	PvPMatchup map[string]int64 `json:"PvPMatchupGameTimes"`
+	TvTMatchup map[string]int64 `json:"TvTMatchupGameTimes"`
+	ZvZMatchup map[string]int64 `json:"ZvZMatchupGameTimes"`
+	PvZMatchup map[string]int64 `json:"PvZMatchupGameTimes"`
+	PvTMatchup map[string]int64 `json:"PvTMatchupGameTimes"`
+	TvZMatchup map[string]int64 `json:"TvZMatchupGameTimes"`
+}
+
+// DefaultMatchupHistograms returns a structure with initialized fields.
+func DefaultMatchupGameTimes() MatchupGameTimes {
+
+	return MatchupGameTimes{
+		PvPMatchup: make(map[string]int64),
+		TvTMatchup: make(map[string]int64),
+		ZvZMatchup: make(map[string]int64),
+		PvZMatchup: make(map[string]int64),
+		PvTMatchup: make(map[string]int64),
+		TvZMatchup: make(map[string]int64),
+	}
+
 }
