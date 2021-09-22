@@ -17,8 +17,8 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	// GameVersion information:
 	gameVersionString := replayData.Metadata.GameVersion
 	if gameVersionString == "" {
-		// TODO: Build a version string here from header information:
-		gameVersionString = ""
+		// Accessing another data structure that holds game version string:
+		gameVersionString = replayData.Header.Version.String()
 	}
 
 	incrementIfKeyExists(gameVersionString, summaryStruct.Summary.GameVersions)

@@ -17,7 +17,7 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	replayDetails := replayData.Details
 
 	// Checking that the duration of the game is not equal to 0:
-	if replayData.Header.Duration().Nanoseconds() == 0 && replayData.Metadata.DurationSec() == 0 {
+	if replayData.Header.Duration().Seconds() == 0 && replayData.Metadata.DurationSec() == 0 {
 		log.WithFields(log.Fields{
 			"headerDurationNanoseconds": replayData.Header.Duration().Nanoseconds(),
 			"metadataDurationSeconds":   replayData.Metadata.DurationSec(),
@@ -26,8 +26,11 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	}
 
 	// Checking if the game version is not empty:
-	if replayData.Metadata.GameVersion() == "" {
-		log.WithField("gameVersion", replayData.Metadata.GameVersion()).Error("Integrity check failed! Detected game version to be empty!")
+	if replayData.Metadata.GameVersion() == "" && replayData.Header.VersionString() == "" {
+		log.WithFields(log.Fields{
+			"metadataGameVersion": replayData.Metadata.GameVersion(),
+			"headerGameVersion":   replayData.Header.VersionString(),
+		}).Error("Integrity check failed! Detected game version to be empty!")
 		return false
 	}
 
