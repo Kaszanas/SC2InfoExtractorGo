@@ -101,6 +101,7 @@ type Summary struct {
 	Units            map[string]int64 `json:"units"`
 	OtherUnits       map[string]int64 `json:"otherUnits"`
 	Dates            map[string]int64 `json:"dates"`
+	DatesGameTimes   DatesGameTimes   `json:"datesGameTimes"`
 	Servers          map[string]int64 `json:"servers"`
 	MatchupCount     map[string]int64 `json:"matchupCount"`
 	MatchupGameTimes MatchupGameTimes `json:"matchupGameTimes"`
@@ -117,6 +118,7 @@ func DefaultSummary() Summary {
 		Units:            make(map[string]int64),
 		OtherUnits:       make(map[string]int64),
 		Dates:            make(map[string]int64),
+		DatesGameTimes:   DefaultDatesGameTimes(),
 		Servers:          make(map[string]int64),
 		MatchupCount:     make(map[string]int64),
 		MatchupGameTimes: DefaultMatchupGameTimes(),
@@ -145,4 +147,14 @@ func DefaultMatchupGameTimes() MatchupGameTimes {
 		TvZMatchup: make(map[string]int64),
 	}
 
+}
+
+type DatesGameTimes struct {
+	GameTimes map[string]map[string]int64 `json:"gameTimes"`
+}
+
+func DefaultDatesGameTimes() DatesGameTimes {
+	return DatesGameTimes{
+		GameTimes: make(map[string]map[string]int64),
+	}
 }

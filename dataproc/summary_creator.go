@@ -15,7 +15,8 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Entered generateReplaySummary()")
 
 	// GameVersion information:
-	gameVersionString := replayData.Metadata.GameVersion
+	var gameVersionString string
+	gameVersionString = replayData.Metadata.GameVersion
 	if gameVersionString == "" {
 		// Accessing another data structure that holds game version string:
 		gameVersionString = replayData.Header.Version.String()
@@ -26,7 +27,8 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 
 	replayMetadata := replayData.Metadata
 	// GameDuration histogram:
-	replayDuration := strconv.Itoa(int(replayMetadata.Duration))
+	var replayDuration string
+	replayDuration = strconv.Itoa(int(replayMetadata.Duration))
 	// If the game duration from metadata doesn't exist use the one from Header:
 	if replayDuration == "" {
 		replayDuration = strconv.Itoa(int(replayData.Header.DurationSeconds))
@@ -51,6 +53,11 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	dateString := strconv.Itoa(replayYear) + "-" + strconv.Itoa(int(replayMonth)) + "-" + strconv.Itoa(replayDay)
 	incrementIfKeyExists(dateString, summaryStruct.Summary.Dates)
 	log.Info("Finished incrementing summaryStruct.Summary.Dates")
+
+	// GameTimes per year histogram
+	incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
+	// GameTimes per year-month histogram:
+	incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear)+"-"+strconv.Itoa(int(replayMonth)), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
 
 	// Server information histogram:
 	for _, player := range replayData.ToonPlayerDescMap {
@@ -145,4 +152,21 @@ func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
 		mapToCheck[key] = 1
 		log.Info("Finished keyExistsIncrementValue(), new value added")
 	}
+}
+
+func incrementNestedGameTimeIfKeyExists(key string, gameTime string, mapToCheck map[string]map[string]int64) {
+
+	log.Info("Entered incrementNestedGameTimeIfKeyExists()")
+
+	if keyDateMap, ok := mapToCheck[key]; ok {
+		log.Info("Entered incrementNestedGameTimeIfKeyExists()")
+		if val, ok := keyDateMap[gameTime]; ok {
+			keyDateMap[key] = val + 1
+			log.Info("Finished incrementNestedGameTimeIfKeyExists(), value incremented")
+		} else {
+			keyDateMap[key] = 1
+			log.Info("Finished incrementNestedGameTimeIfKeyExists(), new value added")
+		}
+	}
+
 }
