@@ -41,10 +41,13 @@ func checkIntegrity(replayData *rep.Rep) bool {
 		return false
 	}
 
-	// Map name of a replay is available in two places in the parsed data, if they mismatch then integrity test fails:
+	// Map name of a replay is available in two places in the parsed data, if they mismatch then first part of integrity check test fails:
 	if replayData.Metadata.Title() != replayDetails.Title() {
-		log.WithFields(log.Fields{"metadataTitle": replayData.Metadata.Title(), "replayDetailsTitle": replayDetails.Title()}).Error("Integrity check failed! metadataTitle does not match replayDetailsTitle!")
-		return false
+		// Checking if both structures holding map name are empty:
+		if replayData.Metadata.Title() == "" && replayDetails.Title() == "" {
+			log.WithFields(log.Fields{"metadataTitle": replayData.Metadata.Title(), "replayDetailsTitle": replayDetails.Title()}).Error("Integrity check failed! metadataTitle does not match replayDetailsTitle!")
+			return false
+		}
 	}
 
 	// Checking if player list from replayDetails is of the same length as ToonPlayerDescMap:
@@ -52,20 +55,6 @@ func checkIntegrity(replayData *rep.Rep) bool {
 	toonPlayerDescMapLength := len(replayData.TrackerEvts.ToonPlayerDescMap)
 	if replayDetailsPlayerListLength != toonPlayerDescMapLength {
 		log.WithFields(log.Fields{"replayDetailsPlayerListLength": replayDetailsPlayerListLength, "toonPlayerDescMapLength": toonPlayerDescMapLength}).Error("Integrity check failed! length of players mismatch!")
-		return false
-	}
-
-	metadataBaseBuildInt, conversionOk := convertBaseBuild(replayData.Metadata.BaseBuild())
-	if !conversionOk {
-		log.WithField("baseBuild", replayData.Metadata.BaseBuild()).Error("Failed to convert metadata.BaseBuild()")
-		return false
-	}
-
-	// Checking if game version contained in header fits the one that is in metadata:
-	metadataBaseBuildInt64 := int64(metadataBaseBuildInt)
-	headerBaseBuild := replayData.Header.BaseBuild()
-	if headerBaseBuild != metadataBaseBuildInt64 {
-		log.WithFields(log.Fields{"metadataBaseBuildInt64": metadataBaseBuildInt64, "headerBaseBuild": headerBaseBuild}).Error("Integrity check failed! Build version mismatch!")
 		return false
 	}
 
