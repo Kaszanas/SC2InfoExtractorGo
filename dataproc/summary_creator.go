@@ -60,8 +60,14 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear)+"-"+strconv.Itoa(int(replayMonth)), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
 
 	// Server information histogram:
+	// TODO: Verify if this can be accessed differently:
+	singleLoop := false
 	for _, player := range replayData.ToonPlayerDescMap {
-		incrementIfKeyExists(player.Region, summaryStruct.Summary.Servers)
+		// This information is required only once per game:
+		if !singleLoop {
+			incrementIfKeyExists(player.Region, summaryStruct.Summary.Servers)
+		}
+		singleLoop = true
 	}
 	log.Info("Finished incrementing summaryStruct.Summary.Servers")
 
@@ -167,6 +173,8 @@ func incrementNestedGameTimeIfKeyExists(key string, gameTime string, mapToCheck 
 			keyDateMap[key] = 1
 			log.Info("Finished incrementNestedGameTimeIfKeyExists(), new value added")
 		}
+	} else {
+		mapToCheck[key] = map[string]int64{gameTime: 1}
 	}
 
 }

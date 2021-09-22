@@ -28,13 +28,23 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	// Adding Units information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Units, &packageSummary.Summary.Units)
 	log.Info("Finished collapsing Units")
-
 	collapseMapToMap(&replaySummary.Summary.OtherUnits, &packageSummary.Summary.OtherUnits)
 	log.Info("Finished collapsing OtherUnits")
 
 	// Adding Dates information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
 	log.Info("Finished collapsing Dates")
+
+	// TODO: This might not work correctly! Verify on a single package:
+	for key, replayGameTimeMap := range replaySummary.Summary.DatesGameTimes.GameTimes {
+		if packageSummaryMap, ok := packageSummary.Summary.DatesGameTimes.GameTimes[key]; ok {
+			collapseMapToMap(&replayGameTimeMap, &packageSummaryMap)
+			packageSummary.Summary.DatesGameTimes.GameTimes[key] = packageSummaryMap
+		} else {
+			packageSummary.Summary.DatesGameTimes.GameTimes[key] = replayGameTimeMap
+			// collapseNestedMaps(key, &packageSummary.Summary.DatesGameTimes.GameTimes, &replayGameTimeMap)
+		}
+	}
 
 	// Adding Servers information to PackageSummary:
 	collapseMapToMap(&replaySummary.Summary.Servers, &packageSummary.Summary.Servers)
@@ -71,6 +81,16 @@ func collapseMapToMap(mapToCollapse *map[string]int64, collapseInto *map[string]
 
 	log.Info("Finished collapseMapToMap()")
 }
+
+// func collapseNestedMaps(key string, packageSummaryGameTimeMap *map[string]map[string]int64, replayGameTimeMap *map[string]int64) {
+
+// 	_, ok := (*packageSummaryGameTimeMap)[key]
+// 	if ok {
+// 		(*packageSummaryGameTimeMap)[key] = (*packageSummaryGameTimeMap)[key] + (*replayGameTimeMap)[key]
+// 	} else {
+// 		(*packageSummaryGameTimeMap)[key] = *replayGameTimeMap
+// 	}
+// }
 
 // PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
 type PackageSummary struct {
