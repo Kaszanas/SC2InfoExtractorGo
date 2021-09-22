@@ -19,7 +19,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	elapsedGameLoops := replayData.Header.Loops()
 	durationNanoseconds := replayData.Header.Duration().Nanoseconds()
 	durationSeconds := replayData.Header.Duration().Seconds()
-	version := replayData.Header.Struct["version"].(s2prot.Struct)
+	// version := replayData.Header.Struct["version"].(s2prot.Struct)
+
+	version := replayData.Header.VersionString()
 
 	cleanHeader := data.CleanedHeader{
 		ElapsedGameLoops:    uint64(elapsedGameLoops),

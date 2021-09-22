@@ -19,7 +19,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	gameVersionString = replayData.Metadata.GameVersion
 	if gameVersionString == "" {
 		// Accessing another data structure that holds game version string:
-		gameVersionString = replayData.Header.Version.String()
+		gameVersionString = replayData.Header.Version
 	}
 
 	incrementIfKeyExists(gameVersionString, summaryStruct.Summary.GameVersions)
@@ -30,7 +30,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	var replayDuration string
 	replayDuration = strconv.Itoa(int(replayMetadata.Duration))
 	// If the game duration from metadata doesn't exist use the one from Header:
-	if replayDuration == "" {
+	if replayDuration == "0" {
 		replayDuration = strconv.Itoa(int(replayData.Header.DurationSeconds))
 	}
 	incrementIfKeyExists(replayDuration, summaryStruct.Summary.GameTimes)
