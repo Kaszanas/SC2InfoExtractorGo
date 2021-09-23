@@ -35,14 +35,23 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
 	log.Info("Finished collapsing Dates")
 
-	// TODO: This might not work correctly! Verify on a single package:
+	// Creating nested structures for game times by dates:
 	for key, replayGameTimeMap := range replaySummary.Summary.DatesGameTimes.GameTimes {
 		if packageSummaryMap, ok := packageSummary.Summary.DatesGameTimes.GameTimes[key]; ok {
 			collapseMapToMap(&replayGameTimeMap, &packageSummaryMap)
 			packageSummary.Summary.DatesGameTimes.GameTimes[key] = packageSummaryMap
 		} else {
 			packageSummary.Summary.DatesGameTimes.GameTimes[key] = replayGameTimeMap
-			// collapseNestedMaps(key, &packageSummary.Summary.DatesGameTimes.GameTimes, &replayGameTimeMap)
+		}
+	}
+
+	// Creating nested structures for game times by maps:
+	for key, replayGameTimeMap := range replaySummary.Summary.MapsGameTimes.GameTimes {
+		if packageSummaryMap, ok := packageSummary.Summary.MapsGameTimes.GameTimes[key]; ok {
+			collapseMapToMap(&replayGameTimeMap, &packageSummaryMap)
+			packageSummary.Summary.MapsGameTimes.GameTimes[key] = packageSummaryMap
+		} else {
+			packageSummary.Summary.MapsGameTimes.GameTimes[key] = replayGameTimeMap
 		}
 	}
 
