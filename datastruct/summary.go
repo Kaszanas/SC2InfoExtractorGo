@@ -117,11 +117,12 @@ type Summary struct {
 	GameVersions     map[string]int64 `json:"gameVersions"`
 	GameTimes        map[string]int64 `json:"gameTimes"`
 	Maps             map[string]int64 `json:"maps"`
+	MapsGameTimes    GameTimes        `json:"mapGameTimes"`
 	Races            map[string]int64 `json:"races"`
 	Units            map[string]int64 `json:"units"`
 	OtherUnits       map[string]int64 `json:"otherUnits"`
 	Dates            map[string]int64 `json:"dates"`
-	DatesGameTimes   DatesGameTimes   `json:"datesGameTimes"`
+	DatesGameTimes   GameTimes        `json:"datesGameTimes"`
 	Servers          map[string]int64 `json:"servers"`
 	MatchupCount     map[string]int64 `json:"matchupCount"`
 	MatchupGameTimes MatchupGameTimes `json:"matchupGameTimes"`
@@ -134,11 +135,12 @@ func DefaultSummary() Summary {
 		GameVersions:     make(map[string]int64),
 		GameTimes:        make(map[string]int64),
 		Maps:             make(map[string]int64),
+		MapsGameTimes:    DefaultGameTimes(),
 		Races:            make(map[string]int64),
 		Units:            make(map[string]int64),
 		OtherUnits:       make(map[string]int64),
 		Dates:            make(map[string]int64),
-		DatesGameTimes:   DefaultDatesGameTimes(),
+		DatesGameTimes:   DefaultGameTimes(),
 		Servers:          make(map[string]int64),
 		MatchupCount:     make(map[string]int64),
 		MatchupGameTimes: DefaultMatchupGameTimes(),
@@ -169,12 +171,12 @@ func DefaultMatchupGameTimes() MatchupGameTimes {
 
 }
 
-type DatesGameTimes struct {
+type GameTimes struct {
 	GameTimes map[string]map[string]int64 `json:"gameTimes"`
 }
 
-func DefaultDatesGameTimes() DatesGameTimes {
-	return DatesGameTimes{
+func DefaultGameTimes() GameTimes {
+	return GameTimes{
 		GameTimes: make(map[string]map[string]int64),
 	}
 }
