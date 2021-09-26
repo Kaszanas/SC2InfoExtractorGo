@@ -84,6 +84,7 @@ func main() {
 		packageToZipBool,
 		flags.PerformIntegrityCheck,
 		flags.PerformValidityCheck,
+		flags.PerformFiltering,
 		flags.FilterGameMode,
 		flags.PerformPlayerAnonymization,
 		flags.PerformChatAnonymization,

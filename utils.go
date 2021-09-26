@@ -21,6 +21,7 @@ type CLIFlags struct {
 	PerformCleanup             bool
 	PerformPlayerAnonymization bool
 	PerformChatAnonymization   bool
+	PerformFiltering           bool
 	FilterGameMode             int
 	LocalizationMapFile        string
 	NumberOfThreads            int
@@ -44,7 +45,8 @@ func parseFlags() (CLIFlags, bool) {
 	performChatAnonymizationFlag := flag.Bool("perform_chat_anonymization", false, "Specifies if the chat anonymization should be performed.")
 
 	// TODO: Write the docs for other game modes:
-	gameModeFilterFlag := flag.Int("game_mode", 0b11111111, "Provide which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111")
+	performFilteringFlag := flag.Bool("perform_filtering", false, "Specifies if the pipeline ought to verify different hard coded game modes. If set to false completely bypasses the filtering.")
+	gameModeFilterFlag := flag.Int("game_mode_filter", 0b11111111, "Specifies which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111")
 
 	// Other compression methods than Deflate need to be registered further down in the code:
 	localizationMappingFileFlag := flag.String("localized_maps_file", "./operation_files/output.json", "Specifies a path to localization file containing {'ForeignName': 'EnglishName'} of maps. If this flag is not set and the default is unavailable, map translation will be ommited.")
@@ -79,6 +81,7 @@ func parseFlags() (CLIFlags, bool) {
 		PerformCleanup:             *performCleanupFlag,
 		PerformPlayerAnonymization: *performPlayerAnonymizationFlag,
 		PerformChatAnonymization:   *performChatAnonymizationFlag,
+		PerformFiltering:           *performFilteringFlag,
 		FilterGameMode:             *gameModeFilterFlag,
 		LocalizationMapFile:        *localizationMappingFileFlag,
 		NumberOfThreads:            *numberOfThreadsUsedFlag,
