@@ -28,13 +28,32 @@ func extractReplayData(replayData *rep.Rep, localizedMapsMap map[string]interfac
 	}
 
 	// Cleaning unused game events
-	if performCleanupBool && !cleanUnusedGameEvents(&structuredReplayData) {
+	if performCleanupBool && !cleanUnusedGameEvents(&structuredReplayData) && !cleanUnusedMessageEvents(&structuredReplayData) {
 		log.Error("Error in cleaning the replay structure.")
 		return false, data.CleanedReplay{}
 	}
 
 	log.Info("Finished cleanReplay()")
 	return true, structuredReplayData
+}
+
+// cleanUnusedMessageEvents iterates over the message events and creates a new structure without the events that were hardcoded as redundant.
+func cleanUnusedMessageEvents(replayData *data.CleanedReplay) bool {
+
+	log.Info("Entered cleanUnusedMessageEvents()")
+
+	var cleanMessageEvents []s2prot.Struct
+	for _, event := range replayData.MessageEvents {
+		eventType := event["evtTypeName"].(string)
+		if !contains(settings.UnusedMessageEvents, eventType) {
+			cleanMessageEvents = append(cleanMessageEvents, event)
+		}
+	}
+
+	replayData.MessageEvents = cleanMessageEvents
+
+	log.Info("Finished cleanUnusedMessageEvents()")
+	return true
 }
 
 // cleanUnusedGameEvents checks against settings.UnusedGameEvents and creates new GameEvents structure without certain events.

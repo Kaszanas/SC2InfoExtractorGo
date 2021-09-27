@@ -243,6 +243,7 @@ func FileProcessingPipeline(replayFile string,
 		return false, "", data.ReplaySummary{}, "rep.NewFromFile() failed"
 	}
 	log.WithField("file", replayFile).Info("Read data from a replay.")
+	defer replayData.Close()
 
 	// Performing integrity checks
 	if performIntegrityCheckBool {
@@ -298,8 +299,6 @@ func FileProcessingPipeline(replayFile string,
 		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
 		return false, "", data.ReplaySummary{}, "stringifyReplay() failed"
 	}
-
-	replayData.Close()
 
 	log.Info("Finished FileProcessingPipeline()")
 

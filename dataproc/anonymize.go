@@ -162,7 +162,7 @@ func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
 	var anonymizedMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
 		eventType := event["evtTypeName"].(string)
-		if !contains(settings.UnusedMessageEvents, eventType) {
+		if !contains(settings.AnonymizeMessageEvents, eventType) {
 			anonymizedMessageEvents = append(anonymizedMessageEvents, event)
 		}
 	}
