@@ -5,4 +5,5 @@ var UnusedGameEvents = []string{
 	"TriggerSoundLengthSync",
 	"SetSyncPlayingTime",
 	"SetSyncLoadingTime",
+	"UserFinishedLoadingSync",
 }

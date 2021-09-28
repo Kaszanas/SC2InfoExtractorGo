@@ -27,10 +27,16 @@ func extractReplayData(replayData *rep.Rep, localizedMapsMap map[string]interfac
 		return false, data.CleanedReplay{}
 	}
 
-	// Cleaning unused game events
-	if performCleanupBool && !cleanUnusedGameEvents(&structuredReplayData) && !cleanUnusedMessageEvents(&structuredReplayData) {
-		log.Error("Error in cleaning the replay structure.")
-		return false, data.CleanedReplay{}
+	// Cleaning unused message and game events
+	if performCleanupBool {
+		if !cleanUnusedMessageEvents(&structuredReplayData) {
+			log.Error("Error in cleaning the message events.")
+			return false, data.CleanedReplay{}
+		}
+		if !cleanUnusedGameEvents(&structuredReplayData) {
+			log.Error("Error in cleaning the game events.")
+			return false, data.CleanedReplay{}
+		}
 	}
 
 	log.Info("Finished cleanReplay()")
@@ -44,8 +50,7 @@ func cleanUnusedMessageEvents(replayData *data.CleanedReplay) bool {
 
 	var cleanMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
-		eventType := event["evtTypeName"].(string)
-		if !contains(settings.UnusedMessageEvents, eventType) {
+		if !contains(settings.UnusedMessageEvents, event["evtTypeName"].(string)) {
 			cleanMessageEvents = append(cleanMessageEvents, event)
 		}
 	}
