@@ -13,7 +13,8 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 	for _, value := range gameModeList {
 		// If we want to include games with game mode `value`, and the game matches the requirements
 		// of the game mode, then it matches the filter => return true.
-		if getGameModeFlag&value != 0 && checkGameParameters(replayData, gameModeFiltersMapping[value]) {
+		parametersOk := checkGameParameters(replayData, gameModeFiltersMapping[value])
+		if getGameModeFlag&value != 0 && parametersOk {
 			return true
 		}
 	}
@@ -31,7 +32,7 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 
 	// Verifying if the number of players matches:
 	if !checkNumberOfPlayers(replayData, gameInfoFilter.maxPlayers) {
-		log.Info("Filtering game parameters mismatch! returning from checkGameParameters()")
+		log.Info("Filtering game parameters mismatch! Number of players is different. Returning from checkGameParameters()")
 		return false
 	}
 
@@ -42,7 +43,7 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 	if gameOptionsAmm != gameInfoFilter.isAutoMatchMaking {
 		log.WithFields(log.Fields{
 			"gameOptionsAmm":    gameOptionsAmm,
-			"isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).Info("Filtering game parameters mismatch! returning from checkGameParameters()")
+			"isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).Info("Filtering game parameters mismatch! AutoMatchmaking parameter different! Returning from checkGameParameters()")
 		return false
 	}
 

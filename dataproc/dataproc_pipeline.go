@@ -3,6 +3,7 @@ package dataproc
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
@@ -26,6 +27,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 	packageToZipBool bool,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
+	performFilteringBool bool,
 	gameModeCheckFlag int,
 	performPlayerAnonymizationBool bool,
 	performChatAnonymizationBool bool,
@@ -60,6 +62,7 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 					packageToZipBool,
 					performIntegrityCheckBool,
 					performValidityCheckBool,
+					performFilteringBool,
 					gameModeCheckFlag,
 					performPlayerAnonymizationBool,
 					performChatAnonymizationBool,
@@ -89,6 +92,7 @@ func MultiprocessingChunkPipeline(
 	packageToZipBool bool,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
+	performFilteringBool bool,
 	gameModeCheckFlag int,
 	performAnonymizationBool bool,
 	performChatAnonymizationBool bool,
@@ -142,6 +146,7 @@ func MultiprocessingChunkPipeline(
 			replayFile,
 			performIntegrityCheckBool,
 			performValidityCheckBool,
+			performFilteringBool,
 			gameModeCheckFlag,
 			grpcAnonymizer,
 			performChatAnonymizationBool,
@@ -222,6 +227,7 @@ func MultiprocessingChunkPipeline(
 func FileProcessingPipeline(replayFile string,
 	performIntegrityCheckBool bool,
 	performValidityCheckBool bool,
+	performFiltering bool,
 	gameModeCheckFlag int,
 	grpcAnonymizer *GRPCAnonymizer,
 	performChatAnonymizationBool bool,
@@ -237,11 +243,15 @@ func FileProcessingPipeline(replayFile string,
 		return false, "", data.ReplaySummary{}, "rep.NewFromFile() failed"
 	}
 	log.WithField("file", replayFile).Info("Read data from a replay.")
+	defer replayData.Close()
 
 	// Performing integrity checks
-	if performIntegrityCheckBool && !checkIntegrity(replayData) {
-		log.WithField("file", replayFile).Error("Integrity check failed in file.")
-		return false, "", data.ReplaySummary{}, "checkIntegrity() failed"
+	if performIntegrityCheckBool {
+		integrityOk, failureReason := checkIntegrity(replayData)
+		if !integrityOk {
+			log.WithField("file", replayFile).Error("Integrity check failed in file.")
+			return false, "", data.ReplaySummary{}, fmt.Sprintf("checkIntegrity() failed: %s", failureReason)
+		}
 	}
 
 	// Performing validity checks:
@@ -255,8 +265,10 @@ func FileProcessingPipeline(replayFile string,
 	}
 
 	// Filtering
-	if !filterGameModes(replayData, gameModeCheckFlag) {
-		return false, "", data.ReplaySummary{}, "filterGameModes() failed"
+	if performFiltering {
+		if !filterGameModes(replayData, gameModeCheckFlag) {
+			return false, "", data.ReplaySummary{}, "filterGameModes() failed"
+		}
 	}
 
 	// Clean replay structure:
@@ -287,8 +299,6 @@ func FileProcessingPipeline(replayFile string,
 		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
 		return false, "", data.ReplaySummary{}, "stringifyReplay() failed"
 	}
-
-	replayData.Close()
 
 	log.Info("Finished FileProcessingPipeline()")
 
