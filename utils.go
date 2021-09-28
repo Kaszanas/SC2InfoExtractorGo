@@ -35,7 +35,7 @@ func parseFlags() (CLIFlags, bool) {
 	// Command line arguments:
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed zip packages will be saved.")
-	numberOfPackagesFlag := flag.Int("number_of_packages", 1, "Provide a number of zip packages to be created and compressed into a zip archive. Please remember that this number needs to be lower than the number of processed files. If set to 0, will ommit the zip packaging and save output .json directly to drive.")
+	numberOfPackagesFlag := flag.Int("number_of_packages", 1, "Provide a number of zip packages to be created and compressed into a zip archive. Please remember that this number needs to be lower than the number of processed files. If set to 0, will ommit the zip packaging and output .json directly to drive.")
 
 	// Boolean Flags:
 	performIntegrityCheckFlag := flag.Bool("perform_integrity_checks", false, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
@@ -90,7 +90,7 @@ func parseFlags() (CLIFlags, bool) {
 		LogPath:                    *logDirectoryFlag,
 	}
 
-	// flag.Usage()
+	flag.Usage()
 
 	return flags, true
 
