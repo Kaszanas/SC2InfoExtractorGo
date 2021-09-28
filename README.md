@@ -60,7 +60,7 @@ Two scripts contained within that software can:
 
 In order to anonymize the replays please make sure to download and run our open-source implementation of an anonymization server the SC2AnonServerPy: https://doi.org/10.5281/zenodo.5138313
 
-This is required because of the multiprocessing nature of our code that needs to perform synchronization with an existing database unique toons (player IDs) that are mapped to arbitrary incrementing integer.
+This is required because of the multiprocessing nature of our code that needs to perform synchronization with an existing database of unique toons (player IDs) that are mapped to arbitrary incrementing integer.
 
 ### Map Translation Support
 
