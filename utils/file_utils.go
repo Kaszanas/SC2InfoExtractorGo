@@ -102,7 +102,7 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 
 	localizedMapping := make(map[string]interface{})
 
-	if !unmarshalLocaleFile(pathToMappingFile, &localizedMapping) {
+	if !UnmarshalJsonFile(pathToMappingFile, &localizedMapping) {
 		log.WithField("pathToMappingFile", pathToMappingFile).Error("Failed to open and unmarshal the mapping file!")
 		return localizedMapping
 	}
@@ -113,29 +113,29 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 }
 
 // unmarshalLocaleFile deals with every possible opening and unmarshalling problem that might occur when unmarshalling a localization file supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
-func unmarshalLocaleFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
+func UnmarshalJsonFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
 
-	log.Info("Entered unmarshalFile()")
+	log.Info("Entered unmarshalJsonFile()")
 
 	var file, err = os.Open(pathToMappingFile)
 	if err != nil {
-		log.WithField("fileError", err.Error()).Info("Failed to open Localization Mapping file.")
+		log.WithField("fileError", err.Error()).Info("Failed to open the JSON file.")
 		return false
 	}
 	defer file.Close()
 
 	jsonBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.WithField("readError", err.Error()).Info("Failed to read Localization Mapping file.")
+		log.WithField("readError", err.Error()).Info("Failed to read the JSON file.")
 		return false
 	}
 
 	err = json.Unmarshal([]byte(jsonBytes), &mappingToPopulate)
 	if err != nil {
-		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the Localization JSON file.")
+		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the JSON file.")
 	}
 
-	log.Info("Finished unmarshalFile()")
+	log.Info("Finished unmarshalJsonFile()")
 
 	return true
 }
