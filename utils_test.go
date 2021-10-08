@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"testing"
+
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 )
 
 func TestSetProfilingEmpty(t *testing.T) {
@@ -32,6 +34,52 @@ func TestSetProfiling(t *testing.T) {
 	err = os.Remove(profilerPath)
 	if err != nil {
 		t.Fatalf("Test Failed! Cannot delete profiling file.")
+	}
+
+}
+
+func TestGetChunksOfFiles(t *testing.T) {
+
+	// Read all the test input directory:
+	testReplayDir := "./test_files/test_replays"
+	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfChunks, getOk := getChunksOfFiles(sliceOfFiles, 1)
+
+	if !getOk {
+		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
+	}
+
+	if len(sliceOfChunks) != len(sliceOfFiles) {
+		t.Fatalf("Test Failed! lenghts of slices mismatch.")
+	}
+}
+
+func TestGetChunksOfFilesZero(t *testing.T) {
+
+	// Read all the test input directory:
+	testReplayDir := "./test_files/test_replays"
+	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfChunks, getOk := getChunksOfFiles(sliceOfFiles, 0)
+
+	if !getOk {
+		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
+	}
+
+	if len(sliceOfChunks) != 1 {
+		t.Fatalf("Test Failed! lenghts of slices mismatch.")
+	}
+
+}
+
+func TestGetChunksOfFilesMinus(t *testing.T) {
+
+	// Read all the test input directory:
+	testReplayDir := "./test_files/test_replays"
+	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
+	_, getOk := getChunksOfFiles(sliceOfFiles, -1)
+
+	if getOk {
+		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = true.")
 	}
 
 }
