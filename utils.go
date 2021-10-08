@@ -90,7 +90,7 @@ func parseFlags() (CLIFlags, bool) {
 		LogPath:                    *logDirectoryFlag,
 	}
 
-	flag.Usage()
+	// flag.Usage()
 
 	return flags, true
 
@@ -121,7 +121,7 @@ func setLogging(logPath string, logLevel int) (*os.File, bool) {
 }
 
 // setProfiling sets up pprof profiling to a supplied filepath.
-func setProfiling(profilingPath string) bool {
+func setProfiling(profilingPath string) (*os.File, bool) {
 
 	performCPUProfilingPath := profilingPath
 
@@ -129,12 +129,12 @@ func setProfiling(profilingPath string) bool {
 	profilerFile, err := os.Create(performCPUProfilingPath)
 	if err != nil {
 		log.WithField("error", err).Error("Could not create a profiling file. Exiting program.")
-		return false
+		return profilerFile, false
 	}
 	// Starting profiling:
 	pprof.StartCPUProfile(profilerFile)
 
-	return true
+	return profilerFile, true
 }
 
 // getChunksOfFiles returns chunks of files for processing.
@@ -185,3 +185,9 @@ func getChunkListAndPackageBool(
 	return listOfChunksFiles, packageToZipBool
 
 }
+
+// func CleanupTestFiles(directoryPath string) {
+
+// 	ioutil.ReadDir()
+
+// }

@@ -27,7 +27,7 @@ func main() {
 
 	// Profiling capabilities to verify if the program can be optimized any further:
 	if flags.CPUProfilingPath != "" {
-		okProfiling := setProfiling(flags.CPUProfilingPath)
+		_, okProfiling := setProfiling(flags.CPUProfilingPath)
 		if !okProfiling {
 			log.Fatal("Failed to setProfiling()")
 			os.Exit(1)
