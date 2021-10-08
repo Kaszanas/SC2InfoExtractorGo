@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	listOfChunksFiles, packageToZipBool := getChunkListAndPackageBool(
+	listOfChunksFiles, packageToZipBool := utils.GetChunkListAndPackageBool(
 		listOfInputFiles,
 		flags.NumberOfPackages,
 		flags.NumberOfThreads,

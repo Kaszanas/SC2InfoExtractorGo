@@ -43,7 +43,7 @@ func TestGetChunksOfFiles(t *testing.T) {
 	// Read all the test input directory:
 	testReplayDir := "./test_files/test_replays"
 	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
-	sliceOfChunks, getOk := getChunksOfFiles(sliceOfFiles, 1)
+	sliceOfChunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 1)
 
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
@@ -59,7 +59,7 @@ func TestGetChunksOfFilesZero(t *testing.T) {
 	// Read all the test input directory:
 	testReplayDir := "./test_files/test_replays"
 	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
-	sliceOfChunks, getOk := getChunksOfFiles(sliceOfFiles, 0)
+	sliceOfChunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
@@ -76,7 +76,7 @@ func TestGetChunksOfFilesMinus(t *testing.T) {
 	// Read all the test input directory:
 	testReplayDir := "./test_files/test_replays"
 	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
-	_, getOk := getChunksOfFiles(sliceOfFiles, -1)
+	_, getOk := utils.GetChunksOfFiles(sliceOfFiles, -1)
 
 	if getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = true.")
