@@ -12,7 +12,7 @@ func TestPipelineWrapper(t *testing.T) {
 	testOutputPath := t.TempDir()
 
 	testLocalizationMapFile := "../test_files/test_map_mapping/output.json"
-	logsFilepath := "../test_files/test_logs.log"
+	logsFilepath := "../test_files/test_logs/"
 
 	testReplayDir := "../test_files/test_replays"
 	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")

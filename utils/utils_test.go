@@ -1,15 +1,13 @@
-package main
+package utils
 
 import (
 	"os"
 	"testing"
-
-	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 )
 
 func TestSetProfilingEmpty(t *testing.T) {
 
-	_, profilingSetOk := setProfiling("")
+	_, profilingSetOk := SetProfiling("")
 
 	if profilingSetOk {
 		t.Fatalf("Test Failed! setProfiling returned true on an empty string!.")
@@ -20,7 +18,7 @@ func TestSetProfiling(t *testing.T) {
 
 	profilerPath := "./test_files/test_profiler.txt"
 
-	profilerFile, profilingSetOk := setProfiling(profilerPath)
+	profilerFile, profilingSetOk := SetProfiling(profilerPath)
 
 	if !profilingSetOk {
 		t.Fatalf("Test Failed! setProfiling returned false on a valid path.")
@@ -42,8 +40,8 @@ func TestGetChunksOfFiles(t *testing.T) {
 
 	// Read all the test input directory:
 	testReplayDir := "./test_files/test_replays"
-	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
-	sliceOfChunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 1)
+	sliceOfFiles := ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 1)
 
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
@@ -58,8 +56,8 @@ func TestGetChunksOfFilesZero(t *testing.T) {
 
 	// Read all the test input directory:
 	testReplayDir := "./test_files/test_replays"
-	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
-	sliceOfChunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
+	sliceOfFiles := ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 0)
 
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
@@ -75,8 +73,8 @@ func TestGetChunksOfFilesMinus(t *testing.T) {
 
 	// Read all the test input directory:
 	testReplayDir := "./test_files/test_replays"
-	sliceOfFiles := utils.ListFiles(testReplayDir, ".SC2Replay")
-	_, getOk := utils.GetChunksOfFiles(sliceOfFiles, -1)
+	sliceOfFiles := ListFiles(testReplayDir, ".SC2Replay")
+	_, getOk := GetChunksOfFiles(sliceOfFiles, -1)
 
 	if getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = true.")

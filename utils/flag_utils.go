@@ -1,11 +1,9 @@
-package main
+package utils
 
 import (
 	"flag"
-	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/pprof"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -30,7 +28,7 @@ type CLIFlags struct {
 }
 
 // parseFlags contains logic which is responsible for user input.
-func parseFlags() (CLIFlags, bool) {
+func ParseFlags() (CLIFlags, bool) {
 	// Command line arguments:
 	inputDirectory := flag.String("input", "./DEMOS/Input", "Input directory where .SC2Replay files are held.")
 	outputDirectory := flag.String("output", "./DEMOS/Output", "Output directory where compressed zip packages will be saved.")
@@ -94,50 +92,3 @@ func parseFlags() (CLIFlags, bool) {
 	return flags, true
 
 }
-
-// setLogging contains logic that is used to initialize logging to a specified file with a specified level.
-func setLogging(logPath string, logLevel int) (*os.File, bool) {
-
-	logDirectoryString := logPath
-	log.SetFormatter(&log.JSONFormatter{})
-
-	// If the file doesn't exist, create it or append to the file
-	logFileFilepath := logDirectoryString + "main_log.log"
-	logFile, err := os.OpenFile(logFileFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-		return &os.File{}, false
-	}
-
-	log.SetOutput(logFile)
-	log.Info("Set logging format, defined log file.")
-
-	log.SetLevel(log.Level(logLevel))
-	log.Info("Set logging level.")
-
-	return logFile, true
-
-}
-
-// setProfiling sets up pprof profiling to a supplied filepath.
-func setProfiling(profilingPath string) (*os.File, bool) {
-
-	performCPUProfilingPath := profilingPath
-
-	// Creating profiler file:
-	profilerFile, err := os.Create(performCPUProfilingPath)
-	if err != nil {
-		log.WithField("error", err).Error("Could not create a profiling file. Exiting program.")
-		return profilerFile, false
-	}
-	// Starting profiling:
-	pprof.StartCPUProfile(profilerFile)
-
-	return profilerFile, true
-}
-
-// func CleanupTestFiles(directoryPath string) {
-
-// 	ioutil.ReadDir()
-
-// }
