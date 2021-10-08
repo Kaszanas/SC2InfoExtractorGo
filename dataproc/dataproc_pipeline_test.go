@@ -117,6 +117,24 @@ func TestPipelineWrapper(t *testing.T) {
 		t.Fatalf("Test Failed! gameVersion histogram count is different from number of processed files.")
 	}
 
+	t.Cleanup(func() {
+		cleanup(processedFailedPath, logsFilepath, testOutputPath, logFile, t)
+	})
+
+}
+
+func isNil(i interface{}) bool {
+	if i == nil {
+		return true
+	}
+	switch reflect.TypeOf(i).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(i).IsNil()
+	}
+	return false
+}
+
+func cleanup(processedFailedPath string, logsFilepath string, testOutputPath string, logFile *os.File, t *testing.T) {
 	err := os.Remove(processedFailedPath)
 	if err != nil {
 		t.Fatalf("Test Failed! Cannot delete processed_failed file.")
@@ -139,18 +157,6 @@ func TestPipelineWrapper(t *testing.T) {
 			t.Fatalf("Test Failed! Cannot delete output files.")
 		}
 	}
-
-}
-
-func isNil(i interface{}) bool {
-	if i == nil {
-		return true
-	}
-	switch reflect.TypeOf(i).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
-		return reflect.ValueOf(i).IsNil()
-	}
-	return false
 }
 
 func unmarshalSummaryFile(pathToSummaryFile string, mappingToPopulate *datastruct.PackageSummary) bool {
