@@ -1,18 +1,22 @@
 package dataproc
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	log "github.com/sirupsen/logrus"
 )
 
 func TestPipelineWrapper(t *testing.T) {
 
-	testOutputPath := t.TempDir()
+	testOutputPath := "../test_files/test_replays_output/"
+	// testOutputPath := t.TempDir()
 
 	testLocalizationMapFile := "../test_files/test_map_mapping/output.json"
 	logsFilepath := "../test_files/test_logs/"
@@ -29,7 +33,7 @@ func TestPipelineWrapper(t *testing.T) {
 		t.Fatalf("Test Failed! Could not perform SetLogging.")
 	}
 
-	packageToZip := false
+	packageToZip := true
 	integrityCheck := true
 	validityCheck := false
 	performFilteringBool := false
@@ -97,6 +101,22 @@ func TestPipelineWrapper(t *testing.T) {
 		t.Fatalf("Test Failed! input files and processed_failed information mismatch.")
 	}
 
+	// Read and verify if the created summaries contain the same count as the processed files
+	var summary datastruct.PackageSummary
+	unmarshalOk := unmarshalSummaryFile(testOutputPath+"\\package_summary_0.json", &summary)
+	if !unmarshalOk {
+		t.Fatalf("Test Failed! Cannot read summary file.")
+	}
+
+	gameVersionCount := 0
+	for _, value := range summary.Summary.GameVersions {
+		gameVersionCount += int(value)
+	}
+
+	if gameVersionCount != len(sliceOfFiles) {
+		t.Fatalf("Test Failed! gameVersion histogram count is different from number of processed files.")
+	}
+
 	err := os.Remove(processedFailedPath)
 	if err != nil {
 		t.Fatalf("Test Failed! Cannot delete processed_failed file.")
@@ -112,7 +132,13 @@ func TestPipelineWrapper(t *testing.T) {
 		t.Fatalf("Test Failed! Cannot delete main_log file.")
 	}
 
-	// Read and verify if the created summaries contain the same count as the processed files
+	filesToClean := utils.ListFiles(testOutputPath, "")
+	for _, file := range filesToClean {
+		err = os.Remove(file)
+		if err != nil {
+			t.Fatalf("Test Failed! Cannot delete output files.")
+		}
+	}
 
 }
 
@@ -125,4 +151,31 @@ func isNil(i interface{}) bool {
 		return reflect.ValueOf(i).IsNil()
 	}
 	return false
+}
+
+func unmarshalSummaryFile(pathToSummaryFile string, mappingToPopulate *datastruct.PackageSummary) bool {
+
+	log.Info("Entered unmarshalJsonFile()")
+
+	var file, err = os.Open(pathToSummaryFile)
+	if err != nil {
+		log.WithField("fileError", err.Error()).Info("Failed to open the JSON file.")
+		return false
+	}
+	defer file.Close()
+
+	jsonBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.WithField("readError", err.Error()).Info("Failed to read the JSON file.")
+		return false
+	}
+
+	err = json.Unmarshal([]byte(jsonBytes), &mappingToPopulate)
+	if err != nil {
+		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the JSON file.")
+	}
+
+	log.Info("Finished unmarshalJsonFile()")
+
+	return true
 }

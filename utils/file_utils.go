@@ -69,7 +69,12 @@ func CreatePackageSummaryFile(absolutePathOutputDirectory string, packageSummary
 	}
 	_, err = packageSummaryFile.Write(packageSummaryBytes)
 	if err != nil {
-		log.WithField("error", err).Fatal("Failed to save the packageInfoFile")
+		log.WithField("error", err).Fatal("Failed to save the packageSummaryFile")
+	}
+
+	err = packageSummaryFile.Close()
+	if err != nil {
+		log.WithField("error", err).Fatal("Failed to cloes the packageSummaryFile")
 	}
 
 	log.Info("Finished CreatePackageSummaryFile()")
