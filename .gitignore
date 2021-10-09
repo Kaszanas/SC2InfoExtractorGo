@@ -1,8 +1,7 @@
-*.SC2Replay
+# Binary files:
 *.pickle
 *.exe
 *.zip
-
 *.SC2Map
 *.xlsx
 
@@ -15,10 +14,13 @@ DEMOS/Output/*.json
 .vscode/
 
 map_translator/
-
 post_processing.py
-
 cpu_profiler.prof
 profile001.callgraph.out
 
 command
+
+# Input files:
+DEMOS/Input/*.SC2Replay
+DEMOS/other/*.SC2Replay
+*.SC2Replay
