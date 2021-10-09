@@ -113,7 +113,7 @@ func TestPipelineWrapper(t *testing.T) {
 		gameVersionCount += int(value)
 	}
 
-	if gameVersionCount != len(sliceOfFiles) {
+	if gameVersionCount != processedFilesCount {
 		t.Fatalf("Test Failed! gameVersion histogram count is different from number of processed files.")
 	}
 

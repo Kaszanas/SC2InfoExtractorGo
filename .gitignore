@@ -24,3 +24,5 @@ command
 DEMOS/Input/*.SC2Replay
 DEMOS/other/*.SC2Replay
 *.SC2Replay
+
+processed_mapping.json

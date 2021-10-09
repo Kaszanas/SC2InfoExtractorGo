@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+var TEST_FILE_PATH = "../test_files/"
+var TEST_REPLAYS_PATH = "../test_files/test_replays"
+var TEST_PROFILER_PATH = "../test_files/test_logs/test_profiler.txt"
+
 func TestSetProfilingEmpty(t *testing.T) {
 
 	_, profilingSetOk := SetProfiling("")
@@ -16,9 +20,7 @@ func TestSetProfilingEmpty(t *testing.T) {
 
 func TestSetProfiling(t *testing.T) {
 
-	profilerPath := "./test_files/test_profiler.txt"
-
-	profilerFile, profilingSetOk := SetProfiling(profilerPath)
+	profilerFile, profilingSetOk := SetProfiling(TEST_PROFILER_PATH)
 
 	if !profilingSetOk {
 		t.Fatalf("Test Failed! setProfiling returned false on a valid path.")
@@ -29,7 +31,7 @@ func TestSetProfiling(t *testing.T) {
 		t.Fatalf("Test Failed! Couldn't close the profiling file.")
 	}
 
-	err = os.Remove(profilerPath)
+	err = os.Remove(TEST_PROFILER_PATH)
 	if err != nil {
 		t.Fatalf("Test Failed! Cannot delete profiling file.")
 	}
@@ -39,8 +41,7 @@ func TestSetProfiling(t *testing.T) {
 func TestGetChunksOfFiles(t *testing.T) {
 
 	// Read all the test input directory:
-	testReplayDir := "./test_files/test_replays"
-	sliceOfFiles := ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfFiles := ListFiles(TEST_REPLAYS_PATH, ".SC2Replay")
 	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 1)
 
 	if !getOk {
@@ -55,8 +56,7 @@ func TestGetChunksOfFiles(t *testing.T) {
 func TestGetChunksOfFilesZero(t *testing.T) {
 
 	// Read all the test input directory:
-	testReplayDir := "./test_files/test_replays"
-	sliceOfFiles := ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfFiles := ListFiles(TEST_REPLAYS_PATH, ".SC2Replay")
 	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 0)
 
 	if !getOk {
@@ -72,8 +72,7 @@ func TestGetChunksOfFilesZero(t *testing.T) {
 func TestGetChunksOfFilesMinus(t *testing.T) {
 
 	// Read all the test input directory:
-	testReplayDir := "./test_files/test_replays"
-	sliceOfFiles := ListFiles(testReplayDir, ".SC2Replay")
+	sliceOfFiles := ListFiles(TEST_REPLAYS_PATH, ".SC2Replay")
 	_, getOk := GetChunksOfFiles(sliceOfFiles, -1)
 
 	if getOk {
