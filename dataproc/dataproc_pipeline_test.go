@@ -16,10 +16,14 @@ import (
 
 var TEST_LOGS_DIR = "../test_files/test_logs/"
 var TEST_LOCALIZATION_FILE_PATH = "../test_files/test_map_mapping/output.json"
+
 var TEST_INPUT_REPLAYPACK_DIR = "F:\\Projects\\EsportDataset\\processing_with_python\\input"
+
+// var TEST_INPUT_REPLAYPACK_DIR = ""
 var TEST_INPUT_DIR = "../test_files/test_replays"
 var TEST_OUTPUT_DIR = "../test_files/test_replays_output/"
 var TEST_PROCESSED_FAILED_LOG = TEST_LOGS_DIR + "processed_failed_0.log"
+var TEST_BYPASS_THESE = []string{}
 
 func TestPipelineWrapper(t *testing.T) {
 
@@ -131,29 +135,40 @@ func TestPipelineWrapper(t *testing.T) {
 		t.Fatalf("Test Failed! gameVersion histogram count is different from number of processed files.")
 	}
 
+	cleanukOk, reason := cleanup(TEST_PROCESSED_FAILED_LOG, TEST_LOGS_DIR, TEST_OUTPUT_DIR, logFile, false, false)
+	if !cleanukOk {
+		t.Fatalf("Test Failed! %s", reason)
+	}
+
 }
 
 func TestPipelineWrapperMultiple(t *testing.T) {
 
+	if TEST_INPUT_REPLAYPACK_DIR == "" {
+		t.SkipNow()
+	}
+
 	files, err := ioutil.ReadDir(TEST_INPUT_REPLAYPACK_DIR)
 	if err != nil {
+		t.Fatalf("Could not read the TEST_INPUT_REPLAYPACK_DIR")
 		log.Fatal(err)
 	}
 
 	for _, file := range files {
+		file := file
 		if file.IsDir() {
 			filename := file.Name()
-			absoluteReplayDir := filepath.Join(TEST_INPUT_REPLAYPACK_DIR, filename)
-
-			t.Run(filename, func(t *testing.T) {
-				// t.Parallel()
-				testOk, reason := testPipelineWrapperWithDir(absoluteReplayDir, filename)
-				if !testOk {
-					t.Fatalf("Test Failed! %s", reason)
-				}
-			})
+			if !contains(TEST_BYPASS_THESE, filename) {
+				absoluteReplayDir := filepath.Join(TEST_INPUT_REPLAYPACK_DIR, filename)
+				t.Run(filename, func(t *testing.T) {
+					// t.Parallel()
+					testOk, reason := testPipelineWrapperWithDir(absoluteReplayDir, filename)
+					if !testOk {
+						t.Fatalf("Test Failed! %s", reason)
+					}
+				})
+			}
 		}
-
 	}
 
 }
@@ -282,6 +297,11 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 			return false, reason
 		}
 		return false, "gameVersion histogram count is different from number of processed files."
+	}
+
+	cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+	if !cleanupOk {
+		return false, reason
 	}
 
 	return true, ""
