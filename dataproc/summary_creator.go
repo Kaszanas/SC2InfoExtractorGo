@@ -55,7 +55,7 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	log.Info("Finished incrementing summaryStruct.Summary.Dates")
 
 	// GameTimes per year histogram:
-	incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
+	// incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
 	// GameTimes per year-month histogram:
 	incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear)+"-"+strconv.Itoa(int(replayMonth)), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
 	// GameTimes per map histogram:
