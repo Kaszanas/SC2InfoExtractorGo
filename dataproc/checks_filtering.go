@@ -78,9 +78,6 @@ func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 		"len(playerList)": numberOfPlayers,
 		"requiredNumber":  requiredNumber}).Debug("checkNumberOfPlayers()")
 
-	if numberOfPlayers != requiredNumber {
-		return false
-	}
+	return numberOfPlayers == requiredNumber
 
-	return true
 }

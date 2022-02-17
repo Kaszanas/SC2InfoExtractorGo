@@ -17,9 +17,9 @@ import (
 var TEST_LOGS_DIR = "../test_files/test_logs/"
 var TEST_LOCALIZATION_FILE_PATH = "../test_files/test_map_mapping/output.json"
 
-var TEST_INPUT_REPLAYPACK_DIR = "F:\\Projects\\EsportDataset\\processing_with_python\\input"
+// var TEST_INPUT_REPLAYPACK_DIR = "F:\\Projects\\EsportDataset\\processing_with_python\\input"
 
-// var TEST_INPUT_REPLAYPACK_DIR = ""
+var TEST_INPUT_REPLAYPACK_DIR = ""
 var TEST_INPUT_DIR = "../test_files/test_replays"
 var TEST_OUTPUT_DIR = "../test_files/test_replays_output/"
 var TEST_PROCESSED_FAILED_LOG = TEST_LOGS_DIR + "processed_failed_0.log"

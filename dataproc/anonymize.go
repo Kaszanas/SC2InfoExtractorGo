@@ -11,6 +11,7 @@ import (
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -59,7 +60,7 @@ func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 	log.Info("Entered GRPCAnonymizer.grpcDialConnect()")
 
 	// Set up a connection to the server:
-	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(settings.GrpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		log.WithField("error", err).Fatal("Failed to connect to grpc anonymization service")
 		return false
