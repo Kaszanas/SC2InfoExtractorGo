@@ -33,6 +33,7 @@ var gameModeList = []int{
 	CustomFFA,
 }
 
+// TODO: isBlizzardMap could be applied to the gameModeFilters:
 // gameModeFiltersMapping contains information about different game modes and how to verify them.
 var gameModeFiltersMapping = map[int]VerifyGameInfo{
 	Ranked1v1: {isAutoMatchMaking: true, maxPlayers: 2, isCompetitiveOrRanked: true},
@@ -97,13 +98,10 @@ func checkBlizzardMap(replayData *rep.Rep) bool {
 	gameDescIsBlizzardMap := replayData.InitData.GameDescription.IsBlizzardMap()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
 
-	if !gameDescIsBlizzardMap {
-		log.Error("Detected that the replay was played on a non-Blizzard map in gameDescription, returning")
-		return false
-	}
-
-	if !detailsIsBlizzardMap {
-		log.Error("Detected that the replay was played on a non-Blizzard map in gameDetails, returning")
+	if !gameDescIsBlizzardMap || !detailsIsBlizzardMap {
+		log.WithFields(log.Fields{
+			"gameDescIsBlizzardMap": gameDescIsBlizzardMap,
+			"detailsIsBlizzardMap":  detailsIsBlizzardMap}).Error("Detected that the replay was played on a non-Blizzard map.")
 		return false
 	}
 

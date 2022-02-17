@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
@@ -356,16 +355,16 @@ func cleanup(
 	return true, ""
 }
 
-func isNil(i interface{}) bool {
-	if i == nil {
-		return true
-	}
-	switch reflect.TypeOf(i).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
-		return reflect.ValueOf(i).IsNil()
-	}
-	return false
-}
+// func isNil(i interface{}) bool {
+// 	if i == nil {
+// 		return true
+// 	}
+// 	switch reflect.TypeOf(i).Kind() {
+// 	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+// 		return reflect.ValueOf(i).IsNil()
+// 	}
+// 	return false
+// }
 
 func unmarshalSummaryFile(pathToSummaryFile string, mappingToPopulate *datastruct.PackageSummary) bool {
 
