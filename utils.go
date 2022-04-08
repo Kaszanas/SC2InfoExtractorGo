@@ -38,6 +38,7 @@ func parseFlags() (CLIFlags, bool) {
 	numberOfPackagesFlag := flag.Int("number_of_packages", 1, "Provide a number of zip packages to be created and compressed into a zip archive. Please remember that this number needs to be lower than the number of processed files. If set to 0, will ommit the zip packaging and output .json directly to drive.")
 
 	// Boolean Flags:
+	help := flag.Bool("help", false, "Show command usage")
 	performIntegrityCheckFlag := flag.Bool("perform_integrity_checks", false, "If the software is supposed to check the hardcoded integrity checks for the provided replays")
 	performValidityCheckFlag := flag.Bool("perform_validity_checks", false, "Provide if the tool is supposed to use hardcoded validity checks and verify if the replay file variables are within 'common sense' ranges.")
 	performCleanupFlag := flag.Bool("perform_cleanup", false, "Provide if the tool is supposed to perform the cleaning functions within the processing pipeline.")
@@ -59,6 +60,11 @@ func parseFlags() (CLIFlags, bool) {
 	performCPUProfilingFlag := flag.String("with_cpu_profiler", "", "Set path to the file where pprof cpu profiler will save its information. If this is empty no profiling is performed.")
 
 	flag.Parse()
+
+	if *help {
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	absoluteInputDirectory, err := filepath.Abs(*inputDirectory)
 	if err != nil {
@@ -89,8 +95,6 @@ func parseFlags() (CLIFlags, bool) {
 		CPUProfilingPath:           *performCPUProfilingFlag,
 		LogPath:                    *logDirectoryFlag,
 	}
-
-	flag.Usage()
 
 	return flags, true
 
