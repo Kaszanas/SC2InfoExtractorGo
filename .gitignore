@@ -22,3 +22,5 @@ cpu_profiler.prof
 profile001.callgraph.out
 
 command
+
+SC2InfoExtractorGo
