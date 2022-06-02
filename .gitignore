@@ -26,3 +26,4 @@ DEMOS/other/*.SC2Replay
 *.SC2Replay
 
 processed_mapping.json
+SC2InfoExtractorGo
