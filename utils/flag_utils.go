@@ -2,6 +2,7 @@ package utils
 
 import (
 	"flag"
+	"os"
 	"path/filepath"
 	"runtime"
 

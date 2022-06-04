@@ -1,6 +1,7 @@
 package dataproc
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -25,14 +26,10 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	incrementIfKeyExists(gameVersionString, summaryStruct.Summary.GameVersions)
 	log.Info("Finished incrementing replayData.Metadata.GameVersion")
 
-	replayMetadata := replayData.Metadata
+	// replayMetadata := replayData.Metadata
 	// GameDuration histogram:
-	var replayDuration string
-	replayDuration = strconv.Itoa(int(replayMetadata.Duration))
-	// If the game duration from metadata doesn't exist use the one from Header:
-	if replayDuration == "0" {
-		replayDuration = strconv.Itoa(int(replayData.Header.DurationSeconds))
-	}
+	replayDuration := fmt.Sprintf("%f", float64(replayData.Header.ElapsedGameLoops)/22.4)
+
 	incrementIfKeyExists(replayDuration, summaryStruct.Summary.GameTimes)
 	log.Info("Finished incrementing summaryStruct.Summary.GameTimes")
 
