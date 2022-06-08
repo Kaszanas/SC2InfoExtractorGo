@@ -107,9 +107,9 @@ If You wish to run the pipeline tests against a very big set of replays please k
 
 ```
 @software{BialeckiExtractor2021,
-  author    = {Białecki Andrzej and
-               Białecki Piotr and
-               Krupiński Leszek},
+  author    = {Białecki, Andrzej and
+               Białecki, Piotr and
+               Krupiński, Leszek},
   title     = {{Kaszanas/SC2InfoExtractorGo: 1.2.0 
                SC2InfoExtractorGo Release}},
   month     = {jun},
