@@ -2,10 +2,10 @@ package datastruct
 
 // CleanedMetadata is a structure holding cleaned replay metadata derived from s2prot.Rep.Metadata
 type CleanedMetadata struct {
-	BaseBuild   string  `json:"baseBuild"`
-	DataBuild   string  `json:"dataBuild"`
-	Duration    float64 `json:"durationSeconds"`
-	GameVersion string  `json:"gameVersion"`
+	BaseBuild string `json:"baseBuild"`
+	DataBuild string `json:"dataBuild"`
+	// Duration    float64 `json:"durationSeconds"`
+	GameVersion string `json:"gameVersion"`
 	// Players     []CleanedPlayer `json:"players"`
 	MapName string `json:"mapName"` // Originally Title
 }

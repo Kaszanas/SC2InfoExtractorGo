@@ -134,7 +134,7 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	metadata := replayData.Metadata
 	metadataBaseBuild := metadata.BaseBuild()
 	metadataDataBuild := metadata.DataBuild()
-	metadataDuration := metadata.DurationSec()
+	// metadataDuration := metadata.DurationSec()
 	metadataGameVersion := metadata.GameVersion()
 	metadataMapName := metadata.Title()
 
@@ -161,9 +161,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	}
 
 	cleanMetadata := data.CleanedMetadata{
-		BaseBuild:   metadataBaseBuild,
-		DataBuild:   metadataDataBuild,
-		Duration:    metadataDuration,
+		BaseBuild: metadataBaseBuild,
+		DataBuild: metadataDataBuild,
+		// Duration:    metadataDuration,
 		GameVersion: metadataGameVersion,
 		// Players:     metadataCleanedPlayersList, // This is unused.
 		MapName: metadataMapName,
