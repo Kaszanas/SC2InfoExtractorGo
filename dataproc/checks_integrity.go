@@ -19,8 +19,8 @@ func checkIntegrity(replayData *rep.Rep) (bool, string) {
 	// Checking that the duration of the game is not equal to 0:
 	if replayData.Header.Duration().Seconds() == 0 && replayData.Metadata.DurationSec() == 0 {
 		log.WithFields(log.Fields{
-			"headerDurationNanoseconds": replayData.Header.Duration().Nanoseconds(),
-			"metadataDurationSeconds":   replayData.Metadata.DurationSec(),
+			"headerDurationSeconds":   replayData.Header.Duration().Seconds(),
+			"metadataDurationSeconds": replayData.Metadata.DurationSec(),
 		}).Error("Integrity check failed! Detected the time of the game to be 0!")
 		return false, "Both fields containing game time are empty!"
 	}

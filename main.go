@@ -12,14 +12,14 @@ import (
 func main() {
 
 	// Getting the information from user to start the processing:
-	flags, okFlags := parseFlags()
+	flags, okFlags := utils.ParseFlags()
 	if !okFlags {
 		log.Fatal("Failed parseFlags()")
 		os.Exit(1)
 	}
 
 	// Logging initialization to be able to provide further troubleshooting for users:
-	logFile, okLogging := setLogging(flags.LogPath, flags.LogLevel)
+	logFile, okLogging := utils.SetLogging(flags.LogPath, flags.LogLevel)
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
 		os.Exit(1)
@@ -27,7 +27,7 @@ func main() {
 
 	// Profiling capabilities to verify if the program can be optimized any further:
 	if flags.CPUProfilingPath != "" {
-		okProfiling := setProfiling(flags.CPUProfilingPath)
+		_, okProfiling := utils.SetProfiling(flags.CPUProfilingPath)
 		if !okProfiling {
 			log.Fatal("Failed to setProfiling()")
 			os.Exit(1)
@@ -61,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	listOfChunksFiles, packageToZipBool := getChunkListAndPackageBool(
+	listOfChunksFiles, packageToZipBool := utils.GetChunkListAndPackageBool(
 		listOfInputFiles,
 		flags.NumberOfPackages,
 		flags.NumberOfThreads,

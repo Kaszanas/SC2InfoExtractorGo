@@ -9,4 +9,4 @@ all:
 		./SC2InfoExtractorGo -log_level 6
 
 build:
-	DOCKER_BUILDKIT=1 docker build . -t sc2-info-extractor
+	docker build . -t sc2-info-extractor

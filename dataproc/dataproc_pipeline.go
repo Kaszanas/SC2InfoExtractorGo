@@ -245,7 +245,7 @@ func FileProcessingPipeline(replayFile string,
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 	defer replayData.Close()
 
-	// Performing integrity checks
+	// Performing integrity checks:
 	if performIntegrityCheckBool {
 		integrityOk, failureReason := checkIntegrity(replayData)
 		if !integrityOk {
@@ -264,7 +264,7 @@ func FileProcessingPipeline(replayFile string,
 		}
 	}
 
-	// Filtering
+	// Filtering:
 	if performFiltering {
 		if !filterGameModes(replayData, gameModeCheckFlag) {
 			return false, "", data.ReplaySummary{}, "filterGameModes() failed"
@@ -285,7 +285,7 @@ func FileProcessingPipeline(replayFile string,
 		return false, "", data.ReplaySummary{}, "summarizeReplay() failed"
 	}
 
-	// Anonimize replay:
+	// Anonymize replay:
 	if grpcAnonymizer != nil {
 		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer, performChatAnonymizationBool) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
