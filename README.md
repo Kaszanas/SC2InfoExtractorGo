@@ -108,14 +108,14 @@ If You wish to run the pipeline tests against a very big set of replays please k
 ```
 @software{BialeckiExtractor2021,
   author    = {Białecki, Andrzej and
-               Białecki, Piotr and
-               Krupiński, Leszek},
-  title     = {{Kaszanas/SC2InfoExtractorGo: 1.2.0 
+               Krupiński, Leszek and
+               Białecki, Piotr},
+  title     = {{Kaszanas/SC2InfoExtractorGo: 1.2.1 
                SC2InfoExtractorGo Release}},
   month     = {jun},
   year      = {2022},
   publisher = {Zenodo},
-  version   = {1.2.0},
+  version   = {1.2.1},
   doi       = {10.5281/zenodo.5296788},
   url       = {https://doi.org/10.5281/zenodo.5296788}
 }
