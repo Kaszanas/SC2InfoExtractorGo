@@ -1,4 +1,4 @@
-FROM golang:1.15-alpine
+FROM golang:latest
 
 RUN mkdir /sc2-info-extractor
 WORKDIR /sc2-info-extractor
