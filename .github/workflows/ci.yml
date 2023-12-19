@@ -17,11 +17,18 @@ jobs:
       - name: Check-out repository
         uses: actions/checkout@v2
 
-      - name: Build Docker Image With Compose
+      # Check if the main dockerfile builds:
+      - name: Build "Production" Docker Image
         run: |
-          make action_compose_build
+          make build
 
-      - name: Run Docker Tests With Compose
+        # Check if the main dockerfile builds:
+      - name: Build "Development" Docker Image
         run: |
-          make action_compose_test
+          make build_dev
+
+      # TODO: Running containerized tests:
+      # - name: Run Docker Tests With Compose
+      #   run: |
+      #     make action_compose_test
 

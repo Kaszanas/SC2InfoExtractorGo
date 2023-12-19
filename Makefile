@@ -10,3 +10,6 @@ all:
 
 build:
 	docker build --tag=sc2-info-extractor -f ./Dockerfile .
+
+build_dev:
+	docker build --tag=sc2-info-extractor:dev -f ./Dockerfile.dev .
