@@ -6,7 +6,18 @@ This tool is meant to allow for quick data extraction from SC2 replay files ".SC
 
 ## Usage
 
-In order to use this tool please call ```SC2InfoExtractorGo.exe``` and set the choosen flags listed below:
+The easiest way to run this tool is to use the provided Docker image:
+
+```sh
+docker run -it --rm \
+  -v /path/to/your/replays:/app/DEMOS/Input \
+  -v /path/to/your/output:/app/DEMOS/Output \
+  ghcr.io/kaszanas/sc2infoextractorgo:main [OPTIONS]
+```
+
+Alternatively, you can [compile the tool from source](#build-from-source) and run it directly on your machine.
+
+The following flags are available:
 
 ```
   -input string

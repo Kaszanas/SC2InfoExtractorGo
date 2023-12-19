@@ -15,8 +15,13 @@ RUN --mount=type=cache,target=/go go build
 
 FROM alpine:latest as final
 
-RUN apk add --no-cache ca-certificates
+# libc6-compat is needed for the binary to run on Alpine Linux:
+RUN apk add --no-cache ca-certificates libc6-compat
 
-COPY --from=0 /sc2_info_extractor/SC2InfoExtractorGo .
+WORKDIR /app
 
-CMD ["./SC2InfoExtractorGo"]
+RUN mkdir logs
+
+COPY --from=0 /sc2_info_extractor/SC2InfoExtractorGo /app/
+
+ENTRYPOINT ["/app/SC2InfoExtractorGo"]
