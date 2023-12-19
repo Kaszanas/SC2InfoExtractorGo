@@ -94,8 +94,5 @@ func ParseFlags() (CLIFlags, bool) {
 		LogPath:                    *logDirectoryFlag,
 	}
 
-	// flag.Usage()
-
 	return flags, true
-
 }
