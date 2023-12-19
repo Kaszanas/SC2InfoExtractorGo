@@ -1,3 +1,12 @@
 {
-   "signedContributors": []
+  "signedContributors": [
+    {
+      "name": "Ostrzyciel",
+      "id": 56843159,
+      "comment_id": 1862844874,
+      "created_at": "2023-12-19T14:17:48Z",
+      "repoId": 293351381,
+      "pullRequestNo": 53
+    }
+  ]
 }
