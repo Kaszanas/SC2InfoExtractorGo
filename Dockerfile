@@ -1,4 +1,4 @@
-FROM golang:latest as build_sc2_info_extractor
+FROM golang:1.21-alpine as build_sc2_info_extractor
 
 WORKDIR /sc2_info_extractor
 
@@ -15,8 +15,7 @@ RUN --mount=type=cache,target=/go go build
 
 FROM alpine:latest as final
 
-# libc6-compat is needed for the binary to run on Alpine Linux:
-RUN apk add --no-cache ca-certificates libc6-compat
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
