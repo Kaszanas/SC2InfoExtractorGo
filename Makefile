@@ -9,7 +9,7 @@ all:
 		./SC2InfoExtractorGo -log_level 6
 
 build:
-	docker build --tag=sc2-info-extractor -f ./Dockerfile .
+	docker build --tag=sc2infoextractorgo -f ./Dockerfile .
 
 build_dev:
-	docker build --tag=sc2-info-extractor:dev -f ./Dockerfile.dev .
+	docker build --tag=sc2infoextractorgo:dev -f ./Dockerfile.dev .
