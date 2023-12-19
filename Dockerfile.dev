@@ -1,6 +1,6 @@
-FROM golang:latest as build_sc2_info_extractor
+FROM golang:1.21-alpine as build_sc2_info_extractor
 
-WORKDIR /sc2-info-extractor
+WORKDIR /sc2_info_extractor
 
 # Copy Golang dependency definitions:
 COPY go.mod go.sum /sc2_info_extractor/

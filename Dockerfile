@@ -1,4 +1,4 @@
-FROM golang:latest as build_sc2_info_extractor
+FROM golang:1.21-alpine as build_sc2_info_extractor
 
 WORKDIR /sc2_info_extractor
 
@@ -17,6 +17,10 @@ FROM alpine:latest as final
 
 RUN apk add --no-cache ca-certificates
 
-COPY --from=0 /sc2_info_extractor/SC2InfoExtractorGo .
+WORKDIR /app
 
-CMD ["./SC2InfoExtractorGo"]
+RUN mkdir logs
+
+COPY --from=0 /sc2_info_extractor/SC2InfoExtractorGo /app/
+
+ENTRYPOINT ["/app/SC2InfoExtractorGo"]
