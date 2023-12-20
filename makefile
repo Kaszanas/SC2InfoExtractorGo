@@ -1,5 +1,6 @@
 PWD := `pwd`
 
+# REVIEW: Should this be ran with Docker Compose instead?
 process_replays: ## Runs the container to process replays.
 	docker run \
 		-v "${PWD}/replays:/replays" \
@@ -14,7 +15,7 @@ build: ## Builds the "production" container.
 build_dev: ## Builds the dev container.
 	docker build --tag=sc2infoextractorgo:dev -f ./docker/Dockerfile.dev .
 
-run_dev: ## Runs the interactive shell in the dev container.
+run_dev: ## Runs the interactive shell in the dev container. Runs bash by default.
 	docker run -it sc2infoextractorgo:dev
 
 .PHONY: help
