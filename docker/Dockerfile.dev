@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as build_sc2_info_extractor
+FROM golang:1.21 as build_sc2_info_extractor
 
 WORKDIR /sc2_info_extractor
 
@@ -13,3 +13,4 @@ COPY . .
 # Build the project:
 RUN --mount=type=cache,target=/go go build
 
+CMD ["bash"]

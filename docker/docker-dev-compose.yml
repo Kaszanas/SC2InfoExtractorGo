@@ -1,0 +1,14 @@
+version: '3'
+services:
+
+  sc2infoextractorgo:
+    build:
+      context: '../'
+      dockerfile: './docker/Dockerfile.dev'
+    container_name: sc2infoextractorgo_dev
+    volumes:
+      - ../replays:/app/media
+      - ../logs:/app/logs
+
+volumes:
+  logs:
