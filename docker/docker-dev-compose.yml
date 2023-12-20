@@ -9,6 +9,7 @@ services:
     volumes:
       - ../replays:/app/media
       - ../logs:/app/logs
+      - ../operation_files:/app/operation_files
 
 volumes:
   logs:
