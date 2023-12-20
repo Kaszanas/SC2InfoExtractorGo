@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -12,7 +12,7 @@ func ListFiles(inputPath string, filterFileExtension string) []string {
 
 	log.Info("Entered ListFiles()")
 
-	files, err := ioutil.ReadDir(inputPath)
+	files, err := os.ReadDir(inputPath)
 	if err != nil {
 		log.Fatal(err)
 	}

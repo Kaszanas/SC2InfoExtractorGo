@@ -3,7 +3,7 @@ package dataproc
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -147,7 +147,7 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 		t.SkipNow()
 	}
 
-	files, err := ioutil.ReadDir(TEST_INPUT_REPLAYPACK_DIR)
+	files, err := os.ReadDir(TEST_INPUT_REPLAYPACK_DIR)
 	if err != nil {
 		t.Fatalf("Could not read the TEST_INPUT_REPLAYPACK_DIR")
 		log.Fatal(err)
@@ -377,7 +377,7 @@ func unmarshalSummaryFile(pathToSummaryFile string, mappingToPopulate *datastruc
 	}
 	defer file.Close()
 
-	jsonBytes, err := ioutil.ReadAll(file)
+	jsonBytes, err := io.ReadAll(file)
 	if err != nil {
 		log.WithField("readError", err.Error()).Info("Failed to read the JSON file.")
 		return false

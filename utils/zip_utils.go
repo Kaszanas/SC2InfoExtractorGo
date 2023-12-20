@@ -3,7 +3,7 @@ package utils
 import (
 	"archive/zip"
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -79,7 +79,7 @@ func SaveFileToDrive(replayString string, replayFile string, absolutePathOutputD
 	jsonAbsPath := filepath.Join(absolutePathOutputDirectory, replayFileName+".json")
 	jsonBytes := []byte(replayString)
 
-	err := ioutil.WriteFile(jsonAbsPath, jsonBytes, 0777)
+	err := os.WriteFile(jsonAbsPath, jsonBytes, 0777)
 	if err != nil {
 		log.WithField("replayFile", replayFile).Error("Failed to write .json to drive!")
 		return false

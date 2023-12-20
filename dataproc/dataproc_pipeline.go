@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -211,7 +211,7 @@ func MultiprocessingChunkPipeline(
 		// Writing the zip archive to drive:
 		writer.Close()
 		packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
-		err := ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+		err := os.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packageAbsolutePath": packageAbsPath,

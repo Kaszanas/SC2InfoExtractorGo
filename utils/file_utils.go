@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -23,7 +23,7 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 		}).Fatal("Failed to create or open the file!")
 		os.Exit(1)
 	}
-	byteValue, err := ioutil.ReadAll(createdOrReadFile)
+	byteValue, err := io.ReadAll(createdOrReadFile)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":      err,
@@ -129,7 +129,7 @@ func UnmarshalJsonFile(pathToMappingFile string, mappingToPopulate *map[string]i
 	}
 	defer file.Close()
 
-	jsonBytes, err := ioutil.ReadAll(file)
+	jsonBytes, err := io.ReadAll(file)
 	if err != nil {
 		log.WithField("readError", err.Error()).Info("Failed to read the JSON file.")
 		return false

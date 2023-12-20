@@ -1,5 +1,7 @@
 PWD := `pwd`
 
+TEST_COMPOSE = $(DEPLOY_DIR)/docker-test-compose.yml
+
 # REVIEW: Should this be ran with Docker Compose instead?
 process_replays: ## Runs the container to process replays.
 	docker run \
@@ -17,6 +19,9 @@ build_dev: ## Builds the dev container.
 
 run_dev: ## Runs the interactive shell in the dev container. Runs bash by default.
 	docker run -it sc2infoextractorgo:dev
+
+action_compose_test: ## Runs the tests in a container.
+	docker-compose -f $(TEST_COMPOSE) run --rm sc2infoextractorgo sh -c "go test ./... -v"
 
 .PHONY: help
 help: ## Show available make targets.
