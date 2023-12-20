@@ -10,9 +10,9 @@ The easiest way to run this tool is to use the provided Docker image:
 
 ```sh
 docker run -it --rm \
-  -v /path/to/your/replays:/app/DEMOS/Input \
-  -v /path/to/your/output:/app/DEMOS/Output \
-  ghcr.io/kaszanas/sc2infoextractorgo:main [OPTIONS]
+  -v /path/to/your/replays:/app/replays/input \
+  -v /path/to/your/output:/app/replays/output \
+  ghcr.io/kaszanas/sc2infoextractorgo:latest [OPTIONS]
 ```
 
 Alternatively, you can [compile the tool from source](#build-from-source) and run it directly on your machine.
