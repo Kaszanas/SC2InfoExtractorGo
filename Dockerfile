@@ -21,6 +21,6 @@ WORKDIR /app
 
 RUN mkdir logs
 
-COPY --from=0 /sc2_info_extractor/SC2InfoExtractorGo /app/
+COPY --from=build_sc2_info_extractor /sc2_info_extractor/SC2InfoExtractorGo /app/
 
 ENTRYPOINT ["/app/SC2InfoExtractorGo"]
