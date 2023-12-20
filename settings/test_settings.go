@@ -18,46 +18,57 @@ func GetWorkspaceDirectory() (string, error) {
 	return workspace, nil
 }
 
-func GetTestLogsDirectory() (string, error) {
+func GetTestFilesDirectory() (string, error) {
 	workspace, err := GetWorkspaceDirectory()
 	if err != nil {
 		return "", err
 	}
 
-	logsDir := filepath.Join(workspace, "test_files/test_logs")
+	testFilesDir := filepath.Join(workspace, "test_files")
+
+	return testFilesDir, nil
+}
+
+func GetTestLogsDirectory() (string, error) {
+	testFilesDir, err := GetTestFilesDirectory()
+	if err != nil {
+		return "", err
+	}
+
+	logsDir := filepath.Join(testFilesDir, "test_logs")
 
 	return logsDir, nil
 }
 
 func GetTestLocalizationFilePath() (string, error) {
-	workspace, err := GetWorkspaceDirectory()
+	testFilesDir, err := GetTestFilesDirectory()
 	if err != nil {
 		return "", err
 	}
 
-	localizationFilePath := filepath.Join(workspace, "test_files/test_map_mapping/output.json")
+	localizationFilePath := filepath.Join(testFilesDir, "test_map_mapping/output.json")
 
 	return localizationFilePath, nil
 }
 
 func GetTestInputDirectory() (string, error) {
-	workspace, err := GetWorkspaceDirectory()
+	testFilesDir, err := GetTestFilesDirectory()
 	if err != nil {
 		return "", err
 	}
 
-	inputDir := filepath.Join(workspace, "test_files/test_replays")
+	inputDir := filepath.Join(testFilesDir, "test_replays")
 
 	return inputDir, nil
 }
 
 func GetTestOutputDirectory() (string, error) {
-	workspace, err := GetWorkspaceDirectory()
+	testFilesDir, err := GetTestFilesDirectory()
 	if err != nil {
 		return "", err
 	}
 
-	outputDir := filepath.Join(workspace, "test_files/test_replays_output")
+	outputDir := filepath.Join(testFilesDir, "test_replays_output")
 
 	return outputDir, nil
 }
