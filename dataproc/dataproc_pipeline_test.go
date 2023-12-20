@@ -9,30 +9,44 @@ import (
 	"testing"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	log "github.com/sirupsen/logrus"
 )
 
-var TEST_LOGS_DIR = "../test_files/test_logs/"
-var TEST_LOCALIZATION_FILE_PATH = "../test_files/test_map_mapping/output.json"
-
-// var TEST_INPUT_REPLAYPACK_DIR = "F:\\Projects\\EsportDataset\\processing_with_python\\input"
-
 var TEST_INPUT_REPLAYPACK_DIR = ""
-var TEST_INPUT_DIR = "../test_files/test_replays"
-var TEST_OUTPUT_DIR = "../test_files/test_replays_output/"
-var TEST_PROCESSED_FAILED_LOG = TEST_LOGS_DIR + "processed_failed_0.log"
 var TEST_BYPASS_THESE = []string{}
 
 func TestPipelineWrapper(t *testing.T) {
 
-	sliceOfFiles := utils.ListFiles(TEST_INPUT_DIR, ".SC2Replay")
+	testInputDir, err := settings.GetTestInputDirectory()
+	if err != nil {
+		t.Fatalf("Could not get the test input directory.")
+	}
+	testLogsDir, err := settings.GetTestLogsDirectory()
+	if err != nil {
+		t.Fatalf("Could not get the test logs directory.")
+	}
+	testLocalizationFilePath, err := settings.GetTestLocalizationFilePath()
+	if err != nil {
+		t.Fatalf("Could not get the test localization file path.")
+	}
+	testProcessedFailedlog, err := settings.GetTestProcessedFailedLog()
+	if err != nil {
+		t.Fatalf("Could not get the test processed_failed log.")
+	}
+	testOutputDir, err := settings.GetTestOutputDirectory()
+	if err != nil {
+		t.Fatalf("Could not get the test output directory.")
+	}
+
+	sliceOfFiles := utils.ListFiles(testInputDir, ".SC2Replay")
 	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		t.Fatalf("Test Failed! Could not produce chunks of files!")
 	}
 
-	logFile, logOk := utils.SetLogging(TEST_LOGS_DIR, 3)
+	logFile, logOk := utils.SetLogging(testLogsDir, 3)
 	if !logOk {
 		t.Fatalf("Test Failed! Could not perform SetLogging.")
 	}
@@ -49,17 +63,17 @@ func TestPipelineWrapper(t *testing.T) {
 	numberOfThreads := 1
 
 	localizedMapsMap := map[string]interface{}(nil)
-	localizedMapsMap = utils.UnmarshalLocaleMapping(TEST_LOCALIZATION_FILE_PATH)
+	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
 	if localizedMapsMap == nil {
-		cleanukOk, reason := cleanup(TEST_PROCESSED_FAILED_LOG, TEST_LOGS_DIR, TEST_OUTPUT_DIR, logFile, false, false)
-		if !cleanukOk {
+		cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
+		if !cleanupOk {
 			t.Fatalf("Test Failed! %s", reason)
 		}
 		log.Fatalf("Test Failed! Could not unmarshall the localization mapping file.")
 	}
 
 	PipelineWrapper(
-		TEST_OUTPUT_DIR,
+		testOutputDir,
 		chunks,
 		packageToZip,
 		integrityCheck,
@@ -72,12 +86,12 @@ func TestPipelineWrapper(t *testing.T) {
 		localizedMapsMap,
 		compressionMethod,
 		numberOfThreads,
-		TEST_LOGS_DIR,
+		testLogsDir,
 	)
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
 	logFileMap := map[string]interface{}(nil)
-	utils.UnmarshalJsonFile(TEST_PROCESSED_FAILED_LOG, &logFileMap)
+	utils.UnmarshalJsonFile(testProcessedFailedlog, &logFileMap)
 
 	var failedToProcessCount int
 	failedToProcessCount = 0
@@ -103,7 +117,7 @@ func TestPipelineWrapper(t *testing.T) {
 
 	sumProcessed := processedFilesCount + failedToProcessCount
 	if sumProcessed != len(sliceOfFiles) {
-		cleanukOk, reason := cleanup(TEST_PROCESSED_FAILED_LOG, TEST_LOGS_DIR, TEST_OUTPUT_DIR, logFile, false, false)
+		cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
 		if !cleanukOk {
 			t.Fatalf("Test Failed! %s", reason)
 		}
@@ -112,9 +126,9 @@ func TestPipelineWrapper(t *testing.T) {
 
 	// Read and verify if the created summaries contain the same count as the processed files
 	var summary datastruct.PackageSummary
-	unmarshalOk := unmarshalSummaryFile(TEST_OUTPUT_DIR+"\\package_summary_0.json", &summary)
+	unmarshalOk := unmarshalSummaryFile(testOutputDir+"/package_summary_0.json", &summary)
 	if !unmarshalOk {
-		cleanukOk, reason := cleanup(TEST_PROCESSED_FAILED_LOG, TEST_LOGS_DIR, TEST_OUTPUT_DIR, logFile, false, false)
+		cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
 		if !cleanukOk {
 			t.Fatalf("Test Failed! %s", reason)
 		}
@@ -127,14 +141,14 @@ func TestPipelineWrapper(t *testing.T) {
 	}
 
 	if gameVersionCount != processedFilesCount {
-		cleanukOk, reason := cleanup(TEST_PROCESSED_FAILED_LOG, TEST_LOGS_DIR, TEST_OUTPUT_DIR, logFile, false, false)
+		cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
 		if !cleanukOk {
 			t.Fatalf("Test Failed! %s", reason)
 		}
 		t.Fatalf("Test Failed! gameVersion histogram count is different from number of processed files.")
 	}
 
-	cleanukOk, reason := cleanup(TEST_PROCESSED_FAILED_LOG, TEST_LOGS_DIR, TEST_OUTPUT_DIR, logFile, false, false)
+	cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
 	if !cleanukOk {
 		t.Fatalf("Test Failed! %s", reason)
 	}
@@ -174,19 +188,32 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 
 func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (bool, string) {
 
+	testLogsDir, err := settings.GetTestLogsDirectory()
+	if err != nil {
+		return false, "Could not get the test logs directory."
+	}
+	testOutputDir, err := settings.GetTestOutputDirectory()
+	if err != nil {
+		return false, "Could not get the test output directory."
+	}
+	testLocalizationFilePath, err := settings.GetTestLocalizationFilePath()
+	if err != nil {
+		return false, "Could not get the test localization file path."
+	}
+
 	sliceOfFiles := utils.ListFiles(replayInputPath, ".SC2Replay")
 	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
 	}
 
-	thisTestLogsDir := TEST_LOGS_DIR + replaypackName + "/"
-	err := os.Mkdir(thisTestLogsDir, 0755)
+	thisTestLogsDir := testLogsDir + replaypackName + "/"
+	err = os.Mkdir(thisTestLogsDir, 0755)
 	if err != nil {
 		return false, "Could not create logs directory for test!"
 	}
 
-	thisTestOutputDir := TEST_OUTPUT_DIR + replaypackName + "/"
+	thisTestOutputDir := testOutputDir + replaypackName + "/"
 	err = os.Mkdir(thisTestOutputDir, 0755)
 	if err != nil {
 		return false, "Could not create output directory for test!"
@@ -209,7 +236,7 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	numberOfThreads := 1
 
 	localizedMapsMap := map[string]interface{}(nil)
-	localizedMapsMap = utils.UnmarshalLocaleMapping(TEST_LOCALIZATION_FILE_PATH)
+	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
 	if localizedMapsMap == nil {
 		return false, "Could not unmarshall the localization mapping file."
 	}
@@ -354,17 +381,6 @@ func cleanup(
 
 	return true, ""
 }
-
-// func isNil(i interface{}) bool {
-// 	if i == nil {
-// 		return true
-// 	}
-// 	switch reflect.TypeOf(i).Kind() {
-// 	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
-// 		return reflect.ValueOf(i).IsNil()
-// 	}
-// 	return false
-// }
 
 func unmarshalSummaryFile(pathToSummaryFile string, mappingToPopulate *datastruct.PackageSummary) bool {
 
