@@ -1,6 +1,8 @@
 package test_utils
 
 import (
+	"archive/zip"
+
 	"io"
 	"net/http"
 	"os"
@@ -14,8 +16,12 @@ var TEST_FILES_ARCHIVE = "https://github.com/Kaszanas/SC2InfoExtractorGo/release
 var TEST_ARCHIVE_FILEPATH = "test_files.zip"
 
 func TestFileSetup() error {
-
 	testFilesDirectory, err := settings.GetTestFilesDirectory()
+	if err != nil {
+		return err
+	}
+
+	testReplaysDirectory, err := settings.GetTestInputDirectory()
 	if err != nil {
 		return err
 	}
@@ -25,8 +31,57 @@ func TestFileSetup() error {
 		return err
 	}
 
-	// TODO: Unpack the archive, keeping only the files that do not already exist.
+	// Unpack the archive, keeping only the files that do not already exist.
+	err = UnpackArchive(archive.Name(), testReplaysDirectory)
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func UnpackArchive(archivePath string, destinationDir string) error {
+	reader, err := zip.OpenReader(archivePath)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	for _, file := range reader.File {
+		filePath := filepath.Join(destinationDir, file.Name)
+
+		// Skip if the file already exists:
+		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
+			continue
+		}
+
+		// Create file and copy contents
+		err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
+
+		outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		if err != nil {
+			return err
+		}
+		defer outFile.Close()
+
+		// Get the archived file:
+		rc, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		// Copy the file to the destination outside of the archive:
+		_, err = io.Copy(outFile, rc)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func DownloadTestFiles(testFilesURL string, downloadDir string) (*os.File, error) {
