@@ -10,19 +10,24 @@ import (
 )
 
 func main() {
+	os.Exit(mainReturnWithCode())
+}
+
+// TODO: Wrap the main functionality do not call os.exit directly it does not run deferred functions.
+func mainReturnWithCode() int {
 
 	// Getting the information from user to start the processing:
 	flags, okFlags := utils.ParseFlags()
 	if !okFlags {
 		log.Fatal("Failed parseFlags()")
-		os.Exit(1)
+		return 1
 	}
 
 	// Logging initialization to be able to provide further troubleshooting for users:
 	logFile, okLogging := utils.SetLogging(flags.LogPath, flags.LogLevel)
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
-		os.Exit(1)
+		return 1
 	}
 
 	// Profiling capabilities to verify if the program can be optimized any further:
@@ -30,7 +35,7 @@ func main() {
 		_, okProfiling := utils.SetProfiling(flags.CPUProfilingPath)
 		if !okProfiling {
 			log.Fatal("Failed to setProfiling()")
-			os.Exit(1)
+			return 1
 		}
 		defer pprof.StopCPUProfile()
 	}
@@ -58,7 +63,7 @@ func main() {
 		log.WithFields(log.Fields{
 			"lenListOfInputFiles": lenListOfInputFiles,
 			"numberOfPackages":    flags.NumberOfPackages}).Error("Higher number of packages than input files, closing the program.")
-		os.Exit(1)
+		return 1
 	}
 
 	listOfChunksFiles, packageToZipBool := utils.GetChunkListAndPackageBool(
@@ -73,10 +78,11 @@ func main() {
 		localizedMapsMap = utils.UnmarshalLocaleMapping(flags.LocalizationMapFile)
 		if localizedMapsMap == nil {
 			log.Error("Could not read the JSON mapping file, closing the program.")
-			os.Exit(1)
+			return 1
 		}
 	}
 
+	// TODO: Pass CLI Flags directly, limit the amount of arguments passed to the function:
 	// Initializing the processing:
 	dataproc.PipelineWrapper(
 		flags.OutputDirectory,
@@ -96,4 +102,6 @@ func main() {
 
 	// Closing the log file manually:
 	logFile.Close()
+
+	return 0
 }
