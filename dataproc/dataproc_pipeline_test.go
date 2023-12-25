@@ -51,16 +51,30 @@ func TestPipelineWrapper(t *testing.T) {
 		t.Fatalf("Test Failed! Could not perform SetLogging.")
 	}
 
-	packageToZip := true
-	integrityCheck := true
-	validityCheck := false
-	performFilteringBool := false
+	// Create dummy CLI flags:
 	gameModeCheckFlag := 0
-	performPlayerAnonymization := false
-	performChatAnonymization := false
-	performCleanup := true
+	flags := utils.CLIFlags{
+		InputDirectory:             testInputDir,
+		OutputDirectory:            testOutputDir,
+		NumberOfThreads:            1,
+		NumberOfPackages:           1,
+		PerformIntegrityCheck:      true,
+		PerformValidityCheck:       false,
+		PerformCleanup:             true,
+		PerformPlayerAnonymization: false,
+		PerformChatAnonymization:   false,
+		PerformFiltering:           false,
+		FilterGameMode:             gameModeCheckFlag,
+		LocalizationMapFile:        testLocalizationFilePath,
+		LogFlags: utils.LogFlags{
+			LogLevel: 5,
+			LogPath:  testLogsDir,
+		},
+		CPUProfilingPath: "",
+	}
+
+	packageToZip := true
 	compressionMethod := uint16(8)
-	numberOfThreads := 1
 
 	localizedMapsMap := map[string]interface{}(nil)
 	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
@@ -73,20 +87,11 @@ func TestPipelineWrapper(t *testing.T) {
 	}
 
 	PipelineWrapper(
-		testOutputDir,
 		chunks,
 		packageToZip,
-		integrityCheck,
-		validityCheck,
-		performFilteringBool,
-		gameModeCheckFlag,
-		performPlayerAnonymization,
-		performChatAnonymization,
-		performCleanup,
 		localizedMapsMap,
 		compressionMethod,
-		numberOfThreads,
-		testLogsDir,
+		flags,
 	)
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
@@ -202,7 +207,7 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	sliceOfFiles := utils.ListFiles(replayInputPath, ".SC2Replay")
-	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
+	chunksOfFiles, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
 	}
@@ -224,16 +229,30 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		return false, "Could not perform SetLogging."
 	}
 
-	packageToZip := true
-	integrityCheck := true
-	validityCheck := false
-	performFilteringBool := false
+	// Create dummy CLI flags:
 	gameModeCheckFlag := 0
-	performPlayerAnonymization := false
-	performChatAnonymization := false
-	performCleanup := true
+	flags := utils.CLIFlags{
+		InputDirectory:             replayInputPath,
+		OutputDirectory:            testOutputDir,
+		NumberOfThreads:            1,
+		NumberOfPackages:           1,
+		PerformIntegrityCheck:      true,
+		PerformValidityCheck:       false,
+		PerformCleanup:             true,
+		PerformPlayerAnonymization: false,
+		PerformChatAnonymization:   false,
+		PerformFiltering:           false,
+		FilterGameMode:             gameModeCheckFlag,
+		LocalizationMapFile:        testLocalizationFilePath,
+		LogFlags: utils.LogFlags{
+			LogLevel: 5,
+			LogPath:  testLogsDir,
+		},
+		CPUProfilingPath: "",
+	}
+
+	packageToZip := true
 	compressionMethod := uint16(8)
-	numberOfThreads := 1
 
 	localizedMapsMap := map[string]interface{}(nil)
 	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
@@ -242,20 +261,11 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	PipelineWrapper(
-		thisTestOutputDir,
-		chunks,
+		chunksOfFiles,
 		packageToZip,
-		integrityCheck,
-		validityCheck,
-		performFilteringBool,
-		gameModeCheckFlag,
-		performPlayerAnonymization,
-		performChatAnonymization,
-		performCleanup,
 		localizedMapsMap,
 		compressionMethod,
-		numberOfThreads,
-		thisTestLogsDir,
+		flags,
 	)
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
