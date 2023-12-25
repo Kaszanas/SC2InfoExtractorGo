@@ -24,7 +24,7 @@ func mainReturnWithCode() int {
 	}
 
 	// Logging initialization to be able to provide further troubleshooting for users:
-	logFile, okLogging := utils.SetLogging(flags.LogPath, flags.LogLevel)
+	logFile, okLogging := utils.SetLogging(flags.LogFlags.LogPath, flags.LogFlags.LogLevel)
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
 		return 1
@@ -42,9 +42,10 @@ func mainReturnWithCode() int {
 		"FilterGameMode":             flags.FilterGameMode,
 		"LocalizationMapFile":        flags.LocalizationMapFile,
 		"NumberOfThreads":            flags.NumberOfThreads,
-		"LogLevel":                   flags.LogLevel,
+		"LogLevel":                   flags.LogFlags.LogLevel,
+		"LogPath":                    flags.LogFlags.LogPath,
 		"CPUProfilingPath":           flags.CPUProfilingPath,
-		"LogPath":                    flags.LogPath}).Info("Parsed command line flags")
+	}).Info("Parsed command line flags")
 
 	// Profiling capabilities to verify if the program can be optimized any further:
 	if flags.CPUProfilingPath != "" {
@@ -83,23 +84,16 @@ func mainReturnWithCode() int {
 		}
 	}
 
+	var compressionMethod uint16 = 8
 	// TODO: Pass CLI Flags directly, limit the amount of arguments passed to the function:
 	// Initializing the processing:
 	dataproc.PipelineWrapper(
-		flags.OutputDirectory,
 		listOfChunksFiles,
 		packageToZipBool,
-		flags.PerformIntegrityCheck,
-		flags.PerformValidityCheck,
-		flags.PerformFiltering,
-		flags.FilterGameMode,
-		flags.PerformPlayerAnonymization,
-		flags.PerformChatAnonymization,
-		flags.PerformCleanup,
 		localizedMapsMap,
-		8,
-		flags.NumberOfThreads,
-		flags.LogPath)
+		compressionMethod,
+		flags,
+	)
 
 	// Closing the log file manually:
 	logFile.Close()
