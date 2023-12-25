@@ -13,6 +13,7 @@ import (
 type CLIFlags struct {
 	InputDirectory             string
 	OutputDirectory            string
+	NumberOfThreads            int
 	NumberOfPackages           int
 	PerformIntegrityCheck      bool
 	PerformValidityCheck       bool
@@ -22,10 +23,32 @@ type CLIFlags struct {
 	PerformFiltering           bool
 	FilterGameMode             int
 	LocalizationMapFile        string
-	NumberOfThreads            int
 	LogLevel                   int
-	CPUProfilingPath           string
 	LogPath                    string
+	CPUProfilingPath           string
+}
+
+type ProcessingFlags struct {
+	NumberOfThreads            int
+	NumberOfPackages           int
+	PerformIntegrityCheck      bool
+	PerformValidityCheck       bool
+	PerformCleanup             bool
+	PerformPlayerAnonymization bool
+	PerformChatAnonymization   bool
+	PerformFiltering           bool
+	FilterGameMode             int
+	LocalizationMapFile        string
+}
+
+type DirectoryFlags struct {
+	InputDirectory  string
+	OutputDirectory string
+}
+
+type LogFlags struct {
+	LogLevel int
+	LogPath  string
 }
 
 // parseFlags contains logic which is responsible for user input.
