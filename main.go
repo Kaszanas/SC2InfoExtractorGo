@@ -30,16 +30,6 @@ func mainReturnWithCode() int {
 		return 1
 	}
 
-	// Profiling capabilities to verify if the program can be optimized any further:
-	if flags.CPUProfilingPath != "" {
-		_, okProfiling := utils.SetProfiling(flags.CPUProfilingPath)
-		if !okProfiling {
-			log.Fatal("Failed to setProfiling()")
-			return 1
-		}
-		defer pprof.StopCPUProfile()
-	}
-
 	log.WithFields(log.Fields{
 		"InputDirectory":             flags.InputDirectory,
 		"OutputDirectory":            flags.OutputDirectory,
@@ -56,6 +46,17 @@ func mainReturnWithCode() int {
 		"CPUProfilingPath":           flags.CPUProfilingPath,
 		"LogPath":                    flags.LogPath}).Info("Parsed command line flags")
 
+	// Profiling capabilities to verify if the program can be optimized any further:
+	if flags.CPUProfilingPath != "" {
+		_, okProfiling := utils.SetProfiling(flags.CPUProfilingPath)
+		if !okProfiling {
+			log.Fatal("Failed to setProfiling()")
+			return 1
+		}
+		defer pprof.StopCPUProfile()
+	}
+
+	// TODO: Move everything that is below to separate functions:
 	// Getting list of absolute paths for files from input directory filtering them by file extension to be able to extract the data:
 	listOfInputFiles := utils.ListFiles(flags.InputDirectory, ".SC2Replay")
 	lenListOfInputFiles := len(listOfInputFiles)
