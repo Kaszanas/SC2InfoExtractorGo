@@ -9,6 +9,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// LogFlags contains settings that the user can set for logging.
+type LogFlags struct {
+	LogLevel int
+	LogPath  string
+}
+
 // CLIFlags is a structure which holds all of the information that was supplied by user in CLI.
 type CLIFlags struct {
 	InputDirectory             string
@@ -23,32 +29,8 @@ type CLIFlags struct {
 	PerformFiltering           bool
 	FilterGameMode             int
 	LocalizationMapFile        string
-	LogLevel                   int
-	LogPath                    string
+	LogFlags                   LogFlags
 	CPUProfilingPath           string
-}
-
-type ProcessingFlags struct {
-	NumberOfThreads            int
-	NumberOfPackages           int
-	PerformIntegrityCheck      bool
-	PerformValidityCheck       bool
-	PerformCleanup             bool
-	PerformPlayerAnonymization bool
-	PerformChatAnonymization   bool
-	PerformFiltering           bool
-	FilterGameMode             int
-	LocalizationMapFile        string
-}
-
-type DirectoryFlags struct {
-	InputDirectory  string
-	OutputDirectory string
-}
-
-type LogFlags struct {
-	LogLevel int
-	LogPath  string
 }
 
 // parseFlags contains logic which is responsible for user input.
@@ -99,6 +81,11 @@ func ParseFlags() (CLIFlags, bool) {
 		return CLIFlags{}, false
 	}
 
+	logFlags := LogFlags{
+		LogLevel: *logLevelFlag,
+		LogPath:  *logDirectoryFlag,
+	}
+
 	flags := CLIFlags{
 		InputDirectory:             absoluteInputDirectory,
 		OutputDirectory:            absolutePathOutputDirectory,
@@ -112,9 +99,8 @@ func ParseFlags() (CLIFlags, bool) {
 		FilterGameMode:             *gameModeFilterFlag,
 		LocalizationMapFile:        *localizationMappingFileFlag,
 		NumberOfThreads:            *numberOfThreadsUsedFlag,
-		LogLevel:                   *logLevelFlag,
+		LogFlags:                   logFlags,
 		CPUProfilingPath:           *performCPUProfilingFlag,
-		LogPath:                    *logDirectoryFlag,
 	}
 
 	return flags, true
