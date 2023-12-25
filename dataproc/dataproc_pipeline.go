@@ -162,9 +162,9 @@ func MultiprocessingChunkPipeline(
 		if !okSaveToDrive {
 			saveErrorCounter++
 			log.WithFields(log.Fields{
-				"replayFile":       replayFile,
-				"OutputDirectory":  cliFlags.OutputDirectory,
-				"saveErrorCounter": saveErrorCounter,
+				"replayFile":               replayFile,
+				"cliFlags.OutputDirectory": cliFlags.OutputDirectory,
+				"saveErrorCounter":         saveErrorCounter,
 			}).Error("Failed to save .json to drive!")
 			continue
 		}

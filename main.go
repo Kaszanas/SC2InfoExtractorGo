@@ -31,20 +31,20 @@ func mainReturnWithCode() int {
 	}
 
 	log.WithFields(log.Fields{
-		"InputDirectory":             flags.InputDirectory,
-		"OutputDirectory":            flags.OutputDirectory,
-		"NumberOfPackages":           flags.NumberOfPackages,
-		"PerformIntegrityCheck":      flags.PerformIntegrityCheck,
-		"PerformValidityCheck":       flags.PerformValidityCheck,
-		"PerformCleanup":             flags.PerformCleanup,
-		"PerformPlayerAnonymization": flags.PerformPlayerAnonymization,
-		"PerformChatAnonymization":   flags.PerformChatAnonymization,
-		"FilterGameMode":             flags.FilterGameMode,
-		"LocalizationMapFile":        flags.LocalizationMapFile,
-		"NumberOfThreads":            flags.NumberOfThreads,
-		"LogLevel":                   flags.LogFlags.LogLevel,
-		"LogPath":                    flags.LogFlags.LogPath,
-		"CPUProfilingPath":           flags.CPUProfilingPath,
+		"flags.InputDirectory":             flags.InputDirectory,
+		"flags.OutputDirectory":            flags.OutputDirectory,
+		"flags.NumberOfPackages":           flags.NumberOfPackages,
+		"flags.PerformIntegrityCheck":      flags.PerformIntegrityCheck,
+		"flags.PerformValidityCheck":       flags.PerformValidityCheck,
+		"flags.PerformCleanup":             flags.PerformCleanup,
+		"flags.PerformPlayerAnonymization": flags.PerformPlayerAnonymization,
+		"flags.PerformChatAnonymization":   flags.PerformChatAnonymization,
+		"flags.FilterGameMode":             flags.FilterGameMode,
+		"flags.LocalizationMapFile":        flags.LocalizationMapFile,
+		"flags.NumberOfThreads":            flags.NumberOfThreads,
+		"flags.LogFlags.LogLevel":          flags.LogFlags.LogLevel,
+		"flags.LogFlags.LogPath":           flags.LogFlags.LogPath,
+		"flags.CPUProfilingPath":           flags.CPUProfilingPath,
 	}).Info("Parsed command line flags")
 
 	// Profiling capabilities to verify if the program can be optimized any further:
@@ -63,8 +63,8 @@ func mainReturnWithCode() int {
 	lenListOfInputFiles := len(listOfInputFiles)
 	if lenListOfInputFiles < flags.NumberOfPackages {
 		log.WithFields(log.Fields{
-			"lenListOfInputFiles": lenListOfInputFiles,
-			"numberOfPackages":    flags.NumberOfPackages}).Error("Higher number of packages than input files, closing the program.")
+			"lenListOfInputFiles":    lenListOfInputFiles,
+			"flags.NumberOfPackages": flags.NumberOfPackages}).Error("Higher number of packages than input files, closing the program.")
 		return 1
 	}
 
