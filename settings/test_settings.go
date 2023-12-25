@@ -4,6 +4,11 @@ import (
 	"path/filepath"
 )
 
+// TODO: Maybe create a getter function for this in case there will eve be a logic?
+// TODO: This is only a sample, the repository name will change:
+var TEST_FILES_ARCHIVE = "https://github.com/Kaszanas/sc2reset_test_data/releases/latest/download/sc2reset_test_files.zip"
+var TEST_ARCHIVE_FILEPATH = "test_files.zip"
+
 // REVIEW: Is it better to have an environment variable for the workspace directory?
 // Or is it better to have that in a .env file?
 // How to load a .env file? that is outside of the package?
