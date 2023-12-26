@@ -7,9 +7,13 @@
 # To get a newer version, you will need to update the SHA.
 # You can also reference a tag or branch, but the action may change without warning.
 
-name: Publish Docker image
+name: Publish Docker image (Release)
 
 on:
+  # push:
+  #   branches:
+  #     - dev
+  # workflow_dispatch:
   release:
     types: [published]
 
