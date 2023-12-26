@@ -13,11 +13,32 @@ on:
   # push:
   #   branches:
   #     - dev
+  #     - main
   # workflow_dispatch:
   release:
     types: [published]
 
 jobs:
+  run_tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      
+        # Check if the main dockerfile builds:
+      - name: Build "Production" Docker Image
+        run: |
+          make build
+
+        # Check if the main dockerfile builds:
+      - name: Build "Development" Docker Image
+        run: |
+          make build_dev
+
   push_to_registries:
     name: Push Docker image to multiple registries
     runs-on: ubuntu-latest
@@ -46,13 +67,14 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            my-docker-hub-namespace/my-docker-hub-repository
+            kaszanas/sc2infoextractorgo
             ghcr.io/${{ github.repository }}
       
       - name: Build and push Docker images
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
