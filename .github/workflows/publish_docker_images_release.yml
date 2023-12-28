@@ -52,7 +52,6 @@ jobs:
         with:
           images: |
             kaszanas/sc2infoextractorgo
-            ghcr.io/${{ github.repository }}
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v4
