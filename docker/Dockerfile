@@ -1,9 +1,9 @@
 FROM golang:1.21-alpine as build_sc2_info_extractor
 
-WORKDIR /sc2_info_extractor
+WORKDIR /app
 
 # Copy Golang dependency definitions:
-COPY go.mod go.sum /sc2_info_extractor/
+COPY go.mod go.sum /app/
 
 # Get the project dependencies:
 RUN --mount=type=cache,target=/go go mod download
@@ -21,6 +21,6 @@ WORKDIR /app
 
 RUN mkdir logs
 
-COPY --from=build_sc2_info_extractor /sc2_info_extractor/SC2InfoExtractorGo /app/
+COPY --from=build_sc2_info_extractor /app/SC2InfoExtractorGo /app/
 
 ENTRYPOINT ["/app/SC2InfoExtractorGo"]
