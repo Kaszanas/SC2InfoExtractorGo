@@ -16,12 +16,12 @@ jobs:
       # Check if the main dockerfile builds:
       - name: Build "Production" Docker Image
         run: |
-          make build
+          make docker_build
 
         # Check if the main dockerfile builds:
-      - name: Build "Development" Docker Image
+      - name: Build "Development" Docker Image Using Compose
         run: |
-          make build_dev
+          make compose_build_dev
 
       # TODO: Running containerized tests:
       # - name: Run Docker Tests With Compose

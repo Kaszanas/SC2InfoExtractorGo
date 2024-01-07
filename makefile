@@ -28,7 +28,7 @@ docker_run_dev: ## Runs the interactive shell in the dev container. Runs bash by
 ###################
 #### TESTING ######
 ###################
-compose_build:
+compose_build_dev:
 	docker-compose -f $(TEST_COMPOSE) build
 
 action_compose_test: ## Runs the tests in a container.
