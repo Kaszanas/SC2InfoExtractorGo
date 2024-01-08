@@ -41,6 +41,10 @@ func TestPipelineWrapper(t *testing.T) {
 	}
 
 	sliceOfFiles := utils.ListFiles(testInputDir, ".SC2Replay")
+	if len(sliceOfFiles) < 1 {
+		t.Fatalf("Could not detect test files! Verify if they exist.")
+	}
+
 	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		t.Fatalf("Test Failed! Could not produce chunks of files!")
