@@ -1,6 +1,7 @@
 PWD := `pwd`
 
-TEST_COMPOSE = $(DEPLOY_DIR)/docker-test-compose.yml
+DEPLOY_DIR = ./docker
+TEST_COMPOSE = $(DEPLOY_DIR)/docker-dev-compose.yml
 
 # REVIEW: Should this be ran with Docker Compose instead?
 process_replays: ## Runs the container to process replays.
@@ -24,6 +25,8 @@ docker_build_dev: ## Builds the dev container.
 docker_run_dev: ## Runs the interactive shell in the dev container. Runs bash by default.
 	docker run -it sc2infoextractorgo:dev
 
+docker_go_lint:
+	docker run --rm -v .:/app -w /app golangci/golangci-lint:latest golangci-lint run -v
 
 ###################
 #### TESTING ######
@@ -37,7 +40,7 @@ action_compose_test: ## Runs the tests in a container.
 compose_remove: ## Stops and removes the testing containers, images, volumes.
 	docker-compose -f $(TEST_COMPOSE) down --volumes --remove-orphans
 
-compose_test: compose_build action_compose_test compose_remove
+compose_test: compose_build_dev action_compose_test compose_remove
 
 .PHONY: help
 help: ## Show available make targets.
