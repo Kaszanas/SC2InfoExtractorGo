@@ -19,7 +19,11 @@ func SetProfiling(profilingPath string) (*os.File, bool) {
 		return profilerFile, false
 	}
 	// Starting profiling:
-	pprof.StartCPUProfile(profilerFile)
+	err = pprof.StartCPUProfile(profilerFile)
+	if err != nil {
+		log.WithField("error", err).Error("Could not start profiling. Exiting program.")
+		return profilerFile, false
+	}
 
 	return profilerFile, true
 }

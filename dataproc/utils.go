@@ -25,18 +25,6 @@ func checkUint8(intToCheck int64) (uint8, bool) {
 	}
 }
 
-// checkUint16 verifies if an int64 can fit into uint16 and returns a converted variable and a boolean.
-func checkUint16(intToCheck int64) (uint16, bool) {
-	log.Info("Entered checkUint16()")
-	if intToCheck < 0 || intToCheck > 65535 {
-		log.Info("Value does not fit in uint16, returning 0")
-		return uint16(0), false
-	} else {
-		log.Info("Value fits in uint16, converting")
-		return uint16(intToCheck), true
-	}
-}
-
 // checkUint32 verifies if an int64 can fit into uint64 and returns a converted variable and a boolean.
 func checkUint32(intToCheck int64) (uint32, bool) {
 	log.Info("Entered checkUint32()")
@@ -60,19 +48,6 @@ func checkUint64(intToCheck int64) (uint64, bool) {
 	} else {
 		log.Info("Value fits in uint64, converting")
 		return uint64(intToCheck), true
-	}
-}
-
-// checkUint8Float verifies if an float64 can fit into uint8 and returns a converted variable and a boolean.
-func checkUint8Float(floatToCheck float64) (uint8, bool) {
-	log.Info("Entered checkUint8Float()")
-
-	if floatToCheck < 0 || floatToCheck > 255 {
-		log.Info("Value does not fit in uint8, returning 0")
-		return uint8(0), false
-	} else {
-		log.Info("Value fits in uint 8, converting")
-		return uint8(floatToCheck), true
 	}
 }
 

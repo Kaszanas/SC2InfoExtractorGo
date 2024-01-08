@@ -39,6 +39,7 @@ func anonymizeReplay(
 	return true
 }
 
+//nolint:all
 var keepAliveParameters = keepalive.ClientParameters{
 	Time:                20 * time.Second, // send pings every 10 seconds if there is no activity
 	Timeout:             10 * time.Second, // wait 1 second for ping ack before considering the connection dead

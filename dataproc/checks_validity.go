@@ -85,11 +85,17 @@ func validate1v1Replay(replayData *rep.Rep) bool {
 		}
 	}
 
+	// REVIEW: Should this be hidden behind a CLI flag?
+	isBlizzardMap := checkBlizzardMap(replayData)
+	if !isBlizzardMap {
+		log.Error("Data validation failed! checkBlizzardMap() returned false! Returning")
+		return false
+	}
+
 	log.Info("Finished validateData(), returning")
 	return true
 }
 
-// TODO: Verify if this function is required:
 // checkBlizzardMap verifies if the currently processed replay was played using a Blizzard official map.
 func checkBlizzardMap(replayData *rep.Rep) bool {
 
