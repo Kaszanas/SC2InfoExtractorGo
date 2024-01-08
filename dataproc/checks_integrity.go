@@ -1,9 +1,6 @@
 package dataproc
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
@@ -70,17 +67,4 @@ func checkIntegrity(replayData *rep.Rep) (bool, string) {
 
 	log.Info("Integrity checks passed! Returning from checkIntegrity()")
 	return true, ""
-}
-
-// convertBaseBuild is accessing the metadataBaseBuild and converting it from string to integer.
-func convertBaseBuild(metadataBaseBuild string) (int, bool) {
-
-	metadatBaseBuildString := strings.Replace(metadataBaseBuild, "Base", "", -1)
-	metadataBaseBuildInt, err := strconv.Atoi(metadatBaseBuildString)
-	if err != nil {
-		log.Info("Integrity check failed! Cannot convert replayData.Metadata.BaseBuild() to integer!")
-		return 0, false
-	}
-
-	return metadataBaseBuildInt, true
 }
