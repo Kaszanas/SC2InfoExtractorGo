@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils_test"
 	log "github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ var TEST_BYPASS_THESE = []string{}
 
 func TestPipelineWrapper(t *testing.T) {
 
-	flags, chunksOfFiles, logFile, packageToZip, compressionMethod, testLocalizationFilePath, testProcessedFailedlog, testLogsDir, testOutputDir, lenSliceOfFiles := utils_test.SetTestCLIFlags(t)
+	flags, chunks, logFile, packageToZip, compressionMethod, testLocalizationFilePath, testProcessedFailedlog, testLogsDir, testOutputDir, lenSliceOfFiles := utils_test.SetTestCLIFlags(t)
 
 	localizedMapsMap := map[string]interface{}(nil)
 	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
@@ -32,7 +33,7 @@ func TestPipelineWrapper(t *testing.T) {
 	}
 
 	PipelineWrapper(
-		chunksOfFiles,
+		chunks,
 		packageToZip,
 		localizedMapsMap,
 		compressionMethod,
@@ -117,6 +118,7 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 		log.Fatal(err)
 	}
 
+	// TODO: Refactor
 	for _, file := range files {
 		file := file
 		if file.IsDir() {
@@ -137,8 +139,66 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 }
 
 func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (bool, string) {
+	testLogsDir, err := settings.GetTestLogsDirectory()
+	if err != nil {
+		return false, "Could not get the test logs directory."
+	}
+	testOutputDir, err := settings.GetTestOutputDirectory()
+	if err != nil {
+		return false, "Could not get the test output directory."
+	}
+	testLocalizationFilePath, err := settings.GetTestLocalizationFilePath()
+	if err != nil {
+		return false, "Could not get the test localization file path."
+	}
 
-	flags, chunksOfFiles, logFile, packageToZip, compressionMethod, testLocalizationFilePath, testProcessedFailedlog, testLogsDir, testOutputDir, lenSliceOfFiles := utils_test.SetTestCLIFlags(t)
+	sliceOfFiles := utils.ListFiles(replayInputPath, ".SC2Replay")
+	chunksOfFiles, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
+	if !getOk {
+		return false, "Could not produce chunks of files!"
+	}
+
+	thisTestLogsDir := testLogsDir + replaypackName + "/"
+	err = os.Mkdir(thisTestLogsDir, 0755)
+	if err != nil {
+		return false, "Could not create logs directory for test!"
+	}
+
+	thisTestOutputDir := testOutputDir + replaypackName + "/"
+	err = os.Mkdir(thisTestOutputDir, 0755)
+	if err != nil {
+		return false, "Could not create output directory for test!"
+	}
+
+	logFile, logOk := utils.SetLogging(thisTestLogsDir, 3)
+	if !logOk {
+		return false, "Could not perform SetLogging."
+	}
+
+	// Create dummy CLI flags:
+	gameModeCheckFlag := 0
+	flags := utils.CLIFlags{
+		InputDirectory:             replayInputPath,
+		OutputDirectory:            testOutputDir,
+		NumberOfThreads:            1,
+		NumberOfPackages:           1,
+		PerformIntegrityCheck:      true,
+		PerformValidityCheck:       false,
+		PerformCleanup:             true,
+		PerformPlayerAnonymization: false,
+		PerformChatAnonymization:   false,
+		PerformFiltering:           false,
+		FilterGameMode:             gameModeCheckFlag,
+		LocalizationMapFile:        testLocalizationFilePath,
+		LogFlags: utils.LogFlags{
+			LogLevel: 5,
+			LogPath:  testLogsDir,
+		},
+		CPUProfilingPath: "",
+	}
+
+	packageToZip := true
+	compressionMethod := uint16(8)
 
 	localizedMapsMap := map[string]interface{}(nil)
 	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
@@ -156,9 +216,10 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
 	logFileMap := map[string]interface{}(nil)
-	unmarshalOk := utils.UnmarshalJsonFile(testProcessedFailedlog, &logFileMap)
+	processedFailedPath := thisTestLogsDir + "processed_failed_0.log"
+	unmarshalOk := utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
 	if !unmarshalOk {
-		cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, true, true)
+		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -188,8 +249,8 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	sumProcessed := processedFilesCount + failedToProcessCount
-	if sumProcessed != lenSliceOfFiles {
-		cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, true, true)
+	if sumProcessed != len(sliceOfFiles) {
+		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -198,9 +259,9 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	// Read and verify if the created summaries contain the same count as the processed files
 	var summary datastruct.PackageSummary
-	unmarshalOk = unmarshalSummaryFile(testOutputDir+"\\package_summary_0.json", &summary)
+	unmarshalOk = unmarshalSummaryFile(thisTestOutputDir+"\\package_summary_0.json", &summary)
 	if !unmarshalOk {
-		cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, true, true)
+		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -213,14 +274,14 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	if gameVersionCount != processedFilesCount {
-		cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, true, true)
+		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
 		return false, "gameVersion histogram count is different from number of processed files."
 	}
 
-	cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, true, true)
+	cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 	if !cleanupOk {
 		return false, reason
 	}
