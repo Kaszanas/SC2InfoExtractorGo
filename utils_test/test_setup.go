@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, uint16) {
+func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, uint16, string, string, string, string, int) {
 	testInputDir, err := settings.GetTestInputDirectory()
 	if err != nil {
 		t.Fatalf("Could not get the test input directory.")
@@ -83,5 +83,5 @@ func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, 
 	packageToZip := true
 	compressionMethod := uint16(8)
 
-	return flags, chunks, logFile, packageToZip, compressionMethod
+	return flags, chunks, logFile, packageToZip, compressionMethod, testLocalizationFilePath, testProcessedFailedlog, testLogsDir, testOutputDir, len(sliceOfFiles)
 }
