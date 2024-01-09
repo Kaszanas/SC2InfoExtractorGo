@@ -23,27 +23,39 @@ func TestPipelineWrapper(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not get the test input directory.")
 	}
+	log.WithField("testInputDir", testInputDir).Info("Input dir was set.")
+
 	testLogsDir, err := settings.GetTestLogsDirectory()
 	if err != nil {
 		t.Fatalf("Could not get the test logs directory.")
 	}
+	log.WithField("testLogsDir", testLogsDir).Info("Logs dir was set.")
+
 	testLocalizationFilePath, err := settings.GetTestLocalizationFilePath()
 	if err != nil {
 		t.Fatalf("Could not get the test localization file path.")
 	}
+	log.WithField("testLocalizationFilePath", testLocalizationFilePath).
+		Info("Localization file path was set.")
+
 	testProcessedFailedlog, err := settings.GetTestProcessedFailedLog()
 	if err != nil {
 		t.Fatalf("Could not get the test processed_failed log.")
 	}
+	log.WithField("testProcessedFailedlog", testProcessedFailedlog).
+		Info("Processed failed log path was set.")
+
 	testOutputDir, err := settings.GetTestOutputDirectory()
 	if err != nil {
 		t.Fatalf("Could not get the test output directory.")
 	}
+	log.WithField("testOutputDir", testOutputDir).Info("Output dir was set.")
 
 	sliceOfFiles := utils.ListFiles(testInputDir, ".SC2Replay")
 	if len(sliceOfFiles) < 1 {
 		t.Fatalf("Could not detect test files! Verify if they exist.")
 	}
+	log.WithField("n_files", len(sliceOfFiles)).Info("Number of detected files.")
 
 	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
