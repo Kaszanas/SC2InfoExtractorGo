@@ -11,123 +11,34 @@ import (
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
-	"github.com/Kaszanas/SC2InfoExtractorGo/utils_test"
 	log "github.com/sirupsen/logrus"
 )
 
-var TEST_INPUT_REPLAYPACK_DIR = ""
-var TEST_BYPASS_THESE = []string{}
-
-func TestPipelineWrapper(t *testing.T) {
-
-	flags, chunks, logFile, packageToZip, compressionMethod, testLocalizationFilePath, testProcessedFailedlog, testLogsDir, testOutputDir, lenSliceOfFiles := utils_test.SetTestCLIFlags(t)
-
-	localizedMapsMap := map[string]interface{}(nil)
-	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
-	if localizedMapsMap == nil {
-		cleanupOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
-		if !cleanupOk {
-			t.Fatalf("Test Failed! %s", reason)
-		}
-		log.Fatalf("Test Failed! Could not unmarshall the localization mapping file.")
-	}
-
-	PipelineWrapper(
-		chunks,
-		packageToZip,
-		localizedMapsMap,
-		compressionMethod,
-		flags,
-	)
-
-	// Read and verify if the processed_failed information contains the same count of files processed as the output
-	logFileMap := map[string]interface{}(nil)
-	utils.UnmarshalJsonFile(testProcessedFailedlog, &logFileMap)
-
-	var failedToProcessCount int
-	failedToProcessCount = 0
-	if logFileMap["failedToProcess"] != nil {
-		failedSlice := []string{}
-		for _, v := range logFileMap["failedToProcess"].([]interface{}) {
-			failedSlice = append(failedSlice, fmt.Sprint(v))
-		}
-
-		failedToProcessCount = len(failedSlice)
-	}
-
-	var processedFilesCount int
-	processedFilesCount = 0
-	if logFileMap["processedFiles"] != nil {
-		processedSlice := []string{}
-		for _, v := range logFileMap["processedFiles"].([]interface{}) {
-			processedSlice = append(processedSlice, fmt.Sprint(v))
-		}
-
-		processedFilesCount = len(processedSlice)
-	}
-
-	sumProcessed := processedFilesCount + failedToProcessCount
-	if sumProcessed != lenSliceOfFiles {
-		cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
-		if !cleanukOk {
-			t.Fatalf("Test Failed! %s", reason)
-		}
-		t.Fatalf("Test Failed! input files and processed_failed information mismatch.")
-	}
-
-	// Read and verify if the created summaries contain the same count as the processed files
-	var summary datastruct.PackageSummary
-	unmarshalOk := unmarshalSummaryFile(testOutputDir+"/package_summary_0.json", &summary)
-	if !unmarshalOk {
-		cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
-		if !cleanukOk {
-			t.Fatalf("Test Failed! %s", reason)
-		}
-		t.Fatalf("Test Failed! Cannot read summary file.")
-	}
-
-	gameVersionCount := 0
-	for _, value := range summary.Summary.GameVersions {
-		gameVersionCount += int(value)
-	}
-
-	if gameVersionCount != processedFilesCount {
-		cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
-		if !cleanukOk {
-			t.Fatalf("Test Failed! %s", reason)
-		}
-		t.Fatalf("Test Failed! gameVersion histogram count is different from number of processed files.")
-	}
-
-	cleanukOk, reason := cleanup(testProcessedFailedlog, testLogsDir, testOutputDir, logFile, false, false)
-	if !cleanukOk {
-		t.Fatalf("Test Failed! %s", reason)
-	}
-
-}
+var TEST_BYPASS_THESE_DIRS = []string{}
 
 func TestPipelineWrapperMultiple(t *testing.T) {
 
-	if TEST_INPUT_REPLAYPACK_DIR == "" {
-		t.SkipNow()
-	}
-
-	files, err := os.ReadDir(TEST_INPUT_REPLAYPACK_DIR)
+	testInputDir, err := settings.GetTestInputDirectory()
 	if err != nil {
-		t.Fatalf("Could not read the TEST_INPUT_REPLAYPACK_DIR")
+		t.Fatalf("Could not get the test input directory.")
+	}
+	log.WithField("testInputDir", testInputDir).Info("Input dir was set.")
+
+	dirContents, err := os.ReadDir(testInputDir)
+	if err != nil {
+		t.Fatalf("Could not get the test directory contents.")
 		log.Fatal(err)
 	}
 
 	// TODO: Refactor
-	for _, file := range files {
-		file := file
-		if file.IsDir() {
-			filename := file.Name()
-			if !contains(TEST_BYPASS_THESE, filename) {
-				absoluteReplayDir := filepath.Join(TEST_INPUT_REPLAYPACK_DIR, filename)
-				t.Run(filename, func(t *testing.T) {
+	for _, maybeDir := range dirContents {
+		if maybeDir.IsDir() {
+			dirName := maybeDir.Name()
+			if !contains(TEST_BYPASS_THESE_DIRS, dirName) {
+				absoluteReplayDir := filepath.Join(testInputDir, dirName)
+				t.Run(dirName, func(t *testing.T) {
 					// t.Parallel()
-					testOk, reason := testPipelineWrapperWithDir(absoluteReplayDir, filename)
+					testOk, reason := testPipelineWrapperWithDir(absoluteReplayDir, dirName)
 					if !testOk {
 						t.Fatalf("Test Failed! %s", reason)
 					}
@@ -268,12 +179,12 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		return false, "Cannot read summary file."
 	}
 
-	gameVersionCount := 0
+	histogramGameVersionCount := 0
 	for _, value := range summary.Summary.GameVersions {
-		gameVersionCount += int(value)
+		histogramGameVersionCount += int(value)
 	}
 
-	if gameVersionCount != processedFilesCount {
+	if histogramGameVersionCount != processedFilesCount {
 		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
