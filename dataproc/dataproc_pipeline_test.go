@@ -130,7 +130,7 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	processedFailedPath := thisTestLogsDir + "processed_failed_0.log"
 	unmarshalOk := utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
 	if !unmarshalOk {
-		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -161,7 +161,7 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	sumProcessed := processedFilesCount + failedToProcessCount
 	if sumProcessed != len(sliceOfFiles) {
-		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -172,7 +172,7 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	var summary datastruct.PackageSummary
 	unmarshalOk = unmarshalSummaryFile(thisTestOutputDir+"\\package_summary_0.json", &summary)
 	if !unmarshalOk {
-		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -185,23 +185,22 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	if histogramGameVersionCount != processedFilesCount {
-		cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 		if !cleanupOk {
 			return false, reason
 		}
 		return false, "gameVersion histogram count is different from number of processed files."
 	}
 
-	cleanupOk, reason := cleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+	cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
 	if !cleanupOk {
 		return false, reason
 	}
 
 	return true, ""
-
 }
 
-func cleanup(
+func pipelineTestCleanup(
 	processedFailedPath string,
 	logsFilepath string,
 	testOutputPath string,
@@ -249,26 +248,31 @@ func cleanup(
 	return true, ""
 }
 
-func unmarshalSummaryFile(pathToSummaryFile string, mappingToPopulate *datastruct.PackageSummary) bool {
+func unmarshalSummaryFile(
+	pathToSummaryFile string,
+	mappingToPopulate *datastruct.PackageSummary) bool {
 
 	log.Info("Entered unmarshalJsonFile()")
 
 	var file, err = os.Open(pathToSummaryFile)
 	if err != nil {
-		log.WithField("fileError", err.Error()).Info("Failed to open the JSON file.")
+		log.WithField("fileError", err.Error()).
+			Info("Failed to open the JSON file.")
 		return false
 	}
 	defer file.Close()
 
 	jsonBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.WithField("readError", err.Error()).Info("Failed to read the JSON file.")
+		log.WithField("readError", err.Error()).
+			Info("Failed to read the JSON file.")
 		return false
 	}
 
 	err = json.Unmarshal([]byte(jsonBytes), &mappingToPopulate)
 	if err != nil {
-		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the JSON file.")
+		log.WithField("jsonMarshalError", err.Error()).
+			Info("Could not unmarshal the JSON file.")
 	}
 
 	log.Info("Finished unmarshalJsonFile()")

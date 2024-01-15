@@ -119,12 +119,20 @@ func MultiprocessingChunkPipeline(
 		}
 
 		// Running all of the processing logic and verifying if it worked:
-		didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(
+		didWork, cleanReplayStructure, replaySummary, failureReason := FileProcessingPipeline(
 			replayFile,
 			grpcAnonymizer,
 			localizedMapsMap,
 			cliFlags,
 		)
+
+		// Create final replay string:
+		stringifyOk, replayString := stringifyReplay(&cleanReplayStructure)
+		if !stringifyOk {
+			log.WithField("file", replayFile).
+				Error("Failed to stringify the replay.")
+			continue
+		}
 
 		if !didWork {
 			pipelineErrorCounter++
@@ -202,15 +210,19 @@ func FileProcessingPipeline(
 	grpcAnonymizer *GRPCAnonymizer,
 	localizedMapsMap map[string]interface{},
 	cliFlags utils.CLIFlags,
-) (bool, string, data.ReplaySummary, string) {
+) (bool, data.CleanedReplay, data.ReplaySummary, string) {
 
 	log.Info("Entered FileProcessingPipeline()")
 
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).Error("Failed to read file.")
-		return false, "", data.ReplaySummary{}, "rep.NewFromFile() failed"
+		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).
+			Error("Failed to read file.")
+		return false,
+			data.CleanedReplay{},
+			data.ReplaySummary{},
+			"rep.NewFromFile() failed"
 	}
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 	defer replayData.Close()
@@ -219,8 +231,12 @@ func FileProcessingPipeline(
 	if cliFlags.PerformIntegrityCheck {
 		integrityOk, failureReason := checkIntegrity(replayData)
 		if !integrityOk {
-			log.WithField("file", replayFile).Error("Integrity check failed in file.")
-			return false, "", data.ReplaySummary{}, fmt.Sprintf("checkIntegrity() failed: %s", failureReason)
+			log.WithField("file", replayFile).
+				Error("Integrity check failed in file.")
+			return false,
+				data.CleanedReplay{},
+				data.ReplaySummary{},
+				fmt.Sprintf("checkIntegrity() failed: %s", failureReason)
 		}
 	}
 
@@ -229,7 +245,10 @@ func FileProcessingPipeline(
 		if cliFlags.FilterGameMode&Ranked1v1 != 0 && gameIs1v1Ranked(replayData) {
 			// Perform Validity check
 			if !validate1v1Replay(replayData) {
-				return false, "", data.ReplaySummary{}, "validateReplay() failed"
+				return false,
+					data.CleanedReplay{},
+					data.ReplaySummary{},
+					"validateReplay() failed"
 			}
 		}
 	}
@@ -237,7 +256,10 @@ func FileProcessingPipeline(
 	// Filtering:
 	if cliFlags.PerformFiltering {
 		if !filterGameModes(replayData, cliFlags.FilterGameMode) {
-			return false, "", data.ReplaySummary{}, "filterGameModes() failed"
+			return false,
+				data.CleanedReplay{},
+				data.ReplaySummary{},
+				"filterGameModes() failed"
 		}
 	}
 
@@ -245,34 +267,36 @@ func FileProcessingPipeline(
 	cleanOk, cleanReplayStructure := extractReplayData(replayData, localizedMapsMap, cliFlags.PerformCleanup)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
-		return false, "", data.ReplaySummary{}, "cleanReplay() failed"
+		return false,
+			data.CleanedReplay{},
+			data.ReplaySummary{},
+			"cleanReplay() failed"
 	}
 
 	// Create replay summary:
 	summarizeOk, summarizedReplay := summarizeReplay(&cleanReplayStructure)
 	if !summarizeOk {
 		log.WithField("file", replayFile).Error("Failed to create replay summary.")
-		return false, "", data.ReplaySummary{}, "summarizeReplay() failed"
+		return false,
+			data.CleanedReplay{},
+			data.ReplaySummary{},
+			"summarizeReplay() failed"
 	}
 
 	// Anonymize replay:
 	if grpcAnonymizer != nil {
 		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer, cliFlags.PerformChatAnonymization) {
 			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
-			return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
+			return false,
+				data.CleanedReplay{},
+				data.ReplaySummary{},
+				"anonymizeReplay() failed"
 		}
-	}
-
-	// Create final replay string:
-	stringifyOk, finalReplayString := stringifyReplay(&cleanReplayStructure)
-	if !stringifyOk {
-		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
-		return false, "", data.ReplaySummary{}, "stringifyReplay() failed"
 	}
 
 	log.Info("Finished FileProcessingPipeline()")
 
-	return true, finalReplayString, summarizedReplay, ""
+	return true, cleanReplayStructure, summarizedReplay, ""
 }
 
 // gameis1v1Ranked
