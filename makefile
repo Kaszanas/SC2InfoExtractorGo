@@ -34,6 +34,11 @@ docker_go_lint:
 compose_build_dev:
 	docker-compose -f $(TEST_COMPOSE) build
 
+compose_run_dev_interactive:
+	docker-compose -f $(TEST_COMPOSE) run -it --rm sc2infoextractorgo
+
+compose_run_dev: compose_build_dev compose_run_dev_interactive
+
 action_compose_test: ## Runs the tests in a container.
 	docker-compose -f $(TEST_COMPOSE) run --rm sc2infoextractorgo sh -c "go test ./... -v"
 
