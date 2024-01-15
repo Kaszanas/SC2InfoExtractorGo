@@ -34,7 +34,8 @@ func checkIntegrity(replayData *rep.Rep) (bool, string) {
 	// Technically there cannot be more than 15 human players!
 	// Based on: https://s2editor-tutorials.readthedocs.io/en/master/01_Introduction/009_Player_Properties.html
 	if maxPlayers > 16 || maxPlayers < 1 {
-		log.WithField("maxPlayers", maxPlayers).Error("Integrity check failed! maxPlayers is not within the legal game engine range!")
+		log.WithField("maxPlayers", maxPlayers).
+			Error("Integrity check failed! maxPlayers is not within the legal game engine range!")
 		return false, "Player number doesn't fit within the maximum or minimum!"
 	}
 
@@ -42,7 +43,10 @@ func checkIntegrity(replayData *rep.Rep) (bool, string) {
 	if replayData.Metadata.Title() != replayDetails.Title() {
 		// Checking if both structures holding map name are empty:
 		if replayData.Metadata.Title() == "" && replayDetails.Title() == "" {
-			log.WithFields(log.Fields{"metadataTitle": replayData.Metadata.Title(), "replayDetailsTitle": replayDetails.Title()}).Error("Integrity check failed! metadataTitle does not match replayDetailsTitle!")
+			log.WithFields(log.Fields{
+				"metadataTitle":      replayData.Metadata.Title(),
+				"replayDetailsTitle": replayDetails.Title()}).
+				Error("Integrity check failed! metadataTitle does not match replayDetailsTitle!")
 			return false, "Both fields containing map name are empty!"
 		}
 	}
@@ -51,7 +55,10 @@ func checkIntegrity(replayData *rep.Rep) (bool, string) {
 	replayDetailsPlayerListLength := len(replayDetails.Players())
 	toonPlayerDescMapLength := len(replayData.TrackerEvts.ToonPlayerDescMap)
 	if replayDetailsPlayerListLength != toonPlayerDescMapLength {
-		log.WithFields(log.Fields{"replayDetailsPlayerListLength": replayDetailsPlayerListLength, "toonPlayerDescMapLength": toonPlayerDescMapLength}).Error("Integrity check failed! length of players mismatch!")
+		log.WithFields(log.Fields{
+			"replayDetailsPlayerListLength": replayDetailsPlayerListLength,
+			"toonPlayerDescMapLength":       toonPlayerDescMapLength}).
+			Error("Integrity check failed! length of players mismatch!")
 		return false, "Player lists length mismatch!"
 	}
 

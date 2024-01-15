@@ -15,6 +15,7 @@ func TestGetChunksOfFilesZero(t *testing.T) {
 
 	// Read all the test input directory:
 	sliceOfFiles := ListFiles(testReplaysPath, ".SC2Replay")
+	// TODO: Split this from getting SC2Replay files just pass a list of strings representing files.
 	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 0)
 
 	if !getOk {

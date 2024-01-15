@@ -83,7 +83,9 @@ func MultiprocessingChunkPipeline(
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// Create ProcessingInfoFile:
-	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(cliFlags.LogFlags.LogPath, chunkIndex)
+	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(
+		cliFlags.LogFlags.LogPath,
+		chunkIndex)
 	defer processingInfoFile.Close()
 
 	// Initializing grpc connection if the user chose to perform anonymization.
@@ -140,7 +142,9 @@ func MultiprocessingChunkPipeline(
 				"pipelineErrorCounter": pipelineErrorCounter,
 				"replayFile":           replayFile,
 			}).Error("Failed to perform FileProcessingPipeline()!")
-			processingInfoStruct.FailedToProcess = append(processingInfoStruct.FailedToProcess, map[string]string{replayFile: failureReason})
+			processingInfoStruct.FailedToProcess = append(
+				processingInfoStruct.FailedToProcess,
+				map[string]string{replayFile: failureReason})
 			continue
 		}
 
@@ -150,7 +154,11 @@ func MultiprocessingChunkPipeline(
 			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
 			log.Info("Added replaySummary to packageSummary")
 
-			savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
+			savedSuccess := utils.SaveFileToArchive(
+				replayString,
+				replayFile,
+				compressionMethod,
+				writer)
 			if !savedSuccess {
 				compressionErrorCounter++
 				log.WithFields(log.Fields{
@@ -161,12 +169,17 @@ func MultiprocessingChunkPipeline(
 			}
 			// TODO: This might be done easier. Currently this is duplicate code and seems to introduce bad practice!
 			processedCounter++
-			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
+			processingInfoStruct.ProcessedFiles = append(
+				processingInfoStruct.ProcessedFiles,
+				replayFile)
 			log.Info("Added file to zip archive.")
 			continue
 		}
 
-		okSaveToDrive := utils.SaveFileToDrive(replayString, replayFile, cliFlags.OutputDirectory)
+		okSaveToDrive := utils.SaveFileToDrive(
+			replayString,
+			replayFile,
+			cliFlags.OutputDirectory)
 		if !okSaveToDrive {
 			saveErrorCounter++
 			log.WithFields(log.Fields{
@@ -178,7 +191,9 @@ func MultiprocessingChunkPipeline(
 		}
 
 		processedCounter++
-		processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
+		processingInfoStruct.ProcessedFiles = append(
+			processingInfoStruct.ProcessedFiles,
+			replayFile)
 	}
 
 	// Saving processingInfo to know which files failed to process:
@@ -187,16 +202,22 @@ func MultiprocessingChunkPipeline(
 
 	if packageToZipBool {
 		// Writing PackageSummaryFile to drive:
-		utils.CreatePackageSummaryFile(cliFlags.OutputDirectory, packageSummary, chunkIndex)
+		utils.CreatePackageSummaryFile(
+			cliFlags.OutputDirectory,
+			packageSummary,
+			chunkIndex)
 
 		// Writing the zip archive to drive:
 		writer.Close()
-		packageAbsPath := filepath.Join(cliFlags.OutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
+		packageAbsPath := filepath.Join(
+			cliFlags.OutputDirectory,
+			"package_"+strconv.Itoa(chunkIndex)+".zip")
 		err := os.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packageAbsolutePath": packageAbsPath,
-				"packageNumber":       chunkIndex}).Error("Failed to save package to drive!")
+				"packageNumber":       chunkIndex}).
+				Error("Failed to save package to drive!")
 		}
 	}
 
@@ -217,7 +238,10 @@ func FileProcessingPipeline(
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).
+		log.WithFields(log.Fields{
+			"file":      replayFile,
+			"error":     err,
+			"readError": true}).
 			Error("Failed to read file.")
 		return false,
 			data.CleanedReplay{},
@@ -264,7 +288,10 @@ func FileProcessingPipeline(
 	}
 
 	// Clean replay structure:
-	cleanOk, cleanReplayStructure := extractReplayData(replayData, localizedMapsMap, cliFlags.PerformCleanup)
+	cleanOk, cleanReplayStructure := extractReplayData(
+		replayData,
+		localizedMapsMap,
+		cliFlags.PerformCleanup)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
 		return false,
@@ -285,8 +312,12 @@ func FileProcessingPipeline(
 
 	// Anonymize replay:
 	if grpcAnonymizer != nil {
-		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer, cliFlags.PerformChatAnonymization) {
-			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
+		if !anonymizeReplay(
+			&cleanReplayStructure,
+			grpcAnonymizer,
+			cliFlags.PerformChatAnonymization) {
+			log.WithField("file", replayFile).
+				Error("Failed to anonymize replay.")
 			return false,
 				data.CleanedReplay{},
 				data.ReplaySummary{},
@@ -309,7 +340,8 @@ func gameIs1v1Ranked(replayData *rep.Rep) bool {
 }
 
 // checkAnonymizationInitializeGRPC verifies if the anonymization should be performed and returns a pointer to GRPCAnonymizer.
-func checkAnonymizationInitializeGRPC(performAnonymizationBool bool) *GRPCAnonymizer {
+func checkAnonymizationInitializeGRPC(
+	performAnonymizationBool bool) *GRPCAnonymizer {
 	if !performAnonymizationBool {
 		return nil
 	}

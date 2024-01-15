@@ -37,7 +37,9 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 }
 
 // CreateProcessingInfoFile receives a fileNumber and
-func CreateProcessingInfoFile(logsFilepath string, fileNumber int) (*os.File, data.ProcessingInfo) {
+func CreateProcessingInfoFile(
+	logsFilepath string,
+	fileNumber int) (*os.File, data.ProcessingInfo) {
 
 	log.Info("Entered CreateProcessingInfoFile()")
 
@@ -49,7 +51,7 @@ func CreateProcessingInfoFile(logsFilepath string, fileNumber int) (*os.File, da
 	processingInfoStruct := data.DefaultProcessingInfo()
 	// SaveProcessingInfo(&processingInfoFile, processingInfoStruct)
 
-	log.Infof("Created and saved the ./logs/processed_files/processed_failed_%v.log", fileNumber)
+	log.Infof("Created and saved the %v", processingLogName)
 	log.Info("Finished CreateProcessingInfoFile()")
 
 	return &processingInfoFile, processingInfoStruct
@@ -65,16 +67,19 @@ func CreatePackageSummaryFile(absolutePathOutputDirectory string, packageSummary
 
 	packageSummaryBytes, err := json.Marshal(packageSummaryStruct)
 	if err != nil {
-		log.WithField("error", err).Fatal("Failed to marshal packageSummaryStruct")
+		log.WithField("error", err).
+			Fatal("Failed to marshal packageSummaryStruct")
 	}
 	_, err = packageSummaryFile.Write(packageSummaryBytes)
 	if err != nil {
-		log.WithField("error", err).Fatal("Failed to save the packageSummaryFile")
+		log.WithField("error", err).
+			Fatal("Failed to save the packageSummaryFile")
 	}
 
 	err = packageSummaryFile.Close()
 	if err != nil {
-		log.WithField("error", err).Fatal("Failed to cloes the packageSummaryFile")
+		log.WithField("error", err).
+			Fatal("Failed to cloes the packageSummaryFile")
 	}
 
 	log.Info("Finished CreatePackageSummaryFile()")
@@ -87,7 +92,8 @@ func SaveProcessingInfo(processingInfoFile *os.File, processingInfoStruct data.P
 
 	processingInfoBytes, err := json.Marshal(processingInfoStruct)
 	if err != nil {
-		log.WithField("error", err).Fatal("Failed to marshal processingInfoStruct that is used to create processing.log")
+		log.WithField("error", err).
+			Fatal("Failed to marshal processingInfoStruct that is used to create processing.log")
 	}
 
 	// Writing processingInfo to the file:
@@ -108,7 +114,8 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 	localizedMapping := make(map[string]interface{})
 
 	if !UnmarshalJsonFile(pathToMappingFile, &localizedMapping) {
-		log.WithField("pathToMappingFile", pathToMappingFile).Error("Failed to open and unmarshal the mapping file!")
+		log.WithField("pathToMappingFile", pathToMappingFile).
+			Error("Failed to open and unmarshal the mapping file!")
 		return localizedMapping
 	}
 
@@ -118,26 +125,31 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 }
 
 // unmarshalLocaleFile deals with every possible opening and unmarshalling problem that might occur when unmarshalling a localization file supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
-func UnmarshalJsonFile(pathToMappingFile string, mappingToPopulate *map[string]interface{}) bool {
+func UnmarshalJsonFile(
+	pathToMappingFile string,
+	mappingToPopulate *map[string]interface{}) bool {
 
 	log.Info("Entered unmarshalJsonFile()")
 
 	var file, err = os.Open(pathToMappingFile)
 	if err != nil {
-		log.WithField("fileError", err.Error()).Info("Failed to open the JSON file.")
+		log.WithField("fileError", err.Error()).
+			Info("Failed to open the JSON file.")
 		return false
 	}
 	defer file.Close()
 
 	jsonBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.WithField("readError", err.Error()).Info("Failed to read the JSON file.")
+		log.WithField("readError", err.Error()).
+			Info("Failed to read the JSON file.")
 		return false
 	}
 
 	err = json.Unmarshal([]byte(jsonBytes), &mappingToPopulate)
 	if err != nil {
-		log.WithField("jsonMarshalError", err.Error()).Info("Could not unmarshal the JSON file.")
+		log.WithField("jsonMarshalError", err.Error()).
+			Info("Could not unmarshal the JSON file.")
 	}
 
 	log.Info("Finished unmarshalJsonFile()")

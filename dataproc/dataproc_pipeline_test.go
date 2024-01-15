@@ -38,7 +38,9 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 				absoluteReplayDir := filepath.Join(testInputDir, dirName)
 				t.Run(dirName, func(t *testing.T) {
 					// t.Parallel()
-					testOk, reason := testPipelineWrapperWithDir(absoluteReplayDir, dirName)
+					testOk, reason := testPipelineWrapperWithDir(
+						absoluteReplayDir,
+						dirName)
 					if !testOk {
 						t.Fatalf("Test Failed! %s", reason)
 					}
@@ -130,7 +132,13 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	processedFailedPath := thisTestLogsDir + "processed_failed_0.log"
 	unmarshalOk := utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
 	if !unmarshalOk {
-		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(
+			processedFailedPath,
+			thisTestLogsDir,
+			thisTestOutputDir,
+			logFile,
+			true,
+			true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -161,7 +169,13 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	sumProcessed := processedFilesCount + failedToProcessCount
 	if sumProcessed != len(sliceOfFiles) {
-		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(
+			processedFailedPath,
+			thisTestLogsDir,
+			thisTestOutputDir,
+			logFile,
+			true,
+			true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -170,9 +184,17 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	// Read and verify if the created summaries contain the same count as the processed files
 	var summary datastruct.PackageSummary
-	unmarshalOk = unmarshalSummaryFile(thisTestOutputDir+"\\package_summary_0.json", &summary)
+	unmarshalOk = unmarshalSummaryFile(
+		thisTestOutputDir+"\\package_summary_0.json",
+		&summary)
 	if !unmarshalOk {
-		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(
+			processedFailedPath,
+			thisTestLogsDir,
+			thisTestOutputDir,
+			logFile,
+			true,
+			true)
 		if !cleanupOk {
 			return false, reason
 		}
@@ -185,14 +207,26 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	if histogramGameVersionCount != processedFilesCount {
-		cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+		cleanupOk, reason := pipelineTestCleanup(
+			processedFailedPath,
+			thisTestLogsDir,
+			thisTestOutputDir,
+			logFile,
+			true,
+			true)
 		if !cleanupOk {
 			return false, reason
 		}
 		return false, "gameVersion histogram count is different from number of processed files."
 	}
 
-	cleanupOk, reason := pipelineTestCleanup(processedFailedPath, thisTestLogsDir, thisTestOutputDir, logFile, true, true)
+	cleanupOk, reason := pipelineTestCleanup(
+		processedFailedPath,
+		thisTestLogsDir,
+		thisTestOutputDir,
+		logFile,
+		true,
+		true)
 	if !cleanupOk {
 		return false, reason
 	}

@@ -26,7 +26,9 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 }
 
 // checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
-func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) bool {
+func checkGameParameters(
+	replayData *rep.Rep,
+	gameInfoFilter VerifyGameInfo) bool {
 
 	log.Info("Entered checkGameParameters()")
 
@@ -43,7 +45,8 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 	if gameOptionsAmm != gameInfoFilter.isAutoMatchMaking {
 		log.WithFields(log.Fields{
 			"gameOptionsAmm":    gameOptionsAmm,
-			"isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).Info("Filtering game parameters mismatch! AutoMatchmaking parameter different! Returning from checkGameParameters()")
+			"isAutoMatchMaking": gameInfoFilter.isAutoMatchMaking}).
+			Info("Filtering game parameters mismatch! AutoMatchmaking parameter different! Returning from checkGameParameters()")
 		return false
 	}
 
@@ -51,7 +54,8 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 	if competitiveOrRanked != gameInfoFilter.isCompetitiveOrRanked {
 		log.WithFields(log.Fields{
 			"competitiveOrRanked":   competitiveOrRanked,
-			"isCompetitiveOrRanked": gameInfoFilter.isCompetitiveOrRanked}).Info("Filtering game parameters mismatch! returning from checkGameParameters()")
+			"isCompetitiveOrRanked": gameInfoFilter.isCompetitiveOrRanked}).
+			Info("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 
@@ -59,7 +63,8 @@ func checkGameParameters(replayData *rep.Rep, gameInfoFilter VerifyGameInfo) boo
 	if maxPlayers != int64(gameInfoFilter.maxPlayers) {
 		log.WithFields(log.Fields{
 			"maxPlayers":                maxPlayers,
-			"gameInfoFilter.maxPlayers": gameInfoFilter.maxPlayers}).Info("Filtering game parameters mismatch! returning from checkGameParameters()")
+			"gameInfoFilter.maxPlayers": gameInfoFilter.maxPlayers}).
+			Info("Filtering game parameters mismatch! returning from checkGameParameters()")
 		return false
 	}
 

@@ -60,7 +60,8 @@ func SaveFileToArchive(replayString string, replayFile string, compressionMethod
 		log.WithFields(log.Fields{
 			"file":             replayFile,
 			"error":            err,
-			"compressionError": true}).Error("Got error when adding a file header to the archive.")
+			"compressionError": true}).
+			Error("Got error when adding a file header to the archive.")
 		return false
 	}
 
@@ -70,7 +71,10 @@ func SaveFileToArchive(replayString string, replayFile string, compressionMethod
 }
 
 // SaveFileToDrive is a helper function that takes the json string of a StarCraft II replay and writes it to drive.
-func SaveFileToDrive(replayString string, replayFile string, absolutePathOutputDirectory string) bool {
+func SaveFileToDrive(
+	replayString string,
+	replayFile string,
+	absolutePathOutputDirectory string) bool {
 
 	_, replayFileNameWithExt := filepath.Split(replayFile)
 
@@ -81,7 +85,8 @@ func SaveFileToDrive(replayString string, replayFile string, absolutePathOutputD
 
 	err := os.WriteFile(jsonAbsPath, jsonBytes, 0777)
 	if err != nil {
-		log.WithField("replayFile", replayFile).Error("Failed to write .json to drive!")
+		log.WithField("replayFile", replayFile).
+			Error("Failed to write .json to drive!")
 		return false
 	}
 
