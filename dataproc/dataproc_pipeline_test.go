@@ -52,7 +52,7 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 }
 
 func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (bool, string) {
-	testLogsDir, err := settings.GetTestLogsDirectory()
+	_, err := settings.GetTestLogsDirectory()
 	if err != nil {
 		return false, "Could not get the test logs directory."
 	}
@@ -71,19 +71,13 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		return false, "Could not produce chunks of files!"
 	}
 
-	thisTestLogsDir := testLogsDir + replaypackName + "/"
-	err = os.Mkdir(thisTestLogsDir, 0755)
-	if err != nil {
-		return false, "Could not create logs directory for test!"
-	}
-
 	thisTestOutputDir := testOutputDir + replaypackName + "/"
 	err = os.Mkdir(thisTestOutputDir, 0755)
 	if err != nil {
 		return false, "Could not create output directory for test!"
 	}
 
-	logFile, logOk := utils.SetLogging(thisTestLogsDir, 3)
+	logFile, logOk := utils.SetLogging(thisTestOutputDir, 3)
 	if !logOk {
 		return false, "Could not perform SetLogging."
 	}
@@ -105,7 +99,7 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		LocalizationMapFile:        testLocalizationFilePath,
 		LogFlags: utils.LogFlags{
 			LogLevel: 5,
-			LogPath:  testLogsDir,
+			LogPath:  thisTestOutputDir,
 		},
 		CPUProfilingPath: "",
 	}
@@ -129,12 +123,11 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
 	logFileMap := map[string]interface{}(nil)
-	processedFailedPath := thisTestLogsDir + "processed_failed_0.log"
+	processedFailedPath := thisTestOutputDir + "processed_failed_0.log"
 	unmarshalOk := utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
 	if !unmarshalOk {
 		cleanupOk, reason := pipelineTestCleanup(
 			processedFailedPath,
-			thisTestLogsDir,
 			thisTestOutputDir,
 			logFile,
 			true,
@@ -171,7 +164,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	if sumProcessed != len(sliceOfFiles) {
 		cleanupOk, reason := pipelineTestCleanup(
 			processedFailedPath,
-			thisTestLogsDir,
 			thisTestOutputDir,
 			logFile,
 			true,
@@ -190,7 +182,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	if !unmarshalOk {
 		cleanupOk, reason := pipelineTestCleanup(
 			processedFailedPath,
-			thisTestLogsDir,
 			thisTestOutputDir,
 			logFile,
 			true,
@@ -209,7 +200,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	if histogramGameVersionCount != processedFilesCount {
 		cleanupOk, reason := pipelineTestCleanup(
 			processedFailedPath,
-			thisTestLogsDir,
 			thisTestOutputDir,
 			logFile,
 			true,
@@ -222,7 +212,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	cleanupOk, reason := pipelineTestCleanup(
 		processedFailedPath,
-		thisTestLogsDir,
 		thisTestOutputDir,
 		logFile,
 		true,
@@ -236,7 +225,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 func pipelineTestCleanup(
 	processedFailedPath string,
-	logsFilepath string,
 	testOutputPath string,
 	logFile *os.File,
 	deleteOutputDir bool,
@@ -252,16 +240,9 @@ func pipelineTestCleanup(
 		return false, "Cannot close the main_log file."
 	}
 
-	if deleteLogsFilepath {
-		err = os.RemoveAll(logsFilepath)
-		if err != nil {
-			return false, "Cannot delete logsFilepath."
-		}
-	} else {
-		err = os.Remove(logsFilepath + "main_log.log")
-		if err != nil {
-			return false, "Cannot delete main_log file."
-		}
+	err = os.Remove(testOutputPath + "main_log.log")
+	if err != nil {
+		return false, "Cannot delete main_log file."
 	}
 
 	if deleteOutputDir {

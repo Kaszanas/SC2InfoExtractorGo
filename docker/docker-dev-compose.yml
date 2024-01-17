@@ -1,14 +1,17 @@
 version: '3'
 services:
 
-  sc2infoextractorgo:
+  sc2infoextractorgo-dev:
     build:
       context: '../'
       dockerfile: './docker/Dockerfile.dev'
-    container_name: sc2infoextractorgo_dev
     volumes:
-      - ../logs:/app/logs
-      - ../operation_files:/app/operation_files
+      - ..:/app
 
-volumes:
-  logs:
+  sc2infoextractorgo-test:
+    build:
+      context: '../'
+      dockerfile: './docker/Dockerfile.test'
+    volumes:
+      - ..:/app
+    command: [ "go", "test", "./...", "-v" ]

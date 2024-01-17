@@ -1,11 +1,11 @@
 FROM kaszanas/sc2replaytestdata:latest AS sc2replaytestdata
 FROM golang:1.21 as build_sc2_info_extractor
 
-# Copying test data:
-COPY --from=sc2replaytestdata /sc2replaytestdata /test_files/test_replays/
 
 WORKDIR /app
 
+# Copying test data:
+COPY --from=sc2replaytestdata /sc2replaytestdata /app/test_files/test_replays/
 
 # Copy Golang dependency definitions:
 COPY go.mod go.sum /app/
@@ -18,7 +18,4 @@ COPY . .
 # Build the project:
 RUN --mount=type=cache,target=/go go build
 
-
-ENTRYPOINT [ "bash",  "-c"]
-
-CMD [ "mv /test_files/test_replays/* ./test_files/test_replays/; exec /bin/bash"]
+CMD ["bash"]
