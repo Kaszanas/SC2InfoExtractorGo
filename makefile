@@ -37,7 +37,7 @@ compose_build_dev:
 compose_run_dev_it:
 	docker-compose -f $(TEST_COMPOSE) run -it --rm sc2infoextractorgo-dev
 
-compose_run_dev: compose_build_dev compose_run_dev_interactive
+compose_run_dev: compose_build_dev compose_run_dev_it
 
 action_compose_test: ## Runs the tests in a container.
 	docker-compose -f $(TEST_COMPOSE) run --rm sc2infoextractorgo-test
