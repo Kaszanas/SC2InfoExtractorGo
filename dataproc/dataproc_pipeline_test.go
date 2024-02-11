@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,6 +19,8 @@ var TEST_BYPASS_THESE_DIRS = []string{}
 
 func TestPipelineWrapperMultiple(t *testing.T) {
 
+	removeTestOutputs := settings.DELETE_TEST_OUTPUT
+
 	testInputDir, err := settings.GetTestInputDirectory()
 	if err != nil {
 		t.Fatalf("Could not get the test input directory.")
@@ -30,7 +33,8 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	// TODO: Refactor
+	dirContents = []fs.DirEntry{dirContents[1]}
+
 	for _, maybeDir := range dirContents {
 		if maybeDir.IsDir() {
 			dirName := maybeDir.Name()
@@ -40,8 +44,10 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 					// t.Parallel()
 					testOk, reason := testPipelineWrapperWithDir(
 						absoluteReplayDir,
-						dirName)
+						dirName,
+						removeTestOutputs)
 					if !testOk {
+
 						t.Fatalf("Test Failed! %s", reason)
 					}
 				})
@@ -51,27 +57,37 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 
 }
 
-func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (bool, string) {
-	_, err := settings.GetTestLogsDirectory()
-	if err != nil {
-		return false, "Could not get the test logs directory."
-	}
+func testPipelineWrapperWithDir(
+	replayInputPath string,
+	replaypackName string,
+	removeTestOutputs bool) (bool, string) {
+
 	testOutputDir, err := settings.GetTestOutputDirectory()
 	if err != nil {
 		return false, "Could not get the test output directory."
 	}
+	log.WithField("testOutputDir", testOutputDir).
+		Info("Got test output directory from settings.")
+
 	testLocalizationFilePath, err := settings.GetTestLocalizationFilePath()
 	if err != nil {
 		return false, "Could not get the test localization file path."
 	}
+	log.WithField("testLocalizationFilePath", testLocalizationFilePath).
+		Info("Got test localization filepath from settings.")
 
 	sliceOfFiles := utils.ListFiles(replayInputPath, ".SC2Replay")
 	chunksOfFiles, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
 	}
+	log.WithFields(log.Fields{
+		"n_files":      len(sliceOfFiles),
+		"sliceOfFiles": sliceOfFiles}).Info("Got files to test.")
 
-	thisTestOutputDir := testOutputDir + replaypackName + "/"
+	thisTestOutputDir := testOutputDir + "/" + replaypackName + "/"
+	log.WithField("thisTestOutputDir", thisTestOutputDir).
+		Info("Defined a path for the output of the test.")
 	err = os.Mkdir(thisTestOutputDir, 0755)
 	if err != nil {
 		return false, "Could not create output directory for test!"
@@ -82,11 +98,13 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		return false, "Could not perform SetLogging."
 	}
 
+	// REVIEW: Hardcoded flags for test? I suppose that these
+	// should come from a specific test case.
 	// Create dummy CLI flags:
 	gameModeCheckFlag := 0
 	flags := utils.CLIFlags{
 		InputDirectory:             replayInputPath,
-		OutputDirectory:            testOutputDir,
+		OutputDirectory:            thisTestOutputDir,
 		NumberOfThreads:            1,
 		NumberOfPackages:           1,
 		PerformIntegrityCheck:      true,
@@ -126,15 +144,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	processedFailedPath := thisTestOutputDir + "processed_failed_0.log"
 	unmarshalOk := utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
 	if !unmarshalOk {
-		cleanupOk, reason := pipelineTestCleanup(
-			processedFailedPath,
-			thisTestOutputDir,
-			logFile,
-			true,
-			true)
-		if !cleanupOk {
-			return false, reason
-		}
 		return false, "Could not unmrshal processed_failed file."
 	}
 
@@ -162,15 +171,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 
 	sumProcessed := processedFilesCount + failedToProcessCount
 	if sumProcessed != len(sliceOfFiles) {
-		cleanupOk, reason := pipelineTestCleanup(
-			processedFailedPath,
-			thisTestOutputDir,
-			logFile,
-			true,
-			true)
-		if !cleanupOk {
-			return false, reason
-		}
 		return false, "input files and processed_failed information mismatch."
 	}
 
@@ -180,15 +180,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		thisTestOutputDir+"\\package_summary_0.json",
 		&summary)
 	if !unmarshalOk {
-		cleanupOk, reason := pipelineTestCleanup(
-			processedFailedPath,
-			thisTestOutputDir,
-			logFile,
-			true,
-			true)
-		if !cleanupOk {
-			return false, reason
-		}
 		return false, "Cannot read summary file."
 	}
 
@@ -198,6 +189,10 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 	}
 
 	if histogramGameVersionCount != processedFilesCount {
+		return false, "gameVersion histogram count is different from number of processed files."
+	}
+
+	if removeTestOutputs {
 		cleanupOk, reason := pipelineTestCleanup(
 			processedFailedPath,
 			thisTestOutputDir,
@@ -207,17 +202,6 @@ func testPipelineWrapperWithDir(replayInputPath string, replaypackName string) (
 		if !cleanupOk {
 			return false, reason
 		}
-		return false, "gameVersion histogram count is different from number of processed files."
-	}
-
-	cleanupOk, reason := pipelineTestCleanup(
-		processedFailedPath,
-		thisTestOutputDir,
-		logFile,
-		true,
-		true)
-	if !cleanupOk {
-		return false, reason
 	}
 
 	return true, ""

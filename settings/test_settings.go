@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 )
 
+var DELETE_TEST_OUTPUT = false
+
 // REVIEW: Is it better to have an environment variable for the workspace directory?
 // Or is it better to have that in a .env file?
 // How to load a .env file? that is outside of the package?

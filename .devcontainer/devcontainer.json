@@ -3,7 +3,7 @@
 {
     "name": "Existing Dockerfile",
     "dockerComposeFile": "../docker/docker-dev-compose.yml",
-    "service": "sc2infoextractorgo",
+    "service": "sc2infoextractorgo-dev",
     "workspaceFolder": "/app",
     // "runArgs": [
     // ], // Ensure GPU access
