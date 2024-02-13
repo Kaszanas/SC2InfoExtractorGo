@@ -1,6 +1,7 @@
 PWD := `pwd`
 
-TEST_COMPOSE = $(DEPLOY_DIR)/docker-test-compose.yml
+DEPLOY_DIR = ./docker
+TEST_COMPOSE = $(DEPLOY_DIR)/docker-dev-compose.yml
 
 # REVIEW: Should this be ran with Docker Compose instead?
 process_replays: ## Runs the container to process replays.
@@ -11,17 +12,43 @@ process_replays: ## Runs the container to process replays.
 		sc2infoextractorgo \
 		-log_level 6
 
-build: ## Builds the "production" container.
+
+###################
+#### DOCKER #######
+###################
+docker_build: ## Builds the "production" container.
 	docker build --tag=sc2infoextractorgo -f ./docker/Dockerfile .
 
-build_dev: ## Builds the dev container.
+docker_build_dev: ## Builds the dev container.
 	docker build --tag=sc2infoextractorgo:dev -f ./docker/Dockerfile.dev .
 
-run_dev: ## Runs the interactive shell in the dev container. Runs bash by default.
+docker_run_dev: ## Runs the interactive shell in the dev container. Runs bash by default.
 	docker run -it sc2infoextractorgo:dev
 
+docker_go_lint:
+	docker run --rm -v .:/app -w /app golangci/golangci-lint:latest golangci-lint run -v
+
+###################
+#### TESTING ######
+###################
+test_locally:
+	go test ./... -v
+
+compose_build_dev:
+	docker-compose -f $(TEST_COMPOSE) build
+
+compose_run_dev_it:
+	docker-compose -f $(TEST_COMPOSE) run -it --rm sc2infoextractorgo-dev
+
+compose_run_dev: compose_build_dev compose_run_dev_it
+
 action_compose_test: ## Runs the tests in a container.
-	docker-compose -f $(TEST_COMPOSE) run --rm sc2infoextractorgo sh -c "go test ./... -v"
+	docker-compose -f $(TEST_COMPOSE) run --rm sc2infoextractorgo-test
+
+compose_remove: ## Stops and removes the testing containers, images, volumes.
+	docker-compose -f $(TEST_COMPOSE) down --volumes --remove-orphans
+
+compose_test: compose_build_dev action_compose_test compose_remove
 
 .PHONY: help
 help: ## Show available make targets.

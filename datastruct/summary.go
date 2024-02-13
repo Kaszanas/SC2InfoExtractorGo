@@ -5,34 +5,50 @@ import (
 )
 
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
-func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *PackageSummary) {
+func AddReplaySummToPackageSumm(
+	replaySummary *ReplaySummary,
+	packageSummary *PackageSummary) {
 
 	log.Info("Entered AddReplaySummToPackageSumm()")
 
 	// Adding GameVersion information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.GameVersions, &packageSummary.Summary.GameVersions)
+	collapseMapToMap(
+		&replaySummary.Summary.GameVersions,
+		&packageSummary.Summary.GameVersions)
 	log.Info("Finished collapsing GameVersions")
 
 	// Adding GameTimes information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.GameTimes, &packageSummary.Summary.GameTimes)
+	collapseMapToMap(
+		&replaySummary.Summary.GameTimes,
+		&packageSummary.Summary.GameTimes)
 	log.Info("Finished collapsing GameTimes")
 
 	// Adding Maps information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Maps, &packageSummary.Summary.Maps)
+	collapseMapToMap(
+		&replaySummary.Summary.Maps,
+		&packageSummary.Summary.Maps)
 	log.Info("Finished collapsing Maps")
 
 	// Adding Races information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Races, &packageSummary.Summary.Races)
+	collapseMapToMap(
+		&replaySummary.Summary.Races,
+		&packageSummary.Summary.Races)
 	log.Info("Finished collapsing Races")
 
 	// Adding Units information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Units, &packageSummary.Summary.Units)
+	collapseMapToMap(
+		&replaySummary.Summary.Units,
+		&packageSummary.Summary.Units)
 	log.Info("Finished collapsing Units")
-	collapseMapToMap(&replaySummary.Summary.OtherUnits, &packageSummary.Summary.OtherUnits)
+	collapseMapToMap(
+		&replaySummary.Summary.OtherUnits,
+		&packageSummary.Summary.OtherUnits)
 	log.Info("Finished collapsing OtherUnits")
 
 	// Adding Dates information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Dates, &packageSummary.Summary.Dates)
+	collapseMapToMap(
+		&replaySummary.Summary.Dates,
+		&packageSummary.Summary.Dates)
 	log.Info("Finished collapsing Dates")
 
 	// Creating nested structures for game times by dates:
@@ -56,26 +72,44 @@ func AddReplaySummToPackageSumm(replaySummary *ReplaySummary, packageSummary *Pa
 	}
 
 	// Adding Servers information to PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.Servers, &packageSummary.Summary.Servers)
+	collapseMapToMap(
+		&replaySummary.Summary.Servers,
+		&packageSummary.Summary.Servers)
 	log.Info("Finished collapsing Servers")
 
 	// Adding matchup count information to the PackageSummary:
-	collapseMapToMap(&replaySummary.Summary.MatchupCount, &packageSummary.Summary.MatchupCount)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupCount,
+		&packageSummary.Summary.MatchupCount)
 
 	// Collapsing all of the matchup game times:
-	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.PvPMatchup, &packageSummary.Summary.MatchupGameTimes.PvPMatchup)
-	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.PvTMatchup, &packageSummary.Summary.MatchupGameTimes.PvTMatchup)
-	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.PvZMatchup, &packageSummary.Summary.MatchupGameTimes.PvZMatchup)
-	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.TvTMatchup, &packageSummary.Summary.MatchupGameTimes.TvTMatchup)
-	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.TvZMatchup, &packageSummary.Summary.MatchupGameTimes.TvZMatchup)
-	collapseMapToMap(&replaySummary.Summary.MatchupGameTimes.ZvZMatchup, &packageSummary.Summary.MatchupGameTimes.ZvZMatchup)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupGameTimes.PvPMatchup,
+		&packageSummary.Summary.MatchupGameTimes.PvPMatchup)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupGameTimes.PvTMatchup,
+		&packageSummary.Summary.MatchupGameTimes.PvTMatchup)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupGameTimes.PvZMatchup,
+		&packageSummary.Summary.MatchupGameTimes.PvZMatchup)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupGameTimes.TvTMatchup,
+		&packageSummary.Summary.MatchupGameTimes.TvTMatchup)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupGameTimes.TvZMatchup,
+		&packageSummary.Summary.MatchupGameTimes.TvZMatchup)
+	collapseMapToMap(
+		&replaySummary.Summary.MatchupGameTimes.ZvZMatchup,
+		&packageSummary.Summary.MatchupGameTimes.ZvZMatchup)
 
 	log.Info("Finished collapsing matchup information")
 	log.Info("Finished AddReplaySummToPackageSumm()")
 }
 
 // collapseMapToMap adds the keys and values of one map to another.
-func collapseMapToMap(mapToCollapse *map[string]int64, collapseInto *map[string]int64) {
+func collapseMapToMap(
+	mapToCollapse *map[string]int64,
+	collapseInto *map[string]int64) {
 
 	log.Info("Entered collapseMapToMap()")
 

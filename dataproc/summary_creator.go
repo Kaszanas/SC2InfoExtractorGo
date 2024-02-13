@@ -11,7 +11,9 @@ import (
 )
 
 // generateReplaySummary accesses the data that is within cleaned replay and extracts information for visualization purposes.
-func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.ReplaySummary) {
+func generateReplaySummary(
+	replayData *data.CleanedReplay,
+	summaryStruct *data.ReplaySummary) {
 
 	log.Info("Entered generateReplaySummary()")
 
@@ -54,9 +56,15 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 	// GameTimes per year histogram:
 	// incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
 	// GameTimes per year-month histogram:
-	incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear)+"-"+strconv.Itoa(int(replayMonth)), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
+	incrementNestedGameTimeIfKeyExists(
+		strconv.Itoa(replayYear)+"-"+strconv.Itoa(int(replayMonth)),
+		replayDuration,
+		summaryStruct.Summary.DatesGameTimes.GameTimes)
 	// GameTimes per map histogram:
-	incrementNestedGameTimeIfKeyExists(replayMap, replayDuration, summaryStruct.Summary.MapsGameTimes.GameTimes)
+	incrementNestedGameTimeIfKeyExists(
+		replayMap,
+		replayDuration,
+		summaryStruct.Summary.MapsGameTimes.GameTimes)
 
 	// Server information histogram:
 	// TODO: Verify if this can be accessed differently:
@@ -102,43 +110,59 @@ func generateReplaySummary(replayData *data.CleanedReplay, summaryStruct *data.R
 }
 
 // checkMatchup verifies the matchup string, increments the value of a counter of the matching matchup and returns a boolean that specifies if a matchup was matched.
-func checkMatchupIncrementCount(matchupString string, summaryStruct *data.ReplaySummary, gameTimeString string) bool {
+func checkMatchupIncrementCount(
+	matchupString string,
+	summaryStruct *data.ReplaySummary,
+	gameTimeString string) bool {
+
 	log.Info("Entered checkMatchup()")
 
 	if matchupString == "TerrTerr" {
 		log.Info("Found matchup to be TvT")
 		incrementIfKeyExists("TvT", summaryStruct.Summary.MatchupCount)
-		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.TvTMatchup)
+		incrementIfKeyExists(
+			gameTimeString,
+			summaryStruct.Summary.MatchupGameTimes.TvTMatchup)
 		return true
 	}
 	if matchupString == "ProtProt" {
 		log.Debug("Found matchup to be PvP")
 		incrementIfKeyExists("PvP", summaryStruct.Summary.MatchupCount)
-		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.PvPMatchup)
+		incrementIfKeyExists(
+			gameTimeString,
+			summaryStruct.Summary.MatchupGameTimes.PvPMatchup)
 		return true
 	}
 	if matchupString == "ZergZerg" {
 		log.Debug("Found matchup to be ZvZ")
 		incrementIfKeyExists("ZvZ", summaryStruct.Summary.MatchupCount)
-		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.ZvZMatchup)
+		incrementIfKeyExists(
+			gameTimeString,
+			summaryStruct.Summary.MatchupGameTimes.ZvZMatchup)
 		return true
 	}
 	if strings.Contains(matchupString, "Prot") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be PvT")
 		incrementIfKeyExists("PvT", summaryStruct.Summary.MatchupCount)
-		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.PvTMatchup)
+		incrementIfKeyExists(
+			gameTimeString,
+			summaryStruct.Summary.MatchupGameTimes.PvTMatchup)
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Terr") {
 		log.Debug("Found matchup to be ZvT")
 		incrementIfKeyExists("ZvT", summaryStruct.Summary.MatchupCount)
-		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.TvZMatchup)
+		incrementIfKeyExists(
+			gameTimeString,
+			summaryStruct.Summary.MatchupGameTimes.TvZMatchup)
 		return true
 	}
 	if strings.ContainsAny(matchupString, "Zerg") && strings.Contains(matchupString, "Prot") {
 		log.Debug("Found matchup to be ZvP")
 		incrementIfKeyExists("ZvP", summaryStruct.Summary.MatchupCount)
-		incrementIfKeyExists(gameTimeString, summaryStruct.Summary.MatchupGameTimes.PvZMatchup)
+		incrementIfKeyExists(
+			gameTimeString,
+			summaryStruct.Summary.MatchupGameTimes.PvZMatchup)
 		return true
 	}
 
@@ -159,7 +183,10 @@ func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
 	}
 }
 
-func incrementNestedGameTimeIfKeyExists(key string, gameTime string, mapToCheck map[string]map[string]int64) {
+func incrementNestedGameTimeIfKeyExists(
+	key string,
+	gameTime string,
+	mapToCheck map[string]map[string]int64) {
 
 	log.Info("Entered incrementNestedGameTimeIfKeyExists()")
 

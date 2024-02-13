@@ -10,12 +10,17 @@ import (
 )
 
 // cleanReplay gathers functions that perform redefining "cleaning" of replay structure and cleans up events that are unused.
-func extractReplayData(replayData *rep.Rep, localizedMapsMap map[string]interface{}, performCleanupBool bool) (bool, data.CleanedReplay) {
+func extractReplayData(
+	replayData *rep.Rep,
+	localizedMapsMap map[string]interface{},
+	performCleanupBool bool) (bool, data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
 	// Restructure replay:
-	structuredReplayData, redefOk := redifineReplayStructure(replayData, localizedMapsMap)
+	structuredReplayData, redefOk := redifineReplayStructure(
+		replayData,
+		localizedMapsMap)
 	if !redefOk {
 		log.Error("Error in redefining replay structure.")
 		return false, data.CleanedReplay{}

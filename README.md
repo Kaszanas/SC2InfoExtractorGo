@@ -2,7 +2,7 @@
 
 # SC2InfoExtractorGo
 
-This tool is meant to allow for quick data extraction from SC2 replay files ".SC2Replay".
+A tool meant to allow for quick data extraction from StarCraft 2 replay files ".SC2Replay".
 
 ## Usage
 

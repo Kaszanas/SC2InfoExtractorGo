@@ -11,7 +11,9 @@ import (
 )
 
 // redefineReplayStructure moves arbitrary data into different data structures.
-func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
+func redifineReplayStructure(
+	replayData *rep.Rep,
+	localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
 
@@ -46,21 +48,24 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	mapSizeX := gameDescription.MapSizeX()
 	mapSizeXChecked, okMapSizeX := checkUint32(mapSizeX)
 	if !okMapSizeX {
-		log.WithField("mapSizeX", mapSizeX).Error("Found that value of mapSizeX exceeds uint32")
+		log.WithField("mapSizeX", mapSizeX).
+			Error("Found that value of mapSizeX exceeds uint32")
 		return data.CleanedReplay{}, false
 	}
 
 	mapSizeY := gameDescription.MapSizeY()
 	mapSizeYChecked, okMapSizeY := checkUint32(mapSizeY)
 	if !okMapSizeY {
-		log.WithField("mapSizeY", mapSizeY).Error("Found that value of mapSizeY exceeds uint32")
+		log.WithField("mapSizeY", mapSizeY).
+			Error("Found that value of mapSizeY exceeds uint32")
 		return data.CleanedReplay{}, false
 	}
 
 	maxPlayers := gameDescription.MaxPlayers()
 	maxPlayersChecked, okMaxPlayers := checkUint8(maxPlayers)
 	if !okMaxPlayers {
-		log.WithField("maxPlayers", maxPlayers).Error("Found that value of maxPlayers exceeds uint8")
+		log.WithField("maxPlayers", maxPlayers).
+			Error("Found that value of maxPlayers exceeds uint8")
 		return data.CleanedReplay{}, false
 	}
 
@@ -88,7 +93,8 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 		combinedRaceLevels := userInitData.CombinedRaceLevels()
 		combinedRaceLevelsChecked, okCombinedRaceLevels := checkUint64(combinedRaceLevels)
 		if !okCombinedRaceLevels {
-			log.WithField("combinedRaceLevels", combinedRaceLevels).Error("Found that value of combinedRaceLevels exceeds uint64")
+			log.WithField("combinedRaceLevels", combinedRaceLevels).
+				Error("Found that value of combinedRaceLevels exceeds uint64")
 			return data.CleanedReplay{}, false
 		}
 
@@ -141,9 +147,13 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	// Verifying if it is possible to localize the map and localizing if possible:
 	if localizedMapsMap != nil {
 		detailsMapName := details.Title()
-		localizedDetailsMap, detailsOk := verifyLocalizedMapName(detailsMapName, localizedMapsMap)
+		localizedDetailsMap, detailsOk := verifyLocalizedMapName(
+			detailsMapName,
+			localizedMapsMap)
 
-		localizedMetadataMap, metadataOk := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
+		localizedMetadataMap, metadataOk := verifyLocalizedMapName(
+			metadataMapName,
+			localizedMapsMap)
 
 		if metadataOk && detailsOk {
 			metadataMapName = localizedMetadataMap
@@ -155,7 +165,10 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 			metadataMapName = localizedDetailsMap
 		}
 		if !metadataOk && !detailsOk {
-			log.WithFields(log.Fields{"metadataMapName": metadataMapName, "detailsMapName": detailsMapName}).Error("Not possible to localize the map!")
+			log.WithFields(log.Fields{
+				"metadataMapName": metadataMapName,
+				"detailsMapName":  detailsMapName}).
+				Error("Not possible to localize the map!")
 			return data.CleanedReplay{}, false
 		}
 	}
@@ -302,7 +315,9 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 // Using mapping from a separate tool for map name extraction
 // Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
 // verifyLocalizedMapName attempts to read a English map name and return it.
-func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}) (string, bool) {
+func verifyLocalizedMapName(
+	mapName string,
+	localizedMaps map[string]interface{}) (string, bool) {
 	log.Info("Entered verifyLocalizedMapName()")
 
 	value, ok := localizedMaps[mapName]
