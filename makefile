@@ -31,6 +31,9 @@ docker_go_lint:
 ###################
 #### TESTING ######
 ###################
+test_locally:
+	go test ./... -v
+
 compose_build_dev:
 	docker-compose -f $(TEST_COMPOSE) build
 

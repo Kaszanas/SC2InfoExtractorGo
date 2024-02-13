@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -33,7 +32,7 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	dirContents = []fs.DirEntry{dirContents[1]}
+	// dirContents = []fs.DirEntry{dirContents[3]}
 
 	for _, maybeDir := range dirContents {
 		if maybeDir.IsDir() {
@@ -88,9 +87,13 @@ func testPipelineWrapperWithDir(
 	thisTestOutputDir := testOutputDir + "/" + replaypackName + "/"
 	log.WithField("thisTestOutputDir", thisTestOutputDir).
 		Info("Defined a path for the output of the test.")
-	err = os.Mkdir(thisTestOutputDir, 0755)
-	if err != nil {
-		return false, "Could not create output directory for test!"
+	if _, err := os.Stat(thisTestOutputDir); os.IsNotExist(err) {
+		log.WithField("thisTestOutputDir", thisTestOutputDir).
+			Info("Test output dir does not exist, attempting to create.")
+		err = os.Mkdir(thisTestOutputDir, 0755)
+		if err != nil {
+			return false, "Could not create output directory for test!"
+		}
 	}
 
 	logFile, logOk := utils.SetLogging(thisTestOutputDir, 3)
@@ -154,8 +157,10 @@ func testPipelineWrapperWithDir(
 		for _, v := range logFileMap["failedToProcess"].([]interface{}) {
 			failedSlice = append(failedSlice, fmt.Sprint(v))
 		}
-
 		failedToProcessCount = len(failedSlice)
+	}
+	if failedToProcessCount > 0 {
+		return false, "Failed to process count more than 0"
 	}
 
 	var processedFilesCount int
@@ -165,7 +170,6 @@ func testPipelineWrapperWithDir(
 		for _, v := range logFileMap["processedFiles"].([]interface{}) {
 			processedSlice = append(processedSlice, fmt.Sprint(v))
 		}
-
 		processedFilesCount = len(processedSlice)
 	}
 
@@ -176,11 +180,16 @@ func testPipelineWrapperWithDir(
 
 	// Read and verify if the created summaries contain the same count as the processed files
 	var summary datastruct.PackageSummary
-	unmarshalOk = unmarshalSummaryFile(
-		thisTestOutputDir+"\\package_summary_0.json",
+	pathToSummaryFile := thisTestOutputDir + "/" + "package_summary_0.json"
+	log.WithField("pathToSummaryFile", pathToSummaryFile).
+		Info("Set the path to the summary file.")
+	reason, err := unmarshalSummaryFile(
+		pathToSummaryFile,
 		&summary)
-	if !unmarshalOk {
-		return false, "Cannot read summary file."
+	if err != nil {
+		log.WithField("err", err.Error()).
+			Info(reason)
+		return false, reason
 	}
 
 	histogramGameVersionCount := 0
@@ -193,13 +202,13 @@ func testPipelineWrapperWithDir(
 	}
 
 	if removeTestOutputs {
-		cleanupOk, reason := pipelineTestCleanup(
+		reason, err = pipelineTestCleanup(
 			processedFailedPath,
 			thisTestOutputDir,
 			logFile,
 			true,
 			true)
-		if !cleanupOk {
+		if err != nil {
 			return false, reason
 		}
 	}
@@ -212,7 +221,7 @@ func pipelineTestCleanup(
 	testOutputPath string,
 	logFile *os.File,
 	deleteOutputDir bool,
-	deleteLogsFilepath bool) (bool, string) {
+	deleteLogsFilepath bool) (string, error) {
 
 	// err := os.Remove(processedFailedPath)
 	// if err != nil {
@@ -221,60 +230,55 @@ func pipelineTestCleanup(
 
 	err := logFile.Close()
 	if err != nil {
-		return false, "Cannot close the main_log file."
+		return "Cannot close the main_log file.", err
 	}
 
 	err = os.Remove(testOutputPath + "main_log.log")
 	if err != nil {
-		return false, "Cannot delete main_log file."
+		return "Cannot delete main_log file.", err
 	}
 
 	if deleteOutputDir {
 		err = os.RemoveAll(testOutputPath)
 		if err != nil {
-			return false, "Cannot delete output path."
+			return "Cannot delete output path.", err
 		}
 	} else {
 		filesToClean := utils.ListFiles(testOutputPath, "")
 		for _, file := range filesToClean {
 			err = os.Remove(file)
 			if err != nil {
-				return false, "Cannot delete output files."
+				return "Cannot delete output files.", err
 			}
 		}
 	}
 
-	return true, ""
+	return "", nil
 }
 
 func unmarshalSummaryFile(
 	pathToSummaryFile string,
-	mappingToPopulate *datastruct.PackageSummary) bool {
+	mappingToPopulate *datastruct.PackageSummary) (string, error) {
 
 	log.Info("Entered unmarshalJsonFile()")
 
 	var file, err = os.Open(pathToSummaryFile)
 	if err != nil {
-		log.WithField("fileError", err.Error()).
-			Info("Failed to open the JSON file.")
-		return false
+		return "Failed to open the JSON file.", err
 	}
 	defer file.Close()
 
 	jsonBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.WithField("readError", err.Error()).
-			Info("Failed to read the JSON file.")
-		return false
+		return "Failed to read the JSON file.", err
 	}
 
 	err = json.Unmarshal([]byte(jsonBytes), &mappingToPopulate)
 	if err != nil {
-		log.WithField("jsonMarshalError", err.Error()).
-			Info("Could not unmarshal the JSON file.")
+		return "Could not unmarshal the JSON file.", err
 	}
 
 	log.Info("Finished unmarshalJsonFile()")
 
-	return true
+	return "", nil
 }
