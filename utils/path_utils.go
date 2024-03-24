@@ -1,13 +1,15 @@
 package utils
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// ListFiles creates a slice of filepaths from a give input directory based filtering supplied fileExtension
+// ListFiles creates a slice of filepaths from a give input directory
+// based filtering supplied fileExtension
 func ListFiles(inputPath string, filterFileExtension string) []string {
 
 	log.Info("Entered ListFiles()")
@@ -17,31 +19,46 @@ func ListFiles(inputPath string, filterFileExtension string) []string {
 		log.Fatal(err)
 	}
 
+	var listOfFiles []string
 	if filterFileExtension == "" {
-		var listOfReplayFiles []string
-		for _, file := range files {
-			if !file.IsDir() {
-				filename := file.Name()
-				absoluteReplayPath := filepath.Join(inputPath, filename)
-				listOfReplayFiles = append(listOfReplayFiles, absoluteReplayPath)
-			}
-		}
-		log.Info("Finished ListFiles()")
-		return listOfReplayFiles
+		listOfFiles = getAllFiles(files, inputPath)
+		return listOfFiles
 	}
 
-	var listOfReplayFiles []string
+	listOfFiles = getFilesByExtension(files, inputPath, filterFileExtension)
+	log.Info("Finished ListFiles()")
+	return listOfFiles
+}
+
+// getFilesByExtension filters files by extension and returns a slice of filepaths
+func getFilesByExtension(
+	files []fs.DirEntry,
+	inputPath string,
+	filterFileExtension string) []string {
+	var listOfFiles []string
 	for _, file := range files {
 		if !file.IsDir() {
 			filename := file.Name()
 			fileExtension := filepath.Ext(filename)
 			if fileExtension == filterFileExtension {
 				absoluteReplayPath := filepath.Join(inputPath, filename)
-				listOfReplayFiles = append(listOfReplayFiles, absoluteReplayPath)
+				listOfFiles = append(listOfFiles, absoluteReplayPath)
 			}
 		}
 	}
+	return listOfFiles
+}
 
+// getAllFiles returns a slice of filepaths for all files in a directory
+func getAllFiles(files []fs.DirEntry, inputPath string) []string {
+	var listOfFiles []string
+	for _, file := range files {
+		if !file.IsDir() {
+			filename := file.Name()
+			absoluteReplayPath := filepath.Join(inputPath, filename)
+			listOfFiles = append(listOfFiles, absoluteReplayPath)
+		}
+	}
 	log.Info("Finished ListFiles()")
-	return listOfReplayFiles
+	return listOfFiles
 }
