@@ -36,7 +36,22 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 	return *createdOrReadFile, byteValue
 }
 
-// CreateProcessingInfoFile receives a fileNumber and
+func CreateMapsDirectory(pathToMapsDirectory string) string {
+
+	log.Info("Entered CreateMapsDirectory()")
+
+	err := os.Mkdir(pathToMapsDirectory, 0777)
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("failed to create the maps directory!")
+		return ""
+	}
+
+	return pathToMapsDirectory
+}
+
+// CreateProcessingInfoFile receives a fileNumber and creates a processing info
+// file holding the information on which files were processed successfully and which failed.
 func CreateProcessingInfoFile(
 	logsFilepath string,
 	fileNumber int) (*os.File, data.ProcessingInfo) {
@@ -57,8 +72,12 @@ func CreateProcessingInfoFile(
 	return &processingInfoFile, processingInfoStruct
 }
 
-// CreatePackageSummaryFile receives packageSummaryStruct and fileNumber and saves the package summary file onto the drive.
-func CreatePackageSummaryFile(absolutePathOutputDirectory string, packageSummaryStruct data.PackageSummary, fileNumber int) {
+// CreatePackageSummaryFile receives packageSummaryStruct and fileNumber
+// then saves the package summary file onto the drive.
+func CreatePackageSummaryFile(
+	absolutePathOutputDirectory string,
+	packageSummaryStruct data.PackageSummary,
+	fileNumber int) {
 	log.Info("Entered CreatePackageSummaryFile()")
 
 	packageSummaryFilename := fmt.Sprintf("package_summary_%v.json", fileNumber)
@@ -86,7 +105,9 @@ func CreatePackageSummaryFile(absolutePathOutputDirectory string, packageSummary
 }
 
 // SaveProcessingInfo receives a file and marshals/writes processingInfoStruct into the file.
-func SaveProcessingInfo(processingInfoFile *os.File, processingInfoStruct data.ProcessingInfo) {
+func SaveProcessingInfo(
+	processingInfoFile *os.File,
+	processingInfoStruct data.ProcessingInfo) {
 
 	log.Info("Entered SaveProcessingInfo()")
 
@@ -106,7 +127,8 @@ func SaveProcessingInfo(processingInfoFile *os.File, processingInfoStruct data.P
 
 }
 
-// UnmarshalLocaleMapping wraps around unmarshalLocaleFile and returns and empty map[string]interface{} if it fails to unmarshal the original locale mapping file.
+// UnmarshalLocaleMapping wraps around unmarshalLocaleFile and returns
+// an empty map[string]interface{} if it fails to unmarshal the original locale mapping file.
 func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 
 	log.Info("Entered unmarshalLocaleMapping()")
@@ -124,7 +146,9 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 	return localizedMapping
 }
 
-// unmarshalLocaleFile deals with every possible opening and unmarshalling problem that might occur when unmarshalling a localization file supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
+// unmarshalLocaleFile deals with every possible opening and unmarshalling
+// problem that might occur when unmarshalling a localization file
+// supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func UnmarshalJsonFile(
 	pathToMappingFile string,
 	mappingToPopulate *map[string]interface{}) bool {
