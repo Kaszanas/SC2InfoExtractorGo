@@ -10,46 +10,49 @@ import (
 )
 
 func main() {
+	// main function is wrapping mainReturnWith code as not to call os.Exit directly.
+	// This is because os.Exit does not run deferred functions.
 	os.Exit(mainReturnWithCode())
 }
 
-// TODO: Wrap the main functionality do not call os.exit directly it does not run deferred functions.
 func mainReturnWithCode() int {
 
 	// Getting the information from user to start the processing:
-	flags, okFlags := utils.ParseFlags()
+	CLIflags, okFlags := utils.ParseFlags()
 	if !okFlags {
 		log.Fatal("Failed parseFlags()")
 		return 1
 	}
 
 	// Logging initialization to be able to provide further troubleshooting for users:
-	logFile, okLogging := utils.SetLogging(flags.LogFlags.LogPath, flags.LogFlags.LogLevel)
+	logFile, okLogging := utils.SetLogging(
+		CLIflags.LogFlags.LogPath,
+		CLIflags.LogFlags.LogLevel)
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
 		return 1
 	}
 
 	log.WithFields(log.Fields{
-		"flags.InputDirectory":             flags.InputDirectory,
-		"flags.OutputDirectory":            flags.OutputDirectory,
-		"flags.NumberOfPackages":           flags.NumberOfPackages,
-		"flags.PerformIntegrityCheck":      flags.PerformIntegrityCheck,
-		"flags.PerformValidityCheck":       flags.PerformValidityCheck,
-		"flags.PerformCleanup":             flags.PerformCleanup,
-		"flags.PerformPlayerAnonymization": flags.PerformPlayerAnonymization,
-		"flags.PerformChatAnonymization":   flags.PerformChatAnonymization,
-		"flags.FilterGameMode":             flags.FilterGameMode,
-		"flags.LocalizationMapFile":        flags.LocalizationMapFile,
-		"flags.NumberOfThreads":            flags.NumberOfThreads,
-		"flags.LogFlags.LogLevel":          flags.LogFlags.LogLevel,
-		"flags.LogFlags.LogPath":           flags.LogFlags.LogPath,
-		"flags.CPUProfilingPath":           flags.CPUProfilingPath,
+		"CLIflags.InputDirectory":             CLIflags.InputDirectory,
+		"CLIflags.OutputDirectory":            CLIflags.OutputDirectory,
+		"CLIflags.NumberOfPackages":           CLIflags.NumberOfPackages,
+		"CLIflags.PerformIntegrityCheck":      CLIflags.PerformIntegrityCheck,
+		"CLIflags.PerformValidityCheck":       CLIflags.PerformValidityCheck,
+		"CLIflags.PerformCleanup":             CLIflags.PerformCleanup,
+		"CLIflags.PerformPlayerAnonymization": CLIflags.PerformPlayerAnonymization,
+		"CLIflags.PerformChatAnonymization":   CLIflags.PerformChatAnonymization,
+		"CLIflags.FilterGameMode":             CLIflags.FilterGameMode,
+		"CLIflags.LocalizationMapFile":        CLIflags.LocalizationMapFile,
+		"CLIflags.NumberOfThreads":            CLIflags.NumberOfThreads,
+		"CLIflags.LogFlags.LogLevel":          CLIflags.LogFlags.LogLevel,
+		"CLIflags.LogFlags.LogPath":           CLIflags.LogFlags.LogPath,
+		"CLIflags.CPUProfilingPath":           CLIflags.CPUProfilingPath,
 	}).Info("Parsed command line flags")
 
 	// Profiling capabilities to verify if the program can be optimized any further:
-	if flags.CPUProfilingPath != "" {
-		_, okProfiling := utils.SetProfiling(flags.CPUProfilingPath)
+	if CLIflags.CPUProfilingPath != "" {
+		_, okProfiling := utils.SetProfiling(CLIflags.CPUProfilingPath)
 		if !okProfiling {
 			log.Fatal("Failed to setProfiling()")
 			return 1
@@ -58,26 +61,28 @@ func mainReturnWithCode() int {
 	}
 
 	// TODO: Move everything that is below to separate functions:
-	// Getting list of absolute paths for files from input directory filtering them by file extension to be able to extract the data:
-	listOfInputFiles := utils.ListFiles(flags.InputDirectory, ".SC2Replay")
+	// Getting list of absolute paths for files from input
+	// directory filtering them by file extension to be able to extract the data:
+	listOfInputFiles := utils.ListFiles(CLIflags.InputDirectory, ".SC2Replay")
 	lenListOfInputFiles := len(listOfInputFiles)
-	if lenListOfInputFiles < flags.NumberOfPackages {
+	if lenListOfInputFiles < CLIflags.NumberOfPackages {
 		log.WithFields(log.Fields{
 			"lenListOfInputFiles":    lenListOfInputFiles,
-			"flags.NumberOfPackages": flags.NumberOfPackages}).Error("Higher number of packages than input files, closing the program.")
+			"flags.NumberOfPackages": CLIflags.NumberOfPackages}).Error(
+			"Higher number of packages than input files, closing the program.")
 		return 1
 	}
 
 	listOfChunksFiles, packageToZipBool := utils.GetChunkListAndPackageBool(
 		listOfInputFiles,
-		flags.NumberOfPackages,
-		flags.NumberOfThreads,
+		CLIflags.NumberOfPackages,
+		CLIflags.NumberOfThreads,
 		lenListOfInputFiles)
 
 	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
 	localizedMapsMap := map[string]interface{}(nil)
-	if flags.LocalizationMapFile != "" {
-		localizedMapsMap = utils.UnmarshalLocaleMapping(flags.LocalizationMapFile)
+	if CLIflags.LocalizationMapFile != "" {
+		localizedMapsMap = utils.UnmarshalLocaleMapping(CLIflags.LocalizationMapFile)
 		if localizedMapsMap == nil {
 			log.Error("Could not read the JSON mapping file, closing the program.")
 			return 1
@@ -85,14 +90,13 @@ func mainReturnWithCode() int {
 	}
 
 	var compressionMethod uint16 = 8
-	// TODO: Pass CLI Flags directly, limit the amount of arguments passed to the function:
 	// Initializing the processing:
 	dataproc.PipelineWrapper(
 		listOfChunksFiles,
 		packageToZipBool,
 		localizedMapsMap,
 		compressionMethod,
-		flags,
+		CLIflags,
 	)
 
 	// Closing the log file manually:
