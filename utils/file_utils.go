@@ -36,11 +36,21 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 	return *createdOrReadFile, byteValue
 }
 
+// CreateMapsDirectory receives the path to the
+// maps directory and creates it if it doesn't exist.
 func CreateMapsDirectory(pathToMapsDirectory string) string {
 
 	log.Info("Entered CreateMapsDirectory()")
 
-	err := os.Mkdir(pathToMapsDirectory, 0777)
+	// Check if the maps directory exists:
+	_, err := os.Stat(pathToMapsDirectory)
+	if err == nil {
+		log.Info("The maps directory already exists!")
+		return pathToMapsDirectory
+	}
+
+	// Create the maps directory:
+	err = os.Mkdir(pathToMapsDirectory, 0777)
 	if err != nil {
 		log.WithField("error", err).
 			Fatal("failed to create the maps directory!")
