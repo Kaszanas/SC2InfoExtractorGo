@@ -16,12 +16,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ChannelContents struct {
+type ReplayProcessingChannelContents struct {
 	Index        int
 	ChunkOfFiles []string
 }
 
-// PipelineWrapper is an orchestrator that distributes work among available workers (threads)
+// PipelineWrapper is an orchestrator that distributes work
+// among available workers (threads)
 func PipelineWrapper(
 	fileChunks [][]string,
 	packageToZipBool bool,
@@ -31,10 +32,23 @@ func PipelineWrapper(
 ) {
 
 	log.Info("Entered PipelineWrapper()")
+	// REVIEW: Start Review, New implementation of map translation below:
+	mapsDirectoryName := "maps"
+	// Create maps directory if it doesn't exist:
+	mapsDirectory := utils.GetOrCreateMapsDirectory(mapsDirectoryName)
+	if mapsDirectory == "" {
+		return
+	}
+	existingMapFiles := utils.ListFiles(mapsDirectory, ".s2ma")
+
+	// Shared state for the downloader:
+	downloaderSharedState := NewDownloaderSharedState(existingMapFiles, cliFlags.NumberOfThreads*2)
+	defer downloaderSharedState.workerPool.StopAndWait()
+	// REVIEW: Finish Review
 
 	// If it is specified by the user to perform the processing without multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
 	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
-	var channel = make(chan ChannelContents, cliFlags.NumberOfThreads+1)
+	var channel = make(chan ReplayProcessingChannelContents, cliFlags.NumberOfThreads+1)
 	var wg sync.WaitGroup
 	// Adding a task for each of the supplied chunks to speed up the processing:
 	wg.Add(cliFlags.NumberOfThreads)
@@ -53,6 +67,7 @@ func PipelineWrapper(
 					compressionMethod,
 					localizedMapsMap,
 					channelContents.Index,
+					&downloaderSharedState,
 					cliFlags,
 				)
 			}
@@ -60,7 +75,7 @@ func PipelineWrapper(
 	}
 
 	for index, chunk := range fileChunks {
-		channel <- ChannelContents{Index: index, ChunkOfFiles: chunk}
+		channel <- ReplayProcessingChannelContents{Index: index, ChunkOfFiles: chunk}
 	}
 
 	close(channel)
@@ -69,13 +84,15 @@ func PipelineWrapper(
 	log.Info("Finished PipelineWrapper()")
 }
 
-// MultiprocessingChunkPipeline is a single instance of processing that is meant to be spawned by the orchestrator in order to speed up the process of data extraction.
+// MultiprocessingChunkPipeline is a single instance of processing that
+// is meant to be spawned by the orchestrator in order to speed up the process of data extraction.
 func MultiprocessingChunkPipeline(
 	listOfFiles []string,
 	packageToZipBool bool,
 	compressionMethod uint16,
 	localizedMapsMap map[string]interface{},
 	chunkIndex int,
+	downloaderSharedState *DownloaderSharedState,
 	cliFlags utils.CLIFlags,
 ) {
 
@@ -125,6 +142,7 @@ func MultiprocessingChunkPipeline(
 			replayFile,
 			grpcAnonymizer,
 			localizedMapsMap,
+			downloaderSharedState,
 			cliFlags,
 		)
 
@@ -230,6 +248,7 @@ func FileProcessingPipeline(
 	replayFile string,
 	grpcAnonymizer *GRPCAnonymizer,
 	localizedMapsMap map[string]interface{},
+	downloaderSharedState *DownloaderSharedState,
 	cliFlags utils.CLIFlags,
 ) (bool, data.CleanedReplay, data.ReplaySummary, string) {
 
@@ -287,9 +306,25 @@ func FileProcessingPipeline(
 		}
 	}
 
+	// Getting map URL and hash before mutexing, this operation is not thread safe:
+	mapURL, mapHashAndType, ok := getMapURLAndHashFromReplayData(replayData)
+	if !ok {
+		return false, data.CleanedReplay{}, data.ReplaySummary{}, "getMapURLAndHashFromReplayData() failed"
+	}
+	// TODO: Check if the map is in the list of localized maps:
+
+	// TODO: If it is not then download the map and add it to the list of localized maps:
+
+	// Mutex start
+	englishMapName := getEnglishMapNameDownloadIfNotExists(
+		downloaderSharedState,
+		mapHashAndType,
+		mapURL)
+
 	// Clean replay structure:
 	cleanOk, cleanReplayStructure := extractReplayData(
 		replayData,
+		englishMapName,
 		localizedMapsMap,
 		cliFlags.PerformCleanup)
 	if !cleanOk {

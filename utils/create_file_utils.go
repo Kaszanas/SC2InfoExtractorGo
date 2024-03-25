@@ -36,9 +36,9 @@ func readOrCreateFile(filePath string) (os.File, []byte) {
 	return *createdOrReadFile, byteValue
 }
 
-// CreateMapsDirectory receives the path to the
+// GetOrCreateMapsDirectory receives the path to the
 // maps directory and creates it if it doesn't exist.
-func CreateMapsDirectory(pathToMapsDirectory string) string {
+func GetOrCreateMapsDirectory(pathToMapsDirectory string) string {
 
 	log.Info("Entered CreateMapsDirectory()")
 

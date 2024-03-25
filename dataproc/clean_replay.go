@@ -9,9 +9,11 @@ import (
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 )
 
-// cleanReplay gathers functions that perform redefining "cleaning" of replay structure and cleans up events that are unused.
+// cleanReplay gathers functions that perform redefining
+// "cleaning" of replay structure and cleans up events that are unused.
 func extractReplayData(
 	replayData *rep.Rep,
+	englishMapName string,
 	localizedMapsMap map[string]interface{},
 	performCleanupBool bool) (bool, data.CleanedReplay) {
 
