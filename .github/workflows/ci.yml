@@ -1,4 +1,4 @@
-name: continuous integration (ci)
+name: Continuous Integration (CI)
 
 on: [pull_request, workflow_dispatch]
 
@@ -13,15 +13,12 @@ jobs:
 
     # Define job steps
     steps:
-
       - name: Check-out repository
-        uses: actions/checkout@v2
-
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       # Check if the main dockerfile builds:
       - name: Build "Production" Docker Image
         run: |
           make build
-
         # Check if the main dockerfile builds:
       - name: Build "Development" Docker Image
         run: |
