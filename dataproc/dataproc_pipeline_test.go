@@ -117,7 +117,6 @@ func testPipelineWrapperWithDir(
 		PerformChatAnonymization:   false,
 		PerformFiltering:           false,
 		FilterGameMode:             gameModeCheckFlag,
-		LocalizationMapFile:        testLocalizationFilePath,
 		LogFlags: utils.LogFlags{
 			LogLevel: 5,
 			LogPath:  thisTestOutputDir,
@@ -137,7 +136,6 @@ func testPipelineWrapperWithDir(
 	PipelineWrapper(
 		chunksOfFiles,
 		packageToZip,
-		localizedMapsMap,
 		compressionMethod,
 		flags,
 	)

@@ -14,7 +14,6 @@ import (
 func extractReplayData(
 	replayData *rep.Rep,
 	englishMapName string,
-	localizedMapsMap map[string]interface{},
 	performCleanupBool bool) (bool, data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
@@ -22,7 +21,7 @@ func extractReplayData(
 	// Restructure replay:
 	structuredReplayData, redefOk := redifineReplayStructure(
 		replayData,
-		localizedMapsMap)
+		englishMapName)
 	if !redefOk {
 		log.Error("Error in redefining replay structure.")
 		return false, data.CleanedReplay{}

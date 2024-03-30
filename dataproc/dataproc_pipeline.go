@@ -26,7 +26,6 @@ type ReplayProcessingChannelContents struct {
 func PipelineWrapper(
 	fileChunks [][]string,
 	packageToZipBool bool,
-	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
 	cliFlags utils.CLIFlags,
 ) {
@@ -65,7 +64,6 @@ func PipelineWrapper(
 					channelContents.ChunkOfFiles,
 					packageToZipBool,
 					compressionMethod,
-					localizedMapsMap,
 					channelContents.Index,
 					&downloaderSharedState,
 					cliFlags,
@@ -90,7 +88,6 @@ func MultiprocessingChunkPipeline(
 	listOfFiles []string,
 	packageToZipBool bool,
 	compressionMethod uint16,
-	localizedMapsMap map[string]interface{},
 	chunkIndex int,
 	downloaderSharedState *DownloaderSharedState,
 	cliFlags utils.CLIFlags,
@@ -141,7 +138,6 @@ func MultiprocessingChunkPipeline(
 		didWork, cleanReplayStructure, replaySummary, failureReason := FileProcessingPipeline(
 			replayFile,
 			grpcAnonymizer,
-			localizedMapsMap,
 			downloaderSharedState,
 			cliFlags,
 		)
@@ -247,7 +243,6 @@ func MultiprocessingChunkPipeline(
 func FileProcessingPipeline(
 	replayFile string,
 	grpcAnonymizer *GRPCAnonymizer,
-	localizedMapsMap map[string]interface{},
 	downloaderSharedState *DownloaderSharedState,
 	cliFlags utils.CLIFlags,
 ) (bool, data.CleanedReplay, data.ReplaySummary, string) {
@@ -315,6 +310,7 @@ func FileProcessingPipeline(
 
 	// TODO: If it is not then download the map and add it to the list of localized maps:
 
+	// REVIEW: Start Review, New implementation of map translation below:
 	// Mutex start
 	englishMapName := getEnglishMapNameDownloadIfNotExists(
 		downloaderSharedState,
@@ -325,7 +321,6 @@ func FileProcessingPipeline(
 	cleanOk, cleanReplayStructure := extractReplayData(
 		replayData,
 		englishMapName,
-		localizedMapsMap,
 		cliFlags.PerformCleanup)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
@@ -334,6 +329,7 @@ func FileProcessingPipeline(
 			data.ReplaySummary{},
 			"cleanReplay() failed"
 	}
+	// REVIEW: Finish Review
 
 	// Create replay summary:
 	summarizeOk, summarizedReplay := summarizeReplay(&cleanReplayStructure)

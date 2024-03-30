@@ -28,7 +28,6 @@ type CLIFlags struct {
 	PerformChatAnonymization   bool
 	PerformFiltering           bool
 	FilterGameMode             int
-	LocalizationMapFile        string
 	LogFlags                   LogFlags
 	CPUProfilingPath           string
 }
@@ -85,11 +84,6 @@ func ParseFlags() (CLIFlags, bool) {
 		0b11111111,
 		"Specifies which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111")
 
-	// Other compression methods than Deflate need to be registered further down in the code:
-	localizationMappingFileFlag := flag.String(
-		"localized_maps_file",
-		"./operation_files/output.json",
-		"Specifies a path to localization file containing {'ForeignName': 'EnglishName'} of maps. If this flag is not set and the default is unavailable, map translation will be ommited.")
 	// processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", false, "Specifies if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 	numberOfThreadsUsedFlag := flag.Int(
 		"max_procs",
@@ -145,7 +139,6 @@ func ParseFlags() (CLIFlags, bool) {
 		PerformChatAnonymization:   *performChatAnonymizationFlag,
 		PerformFiltering:           *performFilteringFlag,
 		FilterGameMode:             *gameModeFilterFlag,
-		LocalizationMapFile:        *localizationMappingFileFlag,
 		NumberOfThreads:            *numberOfThreadsUsedFlag,
 		LogFlags:                   logFlags,
 		CPUProfilingPath:           *performCPUProfilingFlag,

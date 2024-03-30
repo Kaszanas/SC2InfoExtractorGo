@@ -43,7 +43,6 @@ func mainReturnWithCode() int {
 		"CLIflags.PerformPlayerAnonymization": CLIflags.PerformPlayerAnonymization,
 		"CLIflags.PerformChatAnonymization":   CLIflags.PerformChatAnonymization,
 		"CLIflags.FilterGameMode":             CLIflags.FilterGameMode,
-		"CLIflags.LocalizationMapFile":        CLIflags.LocalizationMapFile,
 		"CLIflags.NumberOfThreads":            CLIflags.NumberOfThreads,
 		"CLIflags.LogFlags.LogLevel":          CLIflags.LogFlags.LogLevel,
 		"CLIflags.LogFlags.LogPath":           CLIflags.LogFlags.LogPath,
@@ -79,22 +78,11 @@ func mainReturnWithCode() int {
 		CLIflags.NumberOfThreads,
 		lenListOfInputFiles)
 
-	// Opening and marshalling the JSON to map[string]string to use in the pipeline (localization information of maps that were played).
-	localizedMapsMap := map[string]interface{}(nil)
-	if CLIflags.LocalizationMapFile != "" {
-		localizedMapsMap = utils.UnmarshalLocaleMapping(CLIflags.LocalizationMapFile)
-		if localizedMapsMap == nil {
-			log.Error("Could not read the JSON mapping file, closing the program.")
-			return 1
-		}
-	}
-
 	var compressionMethod uint16 = 8
 	// Initializing the processing:
 	dataproc.PipelineWrapper(
 		listOfChunksFiles,
 		packageToZipBool,
-		localizedMapsMap,
 		compressionMethod,
 		CLIflags,
 	)

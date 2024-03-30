@@ -72,7 +72,6 @@ func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, 
 		PerformChatAnonymization:   false,
 		PerformFiltering:           false,
 		FilterGameMode:             gameModeCheckFlag,
-		LocalizationMapFile:        testLocalizationFilePath,
 		LogFlags: utils.LogFlags{
 			LogLevel: 5,
 			LogPath:  testLogsDir,
