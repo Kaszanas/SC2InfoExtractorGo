@@ -66,17 +66,18 @@ type DownloadTaskReturnChannelInfo struct {
 }
 
 func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool) {
-	// TODO: Add logging
+	log.Info("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
 
 	// Get the cacheHandle for the map, I am not sure whi is it the last CacheHandle:
 	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
 	region := mapCacheHandle.Region
 
+	// TODO: This is the only place where errors can be handled
 	badRegions := []string{"Unknown", "Public Test"}
 	for _, badRegion := range badRegions {
 		if region.Name == badRegion {
-			log.WithField("region", region.Name).Info("Detected bad region!")
+			log.WithField("region", region.Name).Error("Detected bad region!")
 			return url.URL{}, "", false
 		}
 	}
@@ -92,7 +93,7 @@ func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool)
 
 	hashAndTypeMerged := fmt.Sprintf("%s.%s", mapCacheHandle.Digest, mapCacheHandle.Type)
 	mapURL := depotURL.JoinPath(hashAndTypeMerged)
-	// TODO: Add logging
+	log.Info("Finished getMapURLAndHashFromReplayData()")
 	return *mapURL, hashAndTypeMerged, true
 }
 
@@ -100,7 +101,6 @@ func getEnglishMapNameDownloadIfNotExists(
 	downloaderSharedState *DownloaderSharedState,
 	mapHashAndType string,
 	mapURL url.URL) string {
-	// TODO: Add logging
 	log.WithFields(
 		log.Fields{
 			"downloaderSharedState": downloaderSharedState,
@@ -121,15 +121,15 @@ func getEnglishMapNameDownloadIfNotExists(
 		}
 
 		// Create channel
-		// TODO: This will be channel tro struct with error and map name:
+		// REVIEW: Verify if this can be a struct like that:
 		downloadTaskInfoChannel := make(chan DownloadTaskReturnChannelInfo)
 
 		// Check if key is in currently downloading:
 		listOfChannels, ok := (*downloaderSharedState.currentlyDownloading)[mapHashAndType]
 		if ok {
-			// TODO: Add logging
-			// If it is then add the channel to the list of channels waiting for result
+			// If it is downloading then add the channel to the list of channels waiting for result
 			// Map is being downloaded, add it to the list of currently downloading maps:
+			log.Info("Map is being downloaded, adding channel to receive the result.")
 			(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = append(listOfChannels, downloadTaskInfoChannel)
 		} else {
 			// TODO: Add logging
@@ -162,7 +162,7 @@ func getEnglishMapNameDownloadIfNotExists(
 	// Wait for channel to finish downloading the map.
 	taskStatus := <-downloadTaskInfoChannel
 	if taskStatus.err != nil {
-		log.Error("Error downloading map: ", taskStatus.err)
+		log.WithField("err", taskStatus.err).Error("Error downloading map")
 		return ""
 	}
 
@@ -250,32 +250,37 @@ func readLocalizedDataFromMap(mapFilepath string) (string, error) {
 
 	m, err := mpq.NewFromFile(mapFilepath)
 	if err != nil {
-		log.Error("Finished readLocalizedDataFromMap() Error reading map file with MPQ: ", err)
+		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
+			Error("Finished readLocalizedDataFromMap(), Error reading map file with MPQ: ")
 		return "", err
 	}
 	defer m.Close()
 
 	data, err := m.FileByName("(listfile)")
 	if err != nil {
-		log.Error("Finished readLocalizedDataFromMap() Error reading listfile from MPQ: ", err)
+		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
+			Error("Finished readLocalizedDataFromMap() Error reading listfile from MPQ: ")
 		return "", err
 	}
 
 	localizationMPQFileName, err := findEnglishLocaleFile(data)
 	if err != nil {
-		log.Error("Finished readLocalizedDataFromMap() Error finding english locale file: ", err)
+		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
+			Error("Finished readLocalizedDataFromMap() Error finding english locale file: ")
 		return "", err
 	}
 
 	localeFileDataBytes, err := m.FileByName(localizationMPQFileName)
 	if err != nil {
-		log.Error("Finished readLocalizedDataFromMap() Error reading locale file from MPQ: ", err)
+		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
+			Error("Finished readLocalizedDataFromMap() Error reading locale file from MPQ: ")
 		return "", err
 	}
 
 	mapName, err := getMapNameFromLocaleFile(localeFileDataBytes)
 	if err != nil {
-		log.Error("Finished readLocalizedDataFromMap() Error getting map name from locale file: ", err)
+		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
+			Error("Finished readLocalizedDataFromMap() Error getting map name from locale file: ")
 		return "", err
 	}
 
@@ -302,7 +307,7 @@ func findEnglishLocaleFile(MPQArchiveBytes []byte) (string, error) {
 		}
 	}
 	if !foundLocaleFile {
-		log.Error("Finished findEnglishLocaleFile(), could not find localization file in MPQ")
+		log.Error("Failed in findEnglishLocaleFile()")
 		return "", fmt.Errorf("could not find localization file in MPQ")
 	}
 
@@ -329,7 +334,7 @@ func getMapNameFromLocaleFile(MPQLocaleFileBytes []byte) (string, error) {
 		}
 	}
 	if !mapNameFound {
-		log.Error("Finished getMapNameFromLocaleFile(), map name was not found.")
+		log.Error("Failed in getMapNameFromLocaleFile()")
 		return "", fmt.Errorf("map name was not found")
 	}
 

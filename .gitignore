@@ -30,3 +30,5 @@ SC2InfoExtractorGo
 
 package_summary*
 test_replays_output/
+*.s2ma
+maps/
