@@ -7,11 +7,9 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"strings"
 	"sync"
 
 	"github.com/alitto/pond"
-	"github.com/icza/mpq"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
@@ -24,23 +22,32 @@ import (
 // channel of string because the response is the map name:
 // DownloaderSharedState holds all of the shared state for the downloader.
 type DownloaderSharedState struct {
-	mapDownloadDirectory string                                           // Directory where the maps are downloaded
-	existingMapFiles     *[]string                                        // List of existing map files in the maps directory
-	mapHashAndTypeToName *map[string]string                               // Mapping from filename to english map name
-	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo // Mapping from filename to list of channels to be notified when download finishes
-	sharedRWMutex        *sync.RWMutex                                    // Mutex for shared state
+	mapDownloadDirectory string                                           // NOT_MODIFIABLE Directory where the maps are downloaded
+	existingMapFiles     *map[string]struct{}                             // NOT_MODIFIABLE List of existing map files in the maps directory
+	mapHashAndTypeToName *map[string]string                               // MODIFIABLE Mapping from filename to english map name
+	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo // MODIFIABLE Mapping from filename to list of channels to be notified when download finishes
+	sharedRWMutex        *sync.RWMutex                                    // MODIFIABLE Mutex for shared state
 	workerPool           *pond.WorkerPool                                 // Worker pool for downloading maps.
 }
 
 // Constructor for new downloader shared state
 // NewDownloaderSharedState creates a new DownloaderSharedState.
 func NewDownloaderSharedState(
-	existingMapFiles []string,
+	existingMapFilesList []string,
 	maxPoolCapacity int) DownloaderSharedState {
+
+	// TODO: Change from a slice of strings into a set implementation
+	mapFilesSetToPopulate := make(map[string]struct{})
+	for _, existingMap := range existingMapFilesList {
+		_, exists := mapFilesSetToPopulate[existingMap]
+		if !exists {
+			mapFilesSetToPopulate[existingMap] = struct{}{}
+		}
+	}
 
 	return DownloaderSharedState{
 		mapDownloadDirectory: "maps",
-		existingMapFiles:     &[]string{},
+		existingMapFiles:     &mapFilesSetToPopulate,
 		mapHashAndTypeToName: &map[string]string{},
 		currentlyDownloading: &map[string][]chan DownloadTaskReturnChannelInfo{},
 		sharedRWMutex:        &sync.RWMutex{},
@@ -51,7 +58,6 @@ func NewDownloaderSharedState(
 // DownloadTaskState holds all of the information needed for the download task.
 type DownloadTaskState struct {
 	mapDownloadDirectory string
-	existingMapFiles     *[]string
 	mapHashAndTypeToName *map[string]string
 	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo
 	mapHashAndType       string
@@ -109,51 +115,13 @@ func getEnglishMapNameDownloadIfNotExists(
 		},
 	).Info("Entered getEnglishMapNameDownloadIfNotExists()")
 
-	englishMapName, downloadTaskInfoChannel := func() (string, chan DownloadTaskReturnChannelInfo) {
-		// Locking access to shared state:
-		downloaderSharedState.sharedRWMutex.Lock()
-		defer downloaderSharedState.sharedRWMutex.Unlock()
+	// TODO: Read and verify if the map exists here it doesn't require locking:
+	maybeMapName, err := getMapNameFromDrive(*downloaderSharedState, mapHashAndType)
+	if maybeMapName == "" && err != nil {
+		return ""
+	}
 
-		// Check if the english map name was already read from the drive, return if present:
-		englishMapName, ok := (*downloaderSharedState.mapHashAndTypeToName)[mapHashAndType]
-		if ok {
-			return englishMapName, nil
-		}
-
-		// Create channel
-		// REVIEW: Verify if this can be a struct like that:
-		downloadTaskInfoChannel := make(chan DownloadTaskReturnChannelInfo)
-
-		// Check if key is in currently downloading:
-		listOfChannels, ok := (*downloaderSharedState.currentlyDownloading)[mapHashAndType]
-		if ok {
-			// If it is downloading then add the channel to the list of channels waiting for result
-			// Map is being downloaded, add it to the list of currently downloading maps:
-			log.Info("Map is being downloaded, adding channel to receive the result.")
-			(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = append(listOfChannels, downloadTaskInfoChannel)
-		} else {
-			// TODO: Add logging
-			taskState := DownloadTaskState{
-				mapDownloadDirectory: downloaderSharedState.mapDownloadDirectory,
-				existingMapFiles:     downloaderSharedState.existingMapFiles,
-				mapHashAndTypeToName: downloaderSharedState.mapHashAndTypeToName,
-				currentlyDownloading: downloaderSharedState.currentlyDownloading,
-				mapHashAndType:       mapHashAndType,
-				mapURL:               mapURL,
-				sharedRWMutex:        downloaderSharedState.sharedRWMutex,
-			}
-			// if it is not then add key to the map and create one element slice with the channel
-			// and submit the download task to the worker pool:
-			(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = []chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
-			downloaderSharedState.workerPool.Submit(
-				func() {
-					// REVIEW: How to recover errors:
-					downloadSingleMapOrRetrieveFromDrive(taskState)
-				},
-			)
-		}
-		return "", downloadTaskInfoChannel
-	}()
+	englishMapName, downloadTaskInfoChannel := dispatchDownloadTask(*downloaderSharedState, mapHashAndType, mapURL)
 
 	if englishMapName != "" {
 		return englishMapName
@@ -171,9 +139,39 @@ func getEnglishMapNameDownloadIfNotExists(
 	return taskStatus.mapNameString
 }
 
+func getMapNameFromDrive(
+	downloaderSharedState DownloaderSharedState,
+	mapHashAndType string) (string, error) {
+
+	// Check if the map name is already downloaded:
+
+	// TODO: read the english map name from map file
+	mapPath := path.Join(downloaderSharedState.mapDownloadDirectory, mapHashAndType)
+	englishMapName, err := readLocalizedDataFromMap(mapPath)
+	if err != nil {
+		return "", err
+	}
+
+	if englishMapName == "" {
+		return "", fmt.Errorf("map name was read but it is empty")
+	}
+
+	// Locking access to shared state:
+	downloaderSharedState.sharedRWMutex.Lock()
+	defer downloaderSharedState.sharedRWMutex.Unlock()
+
+	// REVIEW: Verify this:
+	// Add to the mapHashAndTypeToName if the map is on drive:
+	// Add the variable to the mapHashAndTypeToName
+	// within the mutex lock to avoid IO operations while under lock.
+	(*downloaderSharedState.mapHashAndTypeToName)[mapHashAndType] = englishMapName
+
+	return englishMapName, nil
+}
+
 // TODO: Early return and log errors, create channel with error present.
 // log process ID, thread ID, log when new download task comes
-func downloadSingleMapOrRetrieveFromDrive(taskState DownloadTaskState) {
+func downloadSingleMap(taskState DownloadTaskState) {
 
 	outputFilepath := path.Join(taskState.mapDownloadDirectory, taskState.mapHashAndType)
 
@@ -221,6 +219,56 @@ func downloadSingleMapOrRetrieveFromDrive(taskState DownloadTaskState) {
 	sendDownloadTaskReturnInfoToChannels(&taskState, englishMapName, nil)
 }
 
+func dispatchDownloadTask(
+	downloaderSharedState DownloaderSharedState,
+	mapHashAndType string,
+	mapURL url.URL) (string, chan DownloadTaskReturnChannelInfo) {
+
+	// Locking access to shared state:
+	downloaderSharedState.sharedRWMutex.Lock()
+	defer downloaderSharedState.sharedRWMutex.Unlock()
+
+	// Check if the english map name was already read from the drive, return if present:
+	englishMapName, ok := (*downloaderSharedState.mapHashAndTypeToName)[mapHashAndType]
+	if ok {
+		return englishMapName, nil
+	}
+
+	// Create channel
+	// REVIEW: Verify if this can be a struct like that:
+	downloadTaskInfoChannel := make(chan DownloadTaskReturnChannelInfo)
+
+	// Check if key is in currently downloading:
+	listOfChannels, ok := (*downloaderSharedState.currentlyDownloading)[mapHashAndType]
+	if ok {
+		// If it is downloading then add the channel to the list of channels waiting for result
+		// Map is being downloaded, add it to the list of currently downloading maps:
+		log.Info("Map is being downloaded, adding channel to receive the result.")
+		(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = append(listOfChannels, downloadTaskInfoChannel)
+	} else {
+		// TODO: Add logging
+		taskState := DownloadTaskState{
+			mapDownloadDirectory: downloaderSharedState.mapDownloadDirectory,
+			mapHashAndTypeToName: downloaderSharedState.mapHashAndTypeToName,
+			currentlyDownloading: downloaderSharedState.currentlyDownloading,
+			mapHashAndType:       mapHashAndType,
+			mapURL:               mapURL,
+			sharedRWMutex:        downloaderSharedState.sharedRWMutex,
+		}
+		// if it is not then add key to the map and create one element slice with the channel
+		// and submit the download task to the worker pool:
+		(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = []chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
+		downloaderSharedState.workerPool.Submit(
+			func() {
+				// REVIEW: How to recover errors:
+				downloadSingleMap(taskState)
+			},
+		)
+	}
+	return "", downloadTaskInfoChannel
+
+}
+
 func sendDownloadTaskReturnInfoToChannels(
 	taskState *DownloadTaskState,
 	englishMapName string,
@@ -236,108 +284,4 @@ func sendDownloadTaskReturnInfoToChannels(
 		}
 	}
 	delete(*taskState.currentlyDownloading, taskState.mapHashAndType)
-}
-
-func replaceNewlinesSplitData(input string) []string {
-	replacedNewlines := strings.ReplaceAll(input, "\r\n", "\n")
-	splitFile := strings.Split(replacedNewlines, "\n")
-
-	return splitFile
-}
-
-func readLocalizedDataFromMap(mapFilepath string) (string, error) {
-	log.Info("Entered readLocalizedDataFromMap()")
-
-	m, err := mpq.NewFromFile(mapFilepath)
-	if err != nil {
-		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
-			Error("Finished readLocalizedDataFromMap(), Error reading map file with MPQ: ")
-		return "", err
-	}
-	defer m.Close()
-
-	data, err := m.FileByName("(listfile)")
-	if err != nil {
-		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
-			Error("Finished readLocalizedDataFromMap() Error reading listfile from MPQ: ")
-		return "", err
-	}
-
-	localizationMPQFileName, err := findEnglishLocaleFile(data)
-	if err != nil {
-		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
-			Error("Finished readLocalizedDataFromMap() Error finding english locale file: ")
-		return "", err
-	}
-
-	localeFileDataBytes, err := m.FileByName(localizationMPQFileName)
-	if err != nil {
-		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
-			Error("Finished readLocalizedDataFromMap() Error reading locale file from MPQ: ")
-		return "", err
-	}
-
-	mapName, err := getMapNameFromLocaleFile(localeFileDataBytes)
-	if err != nil {
-		log.WithFields(log.Fields{"mapFilepath": mapFilepath, "err": err}).
-			Error("Finished readLocalizedDataFromMap() Error getting map name from locale file: ")
-		return "", err
-	}
-
-	log.Info("Finished readLocalizedDataFromMap()")
-	return mapName, nil
-}
-
-func findEnglishLocaleFile(MPQArchiveBytes []byte) (string, error) {
-	log.Info("Entered findEnglishLocaleFile()")
-
-	// Cast bytes to string:
-	MPQStringData := string(MPQArchiveBytes)
-	// Split data by newline:
-	splitListfile := replaceNewlinesSplitData(MPQStringData)
-	// Look for the file containing the map name:
-	foundLocaleFile := false
-	localizationMPQFileName := ""
-	fmt.Println("Files inside archive:", splitListfile)
-	for _, fileNameString := range splitListfile {
-		if strings.HasPrefix(fileNameString, "enUS.SC2Data\\LocalizedData\\GameStrings") {
-			foundLocaleFile = true
-			localizationMPQFileName = fileNameString
-			break
-		}
-	}
-	if !foundLocaleFile {
-		log.Error("Failed in findEnglishLocaleFile()")
-		return "", fmt.Errorf("could not find localization file in MPQ")
-	}
-
-	log.Info("Finished findEnglishLocaleFile()")
-	return localizationMPQFileName, nil
-}
-
-func getMapNameFromLocaleFile(MPQLocaleFileBytes []byte) (string, error) {
-
-	log.Info("Entered getMapNameFromLocaleFile()")
-
-	// Cast File content into string:
-	localeFileDataString := string(MPQLocaleFileBytes)
-	splitLocaleFileString := replaceNewlinesSplitData(localeFileDataString)
-	// Look for field with the map name:
-	mapNameFound := false
-	mapName := ""
-	fieldPrefix := "DocInfo/Name="
-	for _, field := range splitLocaleFileString {
-		if strings.HasPrefix(field, fieldPrefix) {
-			mapNameFound = true
-			mapName = strings.TrimPrefix(field, fieldPrefix)
-			break
-		}
-	}
-	if !mapNameFound {
-		log.Error("Failed in getMapNameFromLocaleFile()")
-		return "", fmt.Errorf("map name was not found")
-	}
-
-	log.Info("Finished getMapNameFromLocaleFile(), found map name.")
-	return mapName, nil
 }

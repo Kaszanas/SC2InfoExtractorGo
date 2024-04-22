@@ -1,6 +1,10 @@
 package dataproc
 
-import log "github.com/sirupsen/logrus"
+import (
+	"strings"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // checkClan verifies if a player is in a clan.
 func checkClan(clanTag string) bool {
@@ -64,4 +68,11 @@ func contains(s []string, str string) bool {
 
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
+}
+
+func replaceNewlinesSplitData(input string) []string {
+	replacedNewlines := strings.ReplaceAll(input, "\r\n", "\n")
+	splitFile := strings.Split(replacedNewlines, "\n")
+
+	return splitFile
 }

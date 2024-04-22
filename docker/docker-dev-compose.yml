@@ -22,5 +22,5 @@ services:
     command:
       [
         "-c",
-        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/ && go test ./... -v"
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/ && go test ./... -v -race"
       ]

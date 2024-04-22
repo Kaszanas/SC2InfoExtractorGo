@@ -38,10 +38,11 @@ func PipelineWrapper(
 	if mapsDirectory == "" {
 		return
 	}
-	existingMapFiles := utils.ListFiles(mapsDirectory, ".s2ma")
+	existingMapFilesList := utils.ListFiles(mapsDirectory, ".s2ma")
 
 	// Shared state for the downloader:
-	downloaderSharedState := NewDownloaderSharedState(existingMapFiles, cliFlags.NumberOfThreads*2)
+	downloaderSharedState := NewDownloaderSharedState(
+		existingMapFilesList, cliFlags.NumberOfThreads*2)
 	defer downloaderSharedState.workerPool.StopAndWait()
 	// REVIEW: Finish Review
 
@@ -181,7 +182,8 @@ func MultiprocessingChunkPipeline(
 				}).Error("Failed to save file to archive! Skipping.")
 				continue
 			}
-			// TODO: This might be done easier. Currently this is duplicate code and seems to introduce bad practice!
+			// TODO: This might be done easier.
+			// Currently this is duplicate code and seems to introduce bad practice!
 			processedCounter++
 			processingInfoStruct.ProcessedFiles = append(
 				processingInfoStruct.ProcessedFiles,
