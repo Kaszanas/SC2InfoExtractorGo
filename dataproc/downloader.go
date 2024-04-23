@@ -23,7 +23,6 @@ import (
 // DownloaderSharedState holds all of the shared state for the downloader.
 type DownloaderSharedState struct {
 	mapDownloadDirectory string                                           // NOT_MODIFIABLE Directory where the maps are downloaded
-	existingMapFiles     *map[string]struct{}                             // NOT_MODIFIABLE List of existing map files in the maps directory
 	mapHashAndTypeToName *map[string]string                               // MODIFIABLE Mapping from filename to english map name
 	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo // MODIFIABLE Mapping from filename to list of channels to be notified when download finishes
 	sharedRWMutex        *sync.RWMutex                                    // MODIFIABLE Mutex for shared state
@@ -33,35 +32,41 @@ type DownloaderSharedState struct {
 // Constructor for new downloader shared state
 // NewDownloaderSharedState creates a new DownloaderSharedState.
 func NewDownloaderSharedState(
+	mapsDirectory string,
 	existingMapFilesList []string,
-	maxPoolCapacity int) DownloaderSharedState {
+	maxPoolCapacity int) (DownloaderSharedState, error) {
 
-	// TODO: Change from a slice of strings into a set implementation
-	mapFilesSetToPopulate := make(map[string]struct{})
+	mapHashAndTypeToName := make(map[string]string)
 	for _, existingMap := range existingMapFilesList {
-		_, exists := mapFilesSetToPopulate[existingMap]
-		if !exists {
-			mapFilesSetToPopulate[existingMap] = struct{}{}
+		englishMapName, err := readLocalizedDataFromMap(path.Join(mapsDirectory, existingMap))
+		if err != nil {
+			log.WithField("err", err).Error("Error reading map name from drive")
+			return DownloaderSharedState{}, err
 		}
+		if englishMapName == "" {
+			log.WithField("mapHashAndType", existingMap).
+				Info("Map exists but map name is empty, should be removed and redownloaded.")
+			return DownloaderSharedState{}, fmt.Errorf("map name was read but it is empty, should be removed and redownloaded.")
+		}
+		mapHashAndTypeToName[existingMap] = englishMapName
 	}
 
 	return DownloaderSharedState{
 		mapDownloadDirectory: "maps",
-		existingMapFiles:     &mapFilesSetToPopulate,
-		mapHashAndTypeToName: &map[string]string{},
+		mapHashAndTypeToName: &mapHashAndTypeToName,
 		currentlyDownloading: &map[string][]chan DownloadTaskReturnChannelInfo{},
 		sharedRWMutex:        &sync.RWMutex{},
 		workerPool:           pond.New(3, maxPoolCapacity, pond.Strategy(pond.Eager())),
-	}
+	}, nil
 }
 
 // DownloadTaskState holds all of the information needed for the download task.
 type DownloadTaskState struct {
 	mapDownloadDirectory string
-	mapHashAndTypeToName *map[string]string
-	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo
 	mapHashAndType       string
 	mapURL               url.URL
+	mapHashAndTypeToName *map[string]string
+	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo
 	sharedRWMutex        *sync.RWMutex
 }
 
@@ -115,13 +120,10 @@ func getEnglishMapNameDownloadIfNotExists(
 		},
 	).Info("Entered getEnglishMapNameDownloadIfNotExists()")
 
-	// TODO: Read and verify if the map exists here it doesn't require locking:
-	maybeMapName, err := getMapNameFromDrive(*downloaderSharedState, mapHashAndType)
-	if maybeMapName == "" && err != nil {
-		return ""
-	}
-
-	englishMapName, downloadTaskInfoChannel := dispatchDownloadTask(*downloaderSharedState, mapHashAndType, mapURL)
+	englishMapName, downloadTaskInfoChannel := dispatchMapDownloadTask(
+		*downloaderSharedState,
+		mapHashAndType,
+		mapURL)
 
 	if englishMapName != "" {
 		return englishMapName
@@ -143,9 +145,7 @@ func getMapNameFromDrive(
 	downloaderSharedState DownloaderSharedState,
 	mapHashAndType string) (string, error) {
 
-	// Check if the map name is already downloaded:
-
-	// TODO: read the english map name from map file
+	// Reading the english map name from map file
 	mapPath := path.Join(downloaderSharedState.mapDownloadDirectory, mapHashAndType)
 	englishMapName, err := readLocalizedDataFromMap(mapPath)
 	if err != nil {
@@ -160,7 +160,6 @@ func getMapNameFromDrive(
 	downloaderSharedState.sharedRWMutex.Lock()
 	defer downloaderSharedState.sharedRWMutex.Unlock()
 
-	// REVIEW: Verify this:
 	// Add to the mapHashAndTypeToName if the map is on drive:
 	// Add the variable to the mapHashAndTypeToName
 	// within the mutex lock to avoid IO operations while under lock.
@@ -169,15 +168,19 @@ func getMapNameFromDrive(
 	return englishMapName, nil
 }
 
-// TODO: Early return and log errors, create channel with error present.
-// log process ID, thread ID, log when new download task comes
+// downloadSingleMap handles downloading a single map based on an URL passed through
+// the task state.
 func downloadSingleMap(taskState DownloadTaskState) {
+	log.WithField("taskState", taskState).Info("Entered downloadSingleMap()")
 
 	outputFilepath := path.Join(taskState.mapDownloadDirectory, taskState.mapHashAndType)
 
 	response, err := http.Get(taskState.mapURL.String())
 	if err != nil {
-		sendDownloadTaskReturnInfoToChannels(&taskState, "", err)
+		sendDownloadTaskReturnInfoToChannels(
+			&taskState,
+			"",
+			fmt.Errorf("error downloading in http.Get map: %v", err))
 		return
 	}
 	defer response.Body.Close()
@@ -186,7 +189,7 @@ func downloadSingleMap(taskState DownloadTaskState) {
 		sendDownloadTaskReturnInfoToChannels(
 			&taskState,
 			"",
-			fmt.Errorf("request returned code other than 200 OK"),
+			fmt.Errorf("error downloading, request returned code other than 200 OK"),
 		)
 		return
 	}
@@ -194,7 +197,10 @@ func downloadSingleMap(taskState DownloadTaskState) {
 	// Create output file:
 	outFile, err := os.Create(outputFilepath)
 	if err != nil {
-		sendDownloadTaskReturnInfoToChannels(&taskState, "", err)
+		sendDownloadTaskReturnInfoToChannels(
+			&taskState,
+			"",
+			fmt.Errorf("error creating file in os.Create: %v", err))
 		return
 	}
 	defer outFile.Close()
@@ -202,7 +208,10 @@ func downloadSingleMap(taskState DownloadTaskState) {
 	// Copy contents of response to the file:
 	_, err = io.Copy(outFile, response.Body)
 	if err != nil {
-		sendDownloadTaskReturnInfoToChannels(&taskState, "", err)
+		sendDownloadTaskReturnInfoToChannels(
+			&taskState,
+			"",
+			fmt.Errorf("error copying contents to file in io.Copy: %v", err))
 		return
 	}
 
@@ -219,7 +228,9 @@ func downloadSingleMap(taskState DownloadTaskState) {
 	sendDownloadTaskReturnInfoToChannels(&taskState, englishMapName, nil)
 }
 
-func dispatchDownloadTask(
+// dispatchMapDownloadTask handles dispatching of the map download task, if
+// the map is not available within the shared state under the mapHashAndTypeToName.
+func dispatchMapDownloadTask(
 	downloaderSharedState DownloaderSharedState,
 	mapHashAndType string,
 	mapURL url.URL) (string, chan DownloadTaskReturnChannelInfo) {
@@ -235,7 +246,6 @@ func dispatchDownloadTask(
 	}
 
 	// Create channel
-	// REVIEW: Verify if this can be a struct like that:
 	downloadTaskInfoChannel := make(chan DownloadTaskReturnChannelInfo)
 
 	// Check if key is in currently downloading:
@@ -255,12 +265,14 @@ func dispatchDownloadTask(
 			mapURL:               mapURL,
 			sharedRWMutex:        downloaderSharedState.sharedRWMutex,
 		}
-		// if it is not then add key to the map and create one element slice with the channel
-		// and submit the download task to the worker pool:
+		// if it is not then add key to the map and create one element
+		// slice with the channel and submit the download task to the worker pool:
 		(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = []chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
 		downloaderSharedState.workerPool.Submit(
 			func() {
-				// REVIEW: How to recover errors:
+				// Errors are written to directly to the channel,
+				// each of requesting goroutines will receive the error from
+				// this function via the channel.
 				downloadSingleMap(taskState)
 			},
 		)
@@ -269,6 +281,9 @@ func dispatchDownloadTask(
 
 }
 
+// sendDownloadTaskReturnInfoToChannels iterates over all of the channels
+// waiting for the download to finish, and sends the english map name or an error
+// message through te channel.
 func sendDownloadTaskReturnInfoToChannels(
 	taskState *DownloadTaskState,
 	englishMapName string,

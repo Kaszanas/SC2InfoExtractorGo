@@ -41,9 +41,15 @@ func PipelineWrapper(
 	existingMapFilesList := utils.ListFiles(mapsDirectory, ".s2ma")
 
 	// Shared state for the downloader:
-	downloaderSharedState := NewDownloaderSharedState(
-		existingMapFilesList, cliFlags.NumberOfThreads*2)
+	downloaderSharedState, err := NewDownloaderSharedState(
+		mapsDirectory,
+		existingMapFilesList,
+		cliFlags.NumberOfThreads*2)
 	defer downloaderSharedState.workerPool.StopAndWait()
+	if err != nil {
+		log.WithField("error", err).Error("Failed to create downloader shared state.")
+		return
+	}
 	// REVIEW: Finish Review
 
 	// If it is specified by the user to perform the processing without multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
