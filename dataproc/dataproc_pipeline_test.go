@@ -40,13 +40,15 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 			if !contains(TEST_BYPASS_THESE_DIRS, dirName) {
 				absoluteReplayDir := filepath.Join(testInputDir, dirName)
 				t.Run(dirName, func(t *testing.T) {
+					// WARNING: Cannot run tests in parallel
+					// because of the downloading logic, it reads from a common
+					// maps directory:
 					// t.Parallel()
 					testOk, reason := testPipelineWrapperWithDir(
 						absoluteReplayDir,
 						dirName,
 						removeTestOutputs)
 					if !testOk {
-
 						t.Fatalf("Test Failed! %s", reason)
 					}
 				})
