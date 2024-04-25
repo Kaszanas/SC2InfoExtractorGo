@@ -25,7 +25,7 @@ docker_build_dev: ## Builds the dev container.
 docker_run_dev: ## Runs the interactive shell in the dev container. Runs bash by default.
 	docker run -it sc2infoextractorgo:dev
 
-docker_go_lint:
+docker_go_lint: ## Runs the linter using the golangci-lint container.
 	docker run --rm -v .:/app -w /app golangci/golangci-lint:latest golangci-lint run -v
 
 ###################
