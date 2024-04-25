@@ -10,7 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// generateReplaySummary accesses the data that is within cleaned replay and extracts information for visualization purposes.
+// generateReplaySummary accesses the data that is within cleaned replay
+// and extracts information for visualization purposes.
 func generateReplaySummary(
 	replayData *data.CleanedReplay,
 	summaryStruct *data.ReplaySummary) {
@@ -28,6 +29,7 @@ func generateReplaySummary(
 	incrementIfKeyExists(gameVersionString, summaryStruct.Summary.GameVersions)
 	log.Info("Finished incrementing replayData.Metadata.GameVersion")
 
+	// REVIEW: This seems to be left as legacy:
 	// replayMetadata := replayData.Metadata
 	// GameDuration histogram:
 	replayDuration := fmt.Sprintf("%f", float64(replayData.Header.ElapsedGameLoops)/22.4)
@@ -54,6 +56,7 @@ func generateReplaySummary(
 	log.Info("Finished incrementing summaryStruct.Summary.Dates")
 
 	// GameTimes per year histogram:
+	// REVIEW: This seems to be left as legacy:
 	// incrementNestedGameTimeIfKeyExists(strconv.Itoa(replayYear), replayDuration, summaryStruct.Summary.DatesGameTimes.GameTimes)
 	// GameTimes per year-month histogram:
 	incrementNestedGameTimeIfKeyExists(
@@ -109,7 +112,8 @@ func generateReplaySummary(
 
 }
 
-// checkMatchup verifies the matchup string, increments the value of a counter of the matching matchup and returns a boolean that specifies if a matchup was matched.
+// checkMatchup verifies the matchup string, increments the value of a counter
+// for the matching matchup and returns a boolean that specifies if a matchup was matched.
 func checkMatchupIncrementCount(
 	matchupString string,
 	summaryStruct *data.ReplaySummary,
@@ -170,7 +174,8 @@ func checkMatchupIncrementCount(
 	return false
 }
 
-// incrementIfKeyExists verifies if a key exists in a map and increments the value of a counter that is within a specific key.
+// incrementIfKeyExists verifies if a key exists in a map and increments
+// the value of a counter that is within a specific key.
 func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
 	log.Info("Entered keyExistsIncrementValue()")
 

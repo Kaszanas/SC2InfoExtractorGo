@@ -16,6 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ReplayProcessingChannelContents is a struct that is used to pass data
+// between the orchestrator and the workers in the pipeline.
 type ReplayProcessingChannelContents struct {
 	Index        int
 	ChunkOfFiles []string
@@ -92,7 +94,8 @@ func PipelineWrapper(
 }
 
 // MultiprocessingChunkPipeline is a single instance of processing that
-// is meant to be spawned by the orchestrator in order to speed up the process of data extraction.
+// is meant to be spawned by the orchestrator
+// in order to speed up the process of data extraction.
 func MultiprocessingChunkPipeline(
 	listOfFiles []string,
 	packageToZipBool bool,
@@ -190,7 +193,8 @@ func MultiprocessingChunkPipeline(
 				}).Error("Failed to save file to archive! Skipping.")
 				continue
 			}
-			// TODO: This might be done easier.
+			// REVIEW: Check this:
+			// TODO: This might be done easier?
 			// Currently this is duplicate code and seems to introduce bad practice!
 			processedCounter++
 			processingInfoStruct.ProcessedFiles = append(
@@ -249,7 +253,9 @@ func MultiprocessingChunkPipeline(
 
 }
 
-// FileProcessingPipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
+// FileProcessingPipeline is performing the whole data processing pipeline
+// for a replay file. Reads the replay, cleans the replay structure,
+// creates replay summary, anonymizes, and creates a JSON replay output.
 func FileProcessingPipeline(
 	replayFile string,
 	grpcAnonymizer *GRPCAnonymizer,
@@ -379,7 +385,7 @@ func FileProcessingPipeline(
 	return true, cleanReplayStructure, summarizedReplay, ""
 }
 
-// gameis1v1Ranked
+// gameis1v1Ranked checks if the replay is a 1v1 ranked game.
 func gameIs1v1Ranked(replayData *rep.Rep) bool {
 
 	isAmm := replayData.InitData.GameDescription.GameOptions.Amm()
@@ -388,7 +394,8 @@ func gameIs1v1Ranked(replayData *rep.Rep) bool {
 	return isAmm && isCompetitive && isTwoPlayers
 }
 
-// checkAnonymizationInitializeGRPC verifies if the anonymization should be performed and returns a pointer to GRPCAnonymizer.
+// checkAnonymizationInitializeGRPC verifies if the anonymization should
+// be performed and returns a pointer to GRPCAnonymizer.
 func checkAnonymizationInitializeGRPC(
 	performAnonymizationBool bool) *GRPCAnonymizer {
 	if !performAnonymizationBool {

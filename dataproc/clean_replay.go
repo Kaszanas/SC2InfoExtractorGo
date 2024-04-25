@@ -49,7 +49,8 @@ func extractReplayData(
 	return true, structuredReplayData
 }
 
-// cleanUnusedMessageEvents iterates over the message events and creates a new structure without the events that were hardcoded as redundant.
+// cleanUnusedMessageEvents iterates over the message events and creates
+// a new structure without the events that were hardcoded as redundant.
 func cleanUnusedMessageEvents(replayData *data.CleanedReplay) bool {
 
 	log.Info("Entered cleanUnusedMessageEvents()")
@@ -67,7 +68,8 @@ func cleanUnusedMessageEvents(replayData *data.CleanedReplay) bool {
 	return true
 }
 
-// cleanUnusedGameEvents checks against settings.UnusedGameEvents and creates new GameEvents structure without certain events.
+// cleanUnusedGameEvents checks against settings.UnusedGameEvents and
+// creates a new GameEvents structure without certain events.
 func cleanUnusedGameEvents(replayData *data.CleanedReplay) bool {
 	log.Info("Entered cleanUnusedGameEvents()")
 

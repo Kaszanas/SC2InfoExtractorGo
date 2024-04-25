@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// getMapURLAndHashFromReplayData extracts the map URL,
+// hash, and file extension from the replay data.
 func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool) {
 	log.Info("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
@@ -18,7 +20,6 @@ func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool)
 	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
 	region := mapCacheHandle.Region
 
-	// TODO: This is the only place where errors can be handled
 	badRegions := []string{"Unknown", "Public Test"}
 	for _, badRegion := range badRegions {
 		if region.Name == badRegion {
@@ -42,6 +43,9 @@ func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool)
 	return *mapURL, hashAndTypeMerged, true
 }
 
+// readLocalizedDataFromMap opens the map file (MPQ),
+// reads the listfile, finds the english locale file,
+// reads the map name and returns it.
 func readLocalizedDataFromMap(mapFilepath string) (string, error) {
 	log.Info("Entered readLocalizedDataFromMap()")
 
@@ -85,6 +89,7 @@ func readLocalizedDataFromMap(mapFilepath string) (string, error) {
 	return mapName, nil
 }
 
+// findEnglishLocaleFile looks for the file containing the english map name
 func findEnglishLocaleFile(MPQArchiveBytes []byte) (string, error) {
 	log.Info("Entered findEnglishLocaleFile()")
 
@@ -112,6 +117,8 @@ func findEnglishLocaleFile(MPQArchiveBytes []byte) (string, error) {
 	return localizationMPQFileName, nil
 }
 
+// getMapNameFromLocaleFile reads the english map name
+// from the bytes of opened locale file.
 func getMapNameFromLocaleFile(MPQLocaleFileBytes []byte) (string, error) {
 
 	log.Info("Entered getMapNameFromLocaleFile()")

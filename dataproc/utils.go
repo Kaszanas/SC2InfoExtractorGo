@@ -16,7 +16,8 @@ func checkClan(clanTag string) bool {
 	}
 }
 
-// checkUint8 verifies if an int64 can fit into uint8 and returns a converted variable and a boolean.
+// checkUint8 verifies if an int64 can fit into uint8
+// and returns a converted variable and a boolean.
 func checkUint8(intToCheck int64) (uint8, bool) {
 	log.Info("Entered checkUint8()")
 
@@ -29,7 +30,8 @@ func checkUint8(intToCheck int64) (uint8, bool) {
 	}
 }
 
-// checkUint32 verifies if an int64 can fit into uint64 and returns a converted variable and a boolean.
+// checkUint32 verifies if an int64 can fit into uint64
+// and returns a converted variable and a boolean.
 func checkUint32(intToCheck int64) (uint32, bool) {
 	log.Info("Entered checkUint32()")
 	if intToCheck < 0 || intToCheck > 4294967295 {
@@ -41,7 +43,8 @@ func checkUint32(intToCheck int64) (uint32, bool) {
 	}
 }
 
-// checkUint64 verifies if an int64 can fit into uint32 and returns a converted variable and a boolean.
+// checkUint64 verifies if an int64 can fit into uint32
+// and returns a converted variable and a boolean.
 func checkUint64(intToCheck int64) (uint64, bool) {
 	log.Info("Entered checkUint64()")
 

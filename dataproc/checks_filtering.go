@@ -6,7 +6,8 @@ import (
 )
 
 // Filtering
-// filterGameModes performs the check against a binary 0b1111111 getGameModeFlag to verify if the currently processed replay game mode is correct.
+// filterGameModes performs the check against a binary 0b1111111 getGameModeFlag
+// to verify if the currently processed replay game mode is correct.
 func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 	log.Info("Entered filterGameModes()")
 
@@ -25,7 +26,8 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 	return false
 }
 
-// checkGameParameters takes in a VerifyGameInfo struct that containts information about specific game mode filtering based on available data in the replay file:
+// checkGameParameters takes in a VerifyGameInfo struct that containts
+// information about specific game mode filtering based on available data in the replay file:
 func checkGameParameters(
 	replayData *rep.Rep,
 	gameInfoFilter VerifyGameInfo) bool {

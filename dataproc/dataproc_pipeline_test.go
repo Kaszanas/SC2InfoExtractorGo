@@ -16,6 +16,8 @@ import (
 
 var TEST_BYPASS_THESE_DIRS = []string{}
 
+// TestPipelineWrapperSingle is a test function to test the pipeline wrapper
+// on all of the replaypack directories in the test input directory.
 func TestPipelineWrapperMultiple(t *testing.T) {
 
 	removeTestOutputs := settings.DELETE_TEST_OUTPUT
@@ -58,6 +60,8 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 
 }
 
+// testPipelineWrapperWithDir is a helper function to test the pipeline wrapper
+// on a single replaypack directory.
 func testPipelineWrapperWithDir(
 	replayInputPath string,
 	replaypackName string,
@@ -216,6 +220,7 @@ func testPipelineWrapperWithDir(
 	return true, ""
 }
 
+// pipelineTestCleanup is a helper function to clean up the test output directory.
 func pipelineTestCleanup(
 	processedFailedPath string,
 	testOutputPath string,

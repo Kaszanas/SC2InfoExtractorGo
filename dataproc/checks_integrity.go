@@ -5,8 +5,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Integrity
-// checkIntegrity verifies if the internal saved state of the replayData matches against structures with redundant information.
+// Integrity:
+// checkIntegrity verifies if the internal saved state of the replayData
+// matches against structures with redundant information.
 func checkIntegrity(replayData *rep.Rep) (bool, string) {
 
 	log.Info("Entered checkIntegrity()")
@@ -39,7 +40,8 @@ func checkIntegrity(replayData *rep.Rep) (bool, string) {
 		return false, "Player number doesn't fit within the maximum or minimum!"
 	}
 
-	// Map name of a replay is available in two places in the parsed data, if they mismatch then first part of integrity check test fails:
+	// Map name of a replay is available in two places in the parsed data,
+	// if they mismatch then first part of integrity check test fails:
 	if replayData.Metadata.Title() != replayDetails.Title() {
 		// Checking if both structures holding map name are empty:
 		if replayData.Metadata.Title() == "" && replayDetails.Title() == "" {

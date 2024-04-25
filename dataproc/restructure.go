@@ -59,6 +59,8 @@ func redifineReplayStructure(
 	return cleanedReplay, true
 }
 
+// cleanHeader copies the header,
+// has the capability of removing unescessary fields.
 func cleanHeader(replayData *rep.Rep) data.CleanedHeader {
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Loops()
@@ -79,6 +81,9 @@ func cleanHeader(replayData *rep.Rep) data.CleanedHeader {
 	return cleanHeader
 }
 
+// cleanGameDescription copies the game description,
+// partly verifies the integrity of the data.
+// Has the capability to remove unescessary fields.
 func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, bool) {
 
 	// Constructing a clean GameDescription without unescessary fields:
@@ -131,6 +136,9 @@ func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, boo
 	return cleanedGameDescription, true
 }
 
+// cleanInitData copies the init data,
+// partly verifies the integrity of the data.
+// Has the capability to remove unescessary fields.
 func cleanInitData(
 	replayData *rep.Rep,
 	cleanedGameDescription data.CleanedGameDescription) (
@@ -176,6 +184,8 @@ func cleanInitData(
 	return cleanInitData, cleanedUserInitDataList, true
 }
 
+// cleanDetails copies the details,
+// has the capability of removing unescessary fields.
 func cleanDetails(replayData *rep.Rep) data.CleanedDetails {
 	// Constructing a clean CleanedDetails without unescessary fields
 	detailsGameSpeed := replayData.Details.GameSpeed().String()
@@ -196,6 +206,8 @@ func cleanDetails(replayData *rep.Rep) data.CleanedDetails {
 	return cleanDetails
 }
 
+// cleanMetadata copies the metadata,
+// has the capability of removing unescessary fields.
 func cleanMetadata(
 	replayData *rep.Rep,
 	englishMapName string) data.CleanedMetadata {
@@ -221,6 +233,8 @@ func cleanMetadata(
 	return cleanMetadata
 }
 
+// cleanToonDescMap copies the toon description map,
+// changes the structure into a more readable form.
 func cleanToonDescMap(
 	replayData *rep.Rep,
 	cleanedUserInitDataList []data.CleanedUserInitData) map[string]data.EnhancedToonDescMap {
@@ -311,6 +325,8 @@ func cleanToonDescMap(
 	return enhancedToonDescMap
 }
 
+// cleanMessageEvents copies the message events,
+// has the capability of removing unescessary fields.
 func cleanMessageEvents(replayData *rep.Rep) []s2prot.Struct {
 	// Constructing a clean MessageEvents without unescessary fields:
 	var messageEventsStructs []s2prot.Struct
@@ -321,6 +337,8 @@ func cleanMessageEvents(replayData *rep.Rep) []s2prot.Struct {
 	return messageEventsStructs
 }
 
+// cleanGameEvents copies the game events,
+// has the capability of removing unescessary fields.
 func cleanGameEvents(replayData *rep.Rep) []s2prot.Struct {
 	// Constructing a clean GameEvents without unescessary fields:
 	var gameEventsStructs []s2prot.Struct
@@ -331,6 +349,8 @@ func cleanGameEvents(replayData *rep.Rep) []s2prot.Struct {
 	return gameEventsStructs
 }
 
+// cleanTrackerEvents copies the tracker events,
+// has the capability of removing unescessary fields.
 func cleanTrackerEvents(replayData *rep.Rep) []s2prot.Struct {
 	// Constructing a clean TrackerEvents without unescessary fields:
 	var trackerEventsStructs []s2prot.Struct

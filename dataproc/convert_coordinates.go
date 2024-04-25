@@ -8,7 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// convertCoordinates accesses the data from GameEvents and recalculates the x,y,z coordinates of events
+// convertCoordinates accesses the data from GameEvents
+// and recalculates the x,y,z coordinates of events
 func convertCoordinates(replayData *data.CleanedReplay) bool {
 	log.Info("Entered convertCoordinates()")
 
