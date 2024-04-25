@@ -12,7 +12,10 @@ import (
 // based filtering supplied fileExtension
 func ListFiles(inputPath string, filterFileExtension string) []string {
 
-	log.Info("Entered ListFiles()")
+	log.WithFields(log.Fields{
+		"inputPath":           inputPath,
+		"filterFileExtension": filterFileExtension}).
+		Info("Entered ListFiles()")
 
 	files, err := os.ReadDir(inputPath)
 	if err != nil {
@@ -26,7 +29,8 @@ func ListFiles(inputPath string, filterFileExtension string) []string {
 	}
 
 	listOfFiles = getFilesByExtension(files, inputPath, filterFileExtension)
-	log.Info("Finished ListFiles()")
+
+	log.WithField("n_files", len(listOfFiles)).Info("Finished ListFiles()")
 	return listOfFiles
 }
 
