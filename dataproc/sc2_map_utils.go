@@ -2,11 +2,45 @@ package dataproc
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/icza/mpq"
+	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
+
+func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool) {
+	log.Info("Entered getMapURLAndHashFromReplayData()")
+	cacheHandles := replayData.Details.CacheHandles()
+
+	// Get the cacheHandle for the map, I am not sure whi is it the last CacheHandle:
+	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
+	region := mapCacheHandle.Region
+
+	// TODO: This is the only place where errors can be handled
+	badRegions := []string{"Unknown", "Public Test"}
+	for _, badRegion := range badRegions {
+		if region.Name == badRegion {
+			log.WithField("region", region.Name).Error("Detected bad region!")
+			return url.URL{}, "", false
+		}
+	}
+
+	// SEA Region was removed, so its depot url won't work, replacing with US:
+	if region.Name == "SEA" {
+		log.WithField("region", region.Name).
+			Info("Detected SEA region, replacing with US")
+		region = rep.RegionUS
+	}
+
+	depotURL := region.DepotURL
+
+	hashAndTypeMerged := fmt.Sprintf("%s.%s", mapCacheHandle.Digest, mapCacheHandle.Type)
+	mapURL := depotURL.JoinPath(hashAndTypeMerged)
+	log.Info("Finished getMapURLAndHashFromReplayData()")
+	return *mapURL, hashAndTypeMerged, true
+}
 
 func readLocalizedDataFromMap(mapFilepath string) (string, error) {
 	log.Info("Entered readLocalizedDataFromMap()")

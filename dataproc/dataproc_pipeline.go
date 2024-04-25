@@ -41,8 +41,10 @@ func PipelineWrapper(
 	existingMapFilesList := utils.ListFiles(mapsDirectory, ".s2ma")
 
 	// Shared state for the downloader:
+	mapHashAndTypeToName := make(map[string]string)
 	downloaderSharedState, err := NewDownloaderSharedState(
 		mapsDirectory,
+		mapHashAndTypeToName,
 		existingMapFilesList,
 		cliFlags.NumberOfThreads*2)
 	defer downloaderSharedState.workerPool.StopAndWait()
@@ -309,21 +311,29 @@ func FileProcessingPipeline(
 		}
 	}
 
+	// REVIEW: Start Review, New implementation of map translation below:
 	// Getting map URL and hash before mutexing, this operation is not thread safe:
 	mapURL, mapHashAndType, ok := getMapURLAndHashFromReplayData(replayData)
 	if !ok {
-		return false, data.CleanedReplay{}, data.ReplaySummary{}, "getMapURLAndHashFromReplayData() failed"
+		return false,
+			data.CleanedReplay{},
+			data.ReplaySummary{},
+			"getMapURLAndHashFromReplayData() failed"
 	}
-	// TODO: Check if the map is in the list of localized maps:
 
-	// TODO: If it is not then download the map and add it to the list of localized maps:
-
-	// REVIEW: Start Review, New implementation of map translation below:
 	// Mutex start
 	englishMapName := getEnglishMapNameDownloadIfNotExists(
 		downloaderSharedState,
 		mapHashAndType,
 		mapURL)
+	if englishMapName == "" {
+		log.WithField("file", replayFile).
+			Error("Failed to get English map name.")
+		return false,
+			data.CleanedReplay{},
+			data.ReplaySummary{},
+			"getEnglishMapNameDownloadIfNotExists() failed"
+	}
 
 	// Clean replay structure:
 	cleanOk, cleanReplayStructure := extractReplayData(

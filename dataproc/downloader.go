@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/alitto/pond"
-	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,12 +32,17 @@ type DownloaderSharedState struct {
 // NewDownloaderSharedState creates a new DownloaderSharedState.
 func NewDownloaderSharedState(
 	mapsDirectory string,
+	mapHashAndTypeToName map[string]string,
 	existingMapFilesList []string,
 	maxPoolCapacity int) (DownloaderSharedState, error) {
 
-	mapHashAndTypeToName := make(map[string]string)
+	log.WithFields(log.Fields{
+		"mapsDirectory":          mapsDirectory,
+		"lenExistingMapFileList": len(existingMapFilesList)}).
+		Info("Entered NewDownloaderSharedState()")
+
 	for _, existingMap := range existingMapFilesList {
-		englishMapName, err := readLocalizedDataFromMap(path.Join(mapsDirectory, existingMap))
+		englishMapName, err := readLocalizedDataFromMap(existingMap)
 		if err != nil {
 			log.WithField("err", err).Error("Error reading map name from drive")
 			return DownloaderSharedState{}, err
@@ -46,13 +50,14 @@ func NewDownloaderSharedState(
 		if englishMapName == "" {
 			log.WithField("mapHashAndType", existingMap).
 				Info("Map exists but map name is empty, should be removed and redownloaded.")
-			return DownloaderSharedState{}, fmt.Errorf("map name was read but it is empty, should be removed and redownloaded.")
+			return DownloaderSharedState{},
+				fmt.Errorf("map name was read but it is empty, should be removed and redownloaded")
 		}
 		mapHashAndTypeToName[existingMap] = englishMapName
 	}
 
 	return DownloaderSharedState{
-		mapDownloadDirectory: "maps",
+		mapDownloadDirectory: mapsDirectory,
 		mapHashAndTypeToName: &mapHashAndTypeToName,
 		currentlyDownloading: &map[string][]chan DownloadTaskReturnChannelInfo{},
 		sharedRWMutex:        &sync.RWMutex{},
@@ -74,38 +79,6 @@ type DownloadTaskState struct {
 type DownloadTaskReturnChannelInfo struct {
 	mapNameString string
 	err           error
-}
-
-func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool) {
-	log.Info("Entered getMapURLAndHashFromReplayData()")
-	cacheHandles := replayData.Details.CacheHandles()
-
-	// Get the cacheHandle for the map, I am not sure whi is it the last CacheHandle:
-	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
-	region := mapCacheHandle.Region
-
-	// TODO: This is the only place where errors can be handled
-	badRegions := []string{"Unknown", "Public Test"}
-	for _, badRegion := range badRegions {
-		if region.Name == badRegion {
-			log.WithField("region", region.Name).Error("Detected bad region!")
-			return url.URL{}, "", false
-		}
-	}
-
-	// SEA Region was removed, so its depot url won't work, replacing with US:
-	if region.Name == "SEA" {
-		log.WithField("region", region.Name).
-			Info("Detected SEA region, replacing with US")
-		region = rep.RegionUS
-	}
-
-	depotURL := region.DepotURL
-
-	hashAndTypeMerged := fmt.Sprintf("%s.%s", mapCacheHandle.Digest, mapCacheHandle.Type)
-	mapURL := depotURL.JoinPath(hashAndTypeMerged)
-	log.Info("Finished getMapURLAndHashFromReplayData()")
-	return *mapURL, hashAndTypeMerged, true
 }
 
 func getEnglishMapNameDownloadIfNotExists(
@@ -139,33 +112,6 @@ func getEnglishMapNameDownloadIfNotExists(
 	// Mutex unlock
 	log.Info("Finished getEnglishMapNameDownloadIfNotExists()")
 	return taskStatus.mapNameString
-}
-
-func getMapNameFromDrive(
-	downloaderSharedState DownloaderSharedState,
-	mapHashAndType string) (string, error) {
-
-	// Reading the english map name from map file
-	mapPath := path.Join(downloaderSharedState.mapDownloadDirectory, mapHashAndType)
-	englishMapName, err := readLocalizedDataFromMap(mapPath)
-	if err != nil {
-		return "", err
-	}
-
-	if englishMapName == "" {
-		return "", fmt.Errorf("map name was read but it is empty")
-	}
-
-	// Locking access to shared state:
-	downloaderSharedState.sharedRWMutex.Lock()
-	defer downloaderSharedState.sharedRWMutex.Unlock()
-
-	// Add to the mapHashAndTypeToName if the map is on drive:
-	// Add the variable to the mapHashAndTypeToName
-	// within the mutex lock to avoid IO operations while under lock.
-	(*downloaderSharedState.mapHashAndTypeToName)[mapHashAndType] = englishMapName
-
-	return englishMapName, nil
 }
 
 // downloadSingleMap handles downloading a single map based on an URL passed through
@@ -242,6 +188,7 @@ func dispatchMapDownloadTask(
 	// Check if the english map name was already read from the drive, return if present:
 	englishMapName, ok := (*downloaderSharedState.mapHashAndTypeToName)[mapHashAndType]
 	if ok {
+		log.WithField("englishMapName", englishMapName).Info("Map name already exists in mapHashAndTypeToName")
 		return englishMapName, nil
 	}
 
@@ -253,10 +200,12 @@ func dispatchMapDownloadTask(
 	if ok {
 		// If it is downloading then add the channel to the list of channels waiting for result
 		// Map is being downloaded, add it to the list of currently downloading maps:
-		log.Info("Map is being downloaded, adding channel to receive the result.")
+		log.WithField("mapHashAndType", mapHashAndType).
+			Info("Map is being downloaded, adding channel to receive the result.")
 		(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = append(listOfChannels, downloadTaskInfoChannel)
 	} else {
-		// TODO: Add logging
+		log.WithField("mapHashAndType", mapHashAndType).
+			Info("Map is not being downloaded, adding to download queue.")
 		taskState := DownloadTaskState{
 			mapDownloadDirectory: downloaderSharedState.mapDownloadDirectory,
 			mapHashAndTypeToName: downloaderSharedState.mapHashAndTypeToName,
@@ -277,8 +226,10 @@ func dispatchMapDownloadTask(
 			},
 		)
 	}
-	return "", downloadTaskInfoChannel
 
+	log.WithField("downloadTaskInfoChannel", downloadTaskInfoChannel).
+		Info("Finished dispatchMapDownloadTask()")
+	return "", downloadTaskInfoChannel
 }
 
 // sendDownloadTaskReturnInfoToChannels iterates over all of the channels
