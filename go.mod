@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/alitto/pond v1.8.3
-	github.com/icza/mpq v0.0.0-20230330132843-d3cdc0b651b7 // indirect
+	github.com/icza/mpq v0.0.0-20230330132843-d3cdc0b651b7
 	github.com/icza/s2prot v1.5.1-0.20220316175339-a0ac41576dbb
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.11.0 // indirect
