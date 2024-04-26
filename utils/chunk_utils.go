@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// getChunksOfFiles returns chunks of files for processing.
+// GetChunksOfFiles returns chunks of files for processing.
 func GetChunksOfFiles(slice []string, chunkSize int) ([][]string, bool) {
 
 	log.Info("Entered chunkSlice()")
@@ -35,6 +35,8 @@ func GetChunksOfFiles(slice []string, chunkSize int) ([][]string, bool) {
 	return chunks, true
 }
 
+// GetChunkListAndPackageBool returns list of chunks of files that
+// will be processed and a boolean specifying if the chunking process was a success.
 func GetChunkListAndPackageBool(
 	listOfInputFiles []string,
 	numberOfPackages int, numberOfThreads int,
@@ -49,13 +51,16 @@ func GetChunkListAndPackageBool(
 
 	var numberOfFilesInPackage int
 	if packageToZipBool {
-		// If we package all of the replays into ZIP we use user specified number of packages. Number of chunks is n_files/n_user_provided_packages
+		// If we package all of the replays into ZIP we use user
+		// specified number of packages.
+		// Number of chunks is n_files/n_user_provided_packages
 		numberOfFilesInPackage = int(math.Ceil(float64(lenListOfInputFiles) / float64(numberOfPackages)))
 		listOfChunksFiles, _ := GetChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
 		return listOfChunksFiles, packageToZipBool
 	}
 
-	// If we write stringified .json files of replays to drive without packaging the number of chunks will be n_files/n_threads
+	// If we write stringified .json files of replays to drive without
+	// packaging the number of chunks will be n_files/n_threads
 	numberOfFilesInPackage = int(math.Ceil(float64(lenListOfInputFiles) / float64(numberOfThreads)))
 	listOfChunksFiles, _ := GetChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
 

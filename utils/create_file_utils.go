@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// readOrCreateFile receives a filepath and creates a file if it doesn't exist.
 func readOrCreateFile(filePath string) (os.File, []byte) {
 
 	log.Info("Entered readOrCreateFile()")

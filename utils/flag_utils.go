@@ -32,7 +32,7 @@ type CLIFlags struct {
 	CPUProfilingPath           string
 }
 
-// parseFlags contains logic which is responsible for user input.
+// ParseFlags contains logic which is responsible for user input.
 func ParseFlags() (CLIFlags, bool) {
 	// Command line arguments:
 	inputDirectory := flag.String(
