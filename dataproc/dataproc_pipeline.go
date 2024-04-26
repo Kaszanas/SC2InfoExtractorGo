@@ -43,10 +43,10 @@ func PipelineWrapper(
 	existingMapFilesList := utils.ListFiles(mapsDirectory, ".s2ma")
 
 	// Shared state for the downloader:
-	mapHashAndTypeToName := make(map[string]string)
+	mapHashAndExtensionToName := make(map[string]string)
 	downloaderSharedState, err := NewDownloaderSharedState(
 		mapsDirectory,
-		mapHashAndTypeToName,
+		mapHashAndExtensionToName,
 		existingMapFilesList,
 		cliFlags.NumberOfThreads*2)
 	defer downloaderSharedState.workerPool.StopAndWait()
@@ -319,7 +319,7 @@ func FileProcessingPipeline(
 
 	// REVIEW: Start Review, New implementation of map translation below:
 	// Getting map URL and hash before mutexing, this operation is not thread safe:
-	mapURL, mapHashAndType, ok := getMapURLAndHashFromReplayData(replayData)
+	mapURL, mapHashAndExtension, ok := getMapURLAndHashFromReplayData(replayData)
 	if !ok {
 		return false,
 			data.CleanedReplay{},
@@ -330,7 +330,7 @@ func FileProcessingPipeline(
 	// Mutex start
 	englishMapName := getEnglishMapNameDownloadIfNotExists(
 		downloaderSharedState,
-		mapHashAndType,
+		mapHashAndExtension,
 		mapURL)
 	if englishMapName == "" {
 		log.WithField("file", replayFile).

@@ -37,10 +37,14 @@ func getMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool)
 
 	depotURL := region.DepotURL
 
-	hashAndTypeMerged := fmt.Sprintf("%s.%s", mapCacheHandle.Digest, mapCacheHandle.Type)
-	mapURL := depotURL.JoinPath(hashAndTypeMerged)
+	hashAndExtensionMerged := fmt.Sprintf(
+		"%s.%s",
+		mapCacheHandle.Digest,
+		mapCacheHandle.Type,
+	)
+	mapURL := depotURL.JoinPath(hashAndExtensionMerged)
 	log.Info("Finished getMapURLAndHashFromReplayData()")
-	return *mapURL, hashAndTypeMerged, true
+	return *mapURL, hashAndExtensionMerged, true
 }
 
 // readLocalizedDataFromMap opens the map file (MPQ),

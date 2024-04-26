@@ -102,7 +102,12 @@ func testPipelineWrapperWithDir(
 		}
 	}
 
-	logFile, logOk := utils.SetLogging(thisTestOutputDir, 3)
+	logFlags := utils.LogFlags{
+		LogLevelValue: datastruct.Info,
+		LogPath:       thisTestOutputDir,
+	}
+
+	logFile, logOk := utils.SetLogging(thisTestOutputDir, int(logFlags.LogLevelValue))
 	if !logOk {
 		return false, "Could not perform SetLogging."
 	}
@@ -123,11 +128,8 @@ func testPipelineWrapperWithDir(
 		PerformChatAnonymization:   false,
 		PerformFiltering:           false,
 		FilterGameMode:             gameModeCheckFlag,
-		LogFlags: utils.LogFlags{
-			LogLevelValue: 5,
-			LogPath:       thisTestOutputDir,
-		},
-		CPUProfilingPath: "",
+		LogFlags:                   logFlags,
+		CPUProfilingPath:           "",
 	}
 
 	packageToZip := true

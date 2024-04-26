@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"sync"
 
 	"github.com/alitto/pond"
@@ -21,18 +21,18 @@ import (
 // channel of string because the response is the map name:
 // DownloaderSharedState holds all of the shared state for the downloader.
 type DownloaderSharedState struct {
-	mapDownloadDirectory string                                           // NOT_MODIFIABLE Directory where the maps are downloaded
-	mapHashAndTypeToName *map[string]string                               // MODIFIABLE Mapping from filename to english map name
-	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo // MODIFIABLE Mapping from filename to list of channels to be notified when download finishes
-	sharedRWMutex        *sync.RWMutex                                    // MODIFIABLE Mutex for shared state
-	workerPool           *pond.WorkerPool                                 // Worker pool for downloading maps.
+	mapDownloadDirectory      string                                           // NOT_MODIFIABLE Directory where the maps are downloaded
+	mapHashAndExtensionToName *map[string]string                               // MODIFIABLE Mapping from filename to english map name
+	currentlyDownloading      *map[string][]chan DownloadTaskReturnChannelInfo // MODIFIABLE Mapping from filename to list of channels to be notified when download finishes
+	sharedRWMutex             *sync.RWMutex                                    // MODIFIABLE Mutex for shared state
+	workerPool                *pond.WorkerPool                                 // Worker pool for downloading maps.
 }
 
 // Constructor for new downloader shared state
 // NewDownloaderSharedState creates a new DownloaderSharedState.
 func NewDownloaderSharedState(
 	mapsDirectory string,
-	mapHashAndTypeToName map[string]string,
+	mapHashAndExtensionToName map[string]string,
 	existingMapFilesList []string,
 	maxPoolCapacity int) (DownloaderSharedState, error) {
 
@@ -41,38 +41,40 @@ func NewDownloaderSharedState(
 		"lenExistingMapFileList": len(existingMapFilesList)}).
 		Info("Entered NewDownloaderSharedState()")
 
-	for _, existingMap := range existingMapFilesList {
-		englishMapName, err := readLocalizedDataFromMap(existingMap)
+	for _, existingMapFilepath := range existingMapFilesList {
+		englishMapName, err := readLocalizedDataFromMap(existingMapFilepath)
 		if err != nil {
 			log.WithField("err", err).Error("Error reading map name from drive")
 			return DownloaderSharedState{}, err
 		}
 		if englishMapName == "" {
-			log.WithField("mapHashAndType", existingMap).
+			log.WithField("mapHashAndExtension", existingMapFilepath).
 				Info("Map exists but map name is empty, should be removed and redownloaded.")
 			return DownloaderSharedState{},
 				fmt.Errorf("map name was read but it is empty, should be removed and redownloaded")
 		}
-		mapHashAndTypeToName[existingMap] = englishMapName
+
+		mapFileBase := filepath.Base(existingMapFilepath)
+		mapHashAndExtensionToName[mapFileBase] = englishMapName
 	}
 
 	return DownloaderSharedState{
-		mapDownloadDirectory: mapsDirectory,
-		mapHashAndTypeToName: &mapHashAndTypeToName,
-		currentlyDownloading: &map[string][]chan DownloadTaskReturnChannelInfo{},
-		sharedRWMutex:        &sync.RWMutex{},
-		workerPool:           pond.New(3, maxPoolCapacity, pond.Strategy(pond.Eager())),
+		mapDownloadDirectory:      mapsDirectory,
+		mapHashAndExtensionToName: &mapHashAndExtensionToName,
+		currentlyDownloading:      &map[string][]chan DownloadTaskReturnChannelInfo{},
+		sharedRWMutex:             &sync.RWMutex{},
+		workerPool:                pond.New(3, maxPoolCapacity, pond.Strategy(pond.Eager())),
 	}, nil
 }
 
 // DownloadTaskState holds all of the information needed for the download task.
 type DownloadTaskState struct {
-	mapDownloadDirectory string
-	mapHashAndType       string
-	mapURL               url.URL
-	mapHashAndTypeToName *map[string]string
-	currentlyDownloading *map[string][]chan DownloadTaskReturnChannelInfo
-	sharedRWMutex        *sync.RWMutex
+	mapDownloadDirectory      string
+	mapHashAndExtension       string
+	mapURL                    url.URL
+	mapHashAndExtensionToName *map[string]string
+	currentlyDownloading      *map[string][]chan DownloadTaskReturnChannelInfo
+	sharedRWMutex             *sync.RWMutex
 }
 
 // DownloadTaskReturnChannelInfo holds the information needed to return after the download finishes.
@@ -83,19 +85,19 @@ type DownloadTaskReturnChannelInfo struct {
 
 func getEnglishMapNameDownloadIfNotExists(
 	downloaderSharedState *DownloaderSharedState,
-	mapHashAndType string,
+	mapHashAndExtension string,
 	mapURL url.URL) string {
 	log.WithFields(
 		log.Fields{
 			"downloaderSharedState": downloaderSharedState,
-			"mapHashAndType":        mapHashAndType,
+			"mapHashAndExtension":   mapHashAndExtension,
 			"mapURL":                mapURL.String(),
 		},
 	).Info("Entered getEnglishMapNameDownloadIfNotExists()")
 
 	englishMapName, downloadTaskInfoChannel := dispatchMapDownloadTask(
 		*downloaderSharedState,
-		mapHashAndType,
+		mapHashAndExtension,
 		mapURL)
 
 	if englishMapName != "" {
@@ -119,7 +121,10 @@ func getEnglishMapNameDownloadIfNotExists(
 func downloadSingleMap(taskState DownloadTaskState) {
 	log.WithField("taskState", taskState).Info("Entered downloadSingleMap()")
 
-	outputFilepath := path.Join(taskState.mapDownloadDirectory, taskState.mapHashAndType)
+	outputFilepath := filepath.Join(
+		taskState.mapDownloadDirectory,
+		taskState.mapHashAndExtension,
+	)
 
 	response, err := http.Get(taskState.mapURL.String())
 	if err != nil {
@@ -175,10 +180,10 @@ func downloadSingleMap(taskState DownloadTaskState) {
 }
 
 // dispatchMapDownloadTask handles dispatching of the map download task, if
-// the map is not available within the shared state under the mapHashAndTypeToName.
+// the map is not available within the shared state under the mapHashAndExtensionToName.
 func dispatchMapDownloadTask(
 	downloaderSharedState DownloaderSharedState,
-	mapHashAndType string,
+	mapHashAndExtension string,
 	mapURL url.URL) (string, chan DownloadTaskReturnChannelInfo) {
 
 	// Locking access to shared state:
@@ -186,9 +191,10 @@ func dispatchMapDownloadTask(
 	defer downloaderSharedState.sharedRWMutex.Unlock()
 
 	// Check if the english map name was already read from the drive, return if present:
-	englishMapName, ok := (*downloaderSharedState.mapHashAndTypeToName)[mapHashAndType]
+	englishMapName, ok := (*downloaderSharedState.mapHashAndExtensionToName)[mapHashAndExtension]
 	if ok {
-		log.WithField("englishMapName", englishMapName).Info("Map name already exists in mapHashAndTypeToName")
+		log.WithField("englishMapName", englishMapName).
+			Info("Map name already exists in mapHashAndExtensionToName")
 		return englishMapName, nil
 	}
 
@@ -196,27 +202,27 @@ func dispatchMapDownloadTask(
 	downloadTaskInfoChannel := make(chan DownloadTaskReturnChannelInfo)
 
 	// Check if key is in currently downloading:
-	listOfChannels, ok := (*downloaderSharedState.currentlyDownloading)[mapHashAndType]
+	listOfChannels, ok := (*downloaderSharedState.currentlyDownloading)[mapHashAndExtension]
 	if ok {
 		// If it is downloading then add the channel to the list of channels waiting for result
 		// Map is being downloaded, add it to the list of currently downloading maps:
-		log.WithField("mapHashAndType", mapHashAndType).
+		log.WithField("mapHashAndExtension", mapHashAndExtension).
 			Info("Map is being downloaded, adding channel to receive the result.")
-		(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = append(listOfChannels, downloadTaskInfoChannel)
+		(*downloaderSharedState.currentlyDownloading)[mapHashAndExtension] = append(listOfChannels, downloadTaskInfoChannel)
 	} else {
-		log.WithField("mapHashAndType", mapHashAndType).
+		log.WithField("mapHashAndExtension", mapHashAndExtension).
 			Info("Map is not being downloaded, adding to download queue.")
 		taskState := DownloadTaskState{
-			mapDownloadDirectory: downloaderSharedState.mapDownloadDirectory,
-			mapHashAndTypeToName: downloaderSharedState.mapHashAndTypeToName,
-			currentlyDownloading: downloaderSharedState.currentlyDownloading,
-			mapHashAndType:       mapHashAndType,
-			mapURL:               mapURL,
-			sharedRWMutex:        downloaderSharedState.sharedRWMutex,
+			mapDownloadDirectory:      downloaderSharedState.mapDownloadDirectory,
+			mapHashAndExtensionToName: downloaderSharedState.mapHashAndExtensionToName,
+			currentlyDownloading:      downloaderSharedState.currentlyDownloading,
+			mapHashAndExtension:       mapHashAndExtension,
+			mapURL:                    mapURL,
+			sharedRWMutex:             downloaderSharedState.sharedRWMutex,
 		}
 		// if it is not then add key to the map and create one element
 		// slice with the channel and submit the download task to the worker pool:
-		(*downloaderSharedState.currentlyDownloading)[mapHashAndType] = []chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
+		(*downloaderSharedState.currentlyDownloading)[mapHashAndExtension] = []chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
 		downloaderSharedState.workerPool.Submit(
 			func() {
 				// Errors are written to directly to the channel,
@@ -242,12 +248,12 @@ func sendDownloadTaskReturnInfoToChannels(
 	taskState.sharedRWMutex.Lock()
 	defer taskState.sharedRWMutex.Unlock()
 
-	(*taskState.mapHashAndTypeToName)[taskState.mapHashAndType] = englishMapName
-	for _, channel := range (*taskState.currentlyDownloading)[taskState.mapHashAndType] {
+	(*taskState.mapHashAndExtensionToName)[taskState.mapHashAndExtension] = englishMapName
+	for _, channel := range (*taskState.currentlyDownloading)[taskState.mapHashAndExtension] {
 		channel <- DownloadTaskReturnChannelInfo{
 			mapNameString: englishMapName,
 			err:           err,
 		}
 	}
-	delete(*taskState.currentlyDownloading, taskState.mapHashAndType)
+	delete(*taskState.currentlyDownloading, taskState.mapHashAndExtension)
 }
