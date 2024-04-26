@@ -125,17 +125,8 @@ func collapseMapToMap(
 	log.Info("Finished collapseMapToMap()")
 }
 
-// func collapseNestedMaps(key string, packageSummaryGameTimeMap *map[string]map[string]int64, replayGameTimeMap *map[string]int64) {
-
-// 	_, ok := (*packageSummaryGameTimeMap)[key]
-// 	if ok {
-// 		(*packageSummaryGameTimeMap)[key] = (*packageSummaryGameTimeMap)[key] + (*replayGameTimeMap)[key]
-// 	} else {
-// 		(*packageSummaryGameTimeMap)[key] = *replayGameTimeMap
-// 	}
-// }
-
-// PackageSummary is a structure contains statistics calculated from replay information that belong to a whole ZIP archive.
+// PackageSummary is a structure contains statistics
+// calculated from replay information that belong to a whole ZIP archive.
 type PackageSummary struct {
 	Summary Summary
 }
@@ -155,7 +146,8 @@ func DefaultReplaySummary() ReplaySummary {
 	return ReplaySummary{Summary: DefaultSummary()}
 }
 
-// Summary is an abstract type used by both ReplaySummary and PackageSummary and contains fields that are used as descriptive statistics
+// Summary is an abstract type used by both ReplaySummary
+// and PackageSummary and contains fields that are used as descriptive statistics
 type Summary struct {
 	GameVersions     map[string]int64 `json:"gameVersions"`
 	GameTimes        map[string]int64 `json:"gameTimes"`
@@ -190,7 +182,8 @@ func DefaultSummary() Summary {
 	}
 }
 
-// MatchupHistograms aggregates the data that is required to prepare histograms of Matchup vs Game Length
+// MatchupHistograms aggregates the data that is required
+// to prepare histograms of Matchup vs Game Length
 type MatchupGameTimes struct {
 	PvPMatchup map[string]int64 `json:"PvPMatchupGameTimes"`
 	TvTMatchup map[string]int64 `json:"TvTMatchupGameTimes"`

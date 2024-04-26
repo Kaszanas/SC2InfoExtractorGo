@@ -1,6 +1,7 @@
 package datastruct
 
-// CleanedHeader is a structure holding header information of a replay file derived from s2prot.Rep.Header
+// CleanedHeader is a structure holding header
+// information of a replay file derived from s2prot.Rep.Header
 type CleanedHeader struct {
 	ElapsedGameLoops uint64 `json:"elapsedGameLoops"`
 	// TODO: These values of duration are not verified: https://github.com/icza/s2prot/issues/48

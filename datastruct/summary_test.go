@@ -3,6 +3,7 @@ package datastruct
 import "testing"
 
 // TODO: Define processing info tests
+// TestCollapseMapToMap tests the function collapseMapToMap that merges two maps.
 func TestCollapseMapToMap(t *testing.T) {
 
 	testCases := []struct {
@@ -51,6 +52,8 @@ func TestCollapseMapToMap(t *testing.T) {
 
 }
 
+// TestAddReplaySummToPackageSumm tests the function that is adding
+// a single replay summary to a package summary.
 func TestAddReplaySummToPackageSumm(t *testing.T) {
 
 	replaySummary := ReplaySummary{
@@ -117,6 +120,7 @@ func TestAddReplaySummToPackageSumm(t *testing.T) {
 
 }
 
+// mapsAreEqual is a helper function that compares two maps to see if they are the same.
 func mapsAreEqual(map1, map2 map[string]int64) bool {
 	if len(map1) != len(map2) {
 		return false

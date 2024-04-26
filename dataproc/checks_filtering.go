@@ -12,7 +12,8 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 	log.Info("Entered filterGameModes()")
 
 	for _, value := range gameModeList {
-		// If we want to include games with game mode `value`, and the game matches the requirements
+		// If we want to include games with game mode `value`,
+		// and the game matches the requirements
 		// of the game mode, then it matches the filter => return true.
 		parametersOk := checkGameParameters(replayData, gameModeFiltersMapping[value])
 		if getGameModeFlag&value != 0 && parametersOk {
@@ -27,7 +28,8 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 }
 
 // checkGameParameters takes in a VerifyGameInfo struct that containts
-// information about specific game mode filtering based on available data in the replay file:
+// information about specific game mode filtering
+// based on available data in the replay file:
 func checkGameParameters(
 	replayData *rep.Rep,
 	gameInfoFilter VerifyGameInfo) bool {
@@ -75,7 +77,8 @@ func checkGameParameters(
 
 }
 
-// checkNumberOfPlayers verifies and checks if the number of players is correct for a given game mode.
+// checkNumberOfPlayers verifies and checks if the number
+// of players is correct for a given game mode.
 func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 
 	playerList := replayData.Metadata.Players()

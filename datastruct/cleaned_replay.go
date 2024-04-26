@@ -19,7 +19,8 @@ type CleanedReplay struct {
 	TrackerEvtsErr    bool                           `json:"trackerEvtsErr"`
 }
 
-// EnhancedToonDescMap is a structure that provides more information that standard map[string]*rep.PlayerDesc
+// EnhancedToonDescMap is a structure that provides
+// more information that standard map[string]*rep.PlayerDesc
 type EnhancedToonDescMap struct {
 	Name                string          `json:"nickname"`
 	PlayerID            int64           `json:"playerID"`
