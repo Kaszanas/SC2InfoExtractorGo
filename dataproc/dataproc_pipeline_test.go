@@ -124,8 +124,8 @@ func testPipelineWrapperWithDir(
 		PerformFiltering:           false,
 		FilterGameMode:             gameModeCheckFlag,
 		LogFlags: utils.LogFlags{
-			LogLevel: 5,
-			LogPath:  thisTestOutputDir,
+			LogLevelValue: 5,
+			LogPath:       thisTestOutputDir,
 		},
 		CPUProfilingPath: "",
 	}

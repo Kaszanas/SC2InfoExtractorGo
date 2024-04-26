@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	log "github.com/sirupsen/logrus"
 )
 
 // LogFlags contains settings that the user can set for logging.
 type LogFlags struct {
-	LogLevel int
-	LogPath  string
+	LogLevelValue datastruct.LogLevelEnum
+	LogPath       string
 }
 
 // CLIFlags is a structure which holds all of the information that was supplied by user in CLI.
@@ -124,8 +125,8 @@ func ParseFlags() (CLIFlags, bool) {
 	}
 
 	logFlags := LogFlags{
-		LogLevel: *logLevelFlag,
-		LogPath:  *logDirectoryFlag,
+		LogLevelValue: datastruct.LogLevelEnum(*logLevelFlag),
+		LogPath:       *logDirectoryFlag,
 	}
 
 	flags := CLIFlags{

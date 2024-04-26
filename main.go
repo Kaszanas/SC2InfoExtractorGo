@@ -27,7 +27,7 @@ func mainReturnWithCode() int {
 	// Logging initialization to be able to provide further troubleshooting for users:
 	logFile, okLogging := utils.SetLogging(
 		CLIflags.LogFlags.LogPath,
-		CLIflags.LogFlags.LogLevel)
+		int(CLIflags.LogFlags.LogLevelValue))
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
 		return 1
@@ -44,7 +44,7 @@ func mainReturnWithCode() int {
 		"CLIflags.PerformChatAnonymization":   CLIflags.PerformChatAnonymization,
 		"CLIflags.FilterGameMode":             CLIflags.FilterGameMode,
 		"CLIflags.NumberOfThreads":            CLIflags.NumberOfThreads,
-		"CLIflags.LogFlags.LogLevel":          CLIflags.LogFlags.LogLevel,
+		"CLIflags.LogFlags.LogLevel":          CLIflags.LogFlags.LogLevelValue,
 		"CLIflags.LogFlags.LogPath":           CLIflags.LogFlags.LogPath,
 		"CLIflags.CPUProfilingPath":           CLIflags.CPUProfilingPath,
 	}).Info("Parsed command line flags")

@@ -4,8 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -85,8 +87,8 @@ func SetTestCLIFlags(t *testing.T) (
 		PerformFiltering:           false,
 		FilterGameMode:             gameModeCheckFlag,
 		LogFlags: utils.LogFlags{
-			LogLevel: 5,
-			LogPath:  testLogsDir,
+			LogLevelValue: datastruct.Info,
+			LogPath:       testLogsDir,
 		},
 		CPUProfilingPath: "",
 	}
