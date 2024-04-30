@@ -9,8 +9,8 @@ type ProcessingInfo struct {
 	FailedToProcess []map[string]string `json:"failedToProcess"`
 }
 
-//DefaultProcessingInfo returns empty ProcessingIngo struct.
-func DefaultProcessingInfo() ProcessingInfo {
+// NewProcessingInfo returns empty ProcessingIngo struct.
+func NewProcessingInfo() ProcessingInfo {
 	return ProcessingInfo{
 		ProcessedFiles:  make([]string, 0),
 		FailedToProcess: make([]map[string]string, 0),
