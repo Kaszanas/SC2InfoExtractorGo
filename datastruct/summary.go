@@ -4,6 +4,98 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// PackageSummary is a structure contains statistics
+// calculated from replay information that belong to a whole ZIP archive.
+type PackageSummary struct {
+	Summary Summary
+}
+
+// ReplaySummary contains information calculated from a single replay
+type ReplaySummary struct {
+	Summary Summary
+}
+
+// DefaultPackageSummary returns an initialized PackageSummary
+func DefaultPackageSummary() PackageSummary {
+	return PackageSummary{Summary: NewSummary()}
+}
+
+// DefaultReplaySummary returns an initialized ReplaySummary
+func DefaultReplaySummary() ReplaySummary {
+	return ReplaySummary{Summary: NewSummary()}
+}
+
+// Summary is an abstract type used by both ReplaySummary
+// and PackageSummary and contains fields that are used as descriptive statistics
+type Summary struct {
+	GameVersions     map[string]int64 `json:"gameVersions"`
+	GameTimes        map[string]int64 `json:"gameTimes"`
+	Maps             map[string]int64 `json:"maps"`
+	MapsGameTimes    GameTimes        `json:"mapGameTimes"`
+	Races            map[string]int64 `json:"races"`
+	Units            map[string]int64 `json:"units"`
+	OtherUnits       map[string]int64 `json:"otherUnits"`
+	Dates            map[string]int64 `json:"dates"`
+	DatesGameTimes   GameTimes        `json:"datesGameTimes"`
+	Servers          map[string]int64 `json:"servers"`
+	MatchupCount     map[string]int64 `json:"matchupCount"`
+	MatchupGameTimes MatchupGameTimes `json:"matchupGameTimes"`
+}
+
+// NewSummary returns a Summary structure with initialized fiends
+func NewSummary() Summary {
+
+	return Summary{
+		GameVersions:     make(map[string]int64),
+		GameTimes:        make(map[string]int64),
+		Maps:             make(map[string]int64),
+		MapsGameTimes:    NewGameTimes(),
+		Races:            make(map[string]int64),
+		Units:            make(map[string]int64),
+		OtherUnits:       make(map[string]int64),
+		Dates:            make(map[string]int64),
+		DatesGameTimes:   NewGameTimes(),
+		Servers:          make(map[string]int64),
+		MatchupCount:     make(map[string]int64),
+		MatchupGameTimes: NewMatchupGameTimes(),
+	}
+}
+
+// MatchupHistograms aggregates the data that is required
+// to prepare histograms of Matchup vs Game Length
+type MatchupGameTimes struct {
+	PvPMatchup map[string]int64 `json:"PvPMatchupGameTimes"`
+	TvTMatchup map[string]int64 `json:"TvTMatchupGameTimes"`
+	ZvZMatchup map[string]int64 `json:"ZvZMatchupGameTimes"`
+	PvZMatchup map[string]int64 `json:"PvZMatchupGameTimes"`
+	PvTMatchup map[string]int64 `json:"PvTMatchupGameTimes"`
+	TvZMatchup map[string]int64 `json:"TvZMatchupGameTimes"`
+}
+
+// DefaultMatchupHistograms returns a structure with initialized fields.
+func NewMatchupGameTimes() MatchupGameTimes {
+
+	return MatchupGameTimes{
+		PvPMatchup: make(map[string]int64),
+		TvTMatchup: make(map[string]int64),
+		ZvZMatchup: make(map[string]int64),
+		PvZMatchup: make(map[string]int64),
+		PvTMatchup: make(map[string]int64),
+		TvZMatchup: make(map[string]int64),
+	}
+
+}
+
+type GameTimes struct {
+	GameTimes map[string]map[string]int64 `json:"gameTimes"`
+}
+
+func NewGameTimes() GameTimes {
+	return GameTimes{
+		GameTimes: make(map[string]map[string]int64),
+	}
+}
+
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
 func AddReplaySummToPackageSumm(
 	replaySummary *ReplaySummary,
@@ -123,96 +215,4 @@ func collapseMapToMap(
 	}
 
 	log.Info("Finished collapseMapToMap()")
-}
-
-// PackageSummary is a structure contains statistics
-// calculated from replay information that belong to a whole ZIP archive.
-type PackageSummary struct {
-	Summary Summary
-}
-
-// ReplaySummary contains information calculated from a single replay
-type ReplaySummary struct {
-	Summary Summary
-}
-
-// DefaultPackageSummary returns an initialized PackageSummary
-func DefaultPackageSummary() PackageSummary {
-	return PackageSummary{Summary: DefaultSummary()}
-}
-
-// DefaultReplaySummary returns an initialized ReplaySummary
-func DefaultReplaySummary() ReplaySummary {
-	return ReplaySummary{Summary: DefaultSummary()}
-}
-
-// Summary is an abstract type used by both ReplaySummary
-// and PackageSummary and contains fields that are used as descriptive statistics
-type Summary struct {
-	GameVersions     map[string]int64 `json:"gameVersions"`
-	GameTimes        map[string]int64 `json:"gameTimes"`
-	Maps             map[string]int64 `json:"maps"`
-	MapsGameTimes    GameTimes        `json:"mapGameTimes"`
-	Races            map[string]int64 `json:"races"`
-	Units            map[string]int64 `json:"units"`
-	OtherUnits       map[string]int64 `json:"otherUnits"`
-	Dates            map[string]int64 `json:"dates"`
-	DatesGameTimes   GameTimes        `json:"datesGameTimes"`
-	Servers          map[string]int64 `json:"servers"`
-	MatchupCount     map[string]int64 `json:"matchupCount"`
-	MatchupGameTimes MatchupGameTimes `json:"matchupGameTimes"`
-}
-
-// DefaultSummary returns a Summary structure with initialized fiends
-func DefaultSummary() Summary {
-
-	return Summary{
-		GameVersions:     make(map[string]int64),
-		GameTimes:        make(map[string]int64),
-		Maps:             make(map[string]int64),
-		MapsGameTimes:    DefaultGameTimes(),
-		Races:            make(map[string]int64),
-		Units:            make(map[string]int64),
-		OtherUnits:       make(map[string]int64),
-		Dates:            make(map[string]int64),
-		DatesGameTimes:   DefaultGameTimes(),
-		Servers:          make(map[string]int64),
-		MatchupCount:     make(map[string]int64),
-		MatchupGameTimes: DefaultMatchupGameTimes(),
-	}
-}
-
-// MatchupHistograms aggregates the data that is required
-// to prepare histograms of Matchup vs Game Length
-type MatchupGameTimes struct {
-	PvPMatchup map[string]int64 `json:"PvPMatchupGameTimes"`
-	TvTMatchup map[string]int64 `json:"TvTMatchupGameTimes"`
-	ZvZMatchup map[string]int64 `json:"ZvZMatchupGameTimes"`
-	PvZMatchup map[string]int64 `json:"PvZMatchupGameTimes"`
-	PvTMatchup map[string]int64 `json:"PvTMatchupGameTimes"`
-	TvZMatchup map[string]int64 `json:"TvZMatchupGameTimes"`
-}
-
-// DefaultMatchupHistograms returns a structure with initialized fields.
-func DefaultMatchupGameTimes() MatchupGameTimes {
-
-	return MatchupGameTimes{
-		PvPMatchup: make(map[string]int64),
-		TvTMatchup: make(map[string]int64),
-		ZvZMatchup: make(map[string]int64),
-		PvZMatchup: make(map[string]int64),
-		PvTMatchup: make(map[string]int64),
-		TvZMatchup: make(map[string]int64),
-	}
-
-}
-
-type GameTimes struct {
-	GameTimes map[string]map[string]int64 `json:"gameTimes"`
-}
-
-func DefaultGameTimes() GameTimes {
-	return GameTimes{
-		GameTimes: make(map[string]map[string]int64),
-	}
 }
