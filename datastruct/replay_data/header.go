@@ -1,4 +1,4 @@
-package datastruct
+package replay_data
 
 // CleanedHeader is a structure holding header
 // information of a replay file derived from s2prot.Rep.Header

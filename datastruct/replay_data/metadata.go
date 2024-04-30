@@ -1,4 +1,4 @@
-package datastruct
+package replay_data
 
 // CleanedMetadata is a structure holding cleaned
 // replay metadata derived from s2prot.Rep.Metadata

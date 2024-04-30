@@ -1,4 +1,4 @@
-package datastruct
+package persistent_data
 
 import "testing"
 

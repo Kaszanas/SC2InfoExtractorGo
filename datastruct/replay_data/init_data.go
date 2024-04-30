@@ -1,4 +1,4 @@
-package datastruct
+package replay_data
 
 import (
 	"github.com/icza/s2prot"

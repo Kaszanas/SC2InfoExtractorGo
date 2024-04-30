@@ -1,4 +1,4 @@
-package datastruct
+package replay_data
 
 import "time"
 

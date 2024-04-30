@@ -1,6 +1,11 @@
-package datastruct
+package persistent_data
 
 import (
+	"encoding/json"
+	"fmt"
+	"path/filepath"
+
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,13 +20,13 @@ type ReplaySummary struct {
 	Summary Summary
 }
 
-// DefaultPackageSummary returns an initialized PackageSummary
-func DefaultPackageSummary() PackageSummary {
+// NewPackageSummary returns an initialized PackageSummary
+func NewPackageSummary() PackageSummary {
 	return PackageSummary{Summary: NewSummary()}
 }
 
-// DefaultReplaySummary returns an initialized ReplaySummary
-func DefaultReplaySummary() ReplaySummary {
+// NewReplaySummary returns an initialized ReplaySummary
+func NewReplaySummary() ReplaySummary {
 	return ReplaySummary{Summary: NewSummary()}
 }
 
@@ -72,7 +77,7 @@ type MatchupGameTimes struct {
 	TvZMatchup map[string]int64 `json:"TvZMatchupGameTimes"`
 }
 
-// DefaultMatchupHistograms returns a structure with initialized fields.
+// NewMatchupHistograms returns a structure with initialized fields.
 func NewMatchupGameTimes() MatchupGameTimes {
 
 	return MatchupGameTimes{
@@ -94,6 +99,46 @@ func NewGameTimes() GameTimes {
 	return GameTimes{
 		GameTimes: make(map[string]map[string]int64),
 	}
+}
+
+// CreatePackageSummaryFile receives packageSummaryStruct and fileNumber
+// then saves the package summary file onto the drive.
+func CreatePackageSummaryFile(
+	absolutePathOutputDirectory string,
+	packageSummaryStruct PackageSummary,
+	fileNumber int) error {
+	log.Info("Entered CreatePackageSummaryFile()")
+
+	packageSummaryFilename := fmt.Sprintf("package_summary_%v.json", fileNumber)
+	packageAbsolutePath := filepath.Join(absolutePathOutputDirectory, packageSummaryFilename)
+	packageSummaryFile, err := file_utils.CreateTruncateFile(packageAbsolutePath)
+	if err != nil {
+		log.Error("Failed to create the package summary file!")
+		return err
+	}
+
+	packageSummaryBytes, err := json.Marshal(packageSummaryStruct)
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("Failed to marshal packageSummaryStruct")
+		return fmt.Errorf("Failed to marshal packageSummaryStruct: %v", err)
+	}
+	_, err = packageSummaryFile.Write(packageSummaryBytes)
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("Failed to save the packageSummaryFile")
+		return fmt.Errorf("Failed to save the packageSummaryFile: %v", err)
+	}
+
+	err = packageSummaryFile.Close()
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("Failed to cloes the packageSummaryFile")
+		return fmt.Errorf("Failed to close the packageSummaryFile: %v", err)
+	}
+
+	log.Info("Finished CreatePackageSummaryFile()")
+	return nil
 }
 
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
