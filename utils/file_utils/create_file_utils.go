@@ -1,4 +1,4 @@
-package utils
+package file_utils
 
 import (
 	"encoding/json"
@@ -6,113 +6,87 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	log "github.com/sirupsen/logrus"
 )
 
-// readOrCreateFile receives a filepath and creates a file if it doesn't exist.
-func readOrCreateFile(filePath string) (os.File, []byte) {
+// ReadOrCreateFile receives a filepath and creates a file if it doesn't exist.
+func ReadOrCreateFile(filePath string, flag int) (os.File, []byte, error) {
 
 	log.Info("Entered readOrCreateFile()")
 
-	createdOrReadFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0666)
+	createdOrReadFile, err := os.OpenFile(filePath, flag, 0666)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err":      err,
+			"error":    err,
 			"filePath": filePath,
 		}).Fatal("Failed to create or open the file!")
-		os.Exit(1)
+		return os.File{}, nil, err
 	}
 	byteValue, err := io.ReadAll(createdOrReadFile)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err":      err,
+			"error":    err,
 			"filePath": filePath,
 		}).Fatal("Failed to read bytes from file!")
-		os.Exit(1)
+		return os.File{}, nil, err
 	}
 
 	log.Info("Finished readOrCreateFile()")
-	return *createdOrReadFile, byteValue
+	return *createdOrReadFile, byteValue, nil
 }
 
-// GetOrCreateMapsDirectory receives the path to the
+// GetOrCreateDirectory receives the path to the
 // maps directory and creates it if it doesn't exist.
-func GetOrCreateMapsDirectory(pathToMapsDirectory string) string {
+func GetOrCreateDirectory(pathToMapsDirectory string) error {
 
 	log.Info("Entered CreateMapsDirectory()")
 
-	// Check if the maps directory exists:
-	_, err := os.Stat(pathToMapsDirectory)
-	if err == nil {
-		log.Info("The maps directory already exists!")
-		return pathToMapsDirectory
-	}
-
 	// Create the maps directory:
-	err = os.Mkdir(pathToMapsDirectory, 0777)
+	err := os.Mkdir(pathToMapsDirectory, 0777)
+	if os.IsExist(err) {
+		log.Info("The maps directory already exists!")
+		return nil
+	}
 	if err != nil {
 		log.WithField("error", err).
 			Fatal("failed to create the maps directory!")
-		return ""
+		return fmt.Errorf("failed to create the maps directory: %v", err)
 	}
 
-	return pathToMapsDirectory
+	log.Info("Finished GetOrCreateMapsDirectory()")
+	return nil
 }
 
 // CreateProcessingInfoFile receives a fileNumber and creates a processing info
 // file holding the information on which files were processed successfully and which failed.
 func CreateProcessingInfoFile(
 	logsFilepath string,
-	fileNumber int) (*os.File, data.ProcessingInfo) {
+	fileNumber int) (*os.File, data.ProcessingInfo, error) {
 
 	log.Info("Entered CreateProcessingInfoFile()")
 
 	// Formatting the processing info file name:
 	processingLogName := fmt.Sprintf(logsFilepath+"processed_failed_%v.log", fileNumber)
-	processingInfoFile, _ := readOrCreateFile(processingLogName)
+	processingInfoFile, _, err := ReadOrCreateFile(
+		processingLogName,
+		os.O_CREATE|os.O_TRUNC|os.O_RDWR,
+	)
+	if err != nil {
+		log.Error("Failed to create the processing info file!")
+		return nil, data.ProcessingInfo{}, err
+	}
 
 	// This will hold: {"processedFiles": [path, path, path], "failedFiles": [path, path, path]}
-	processingInfoStruct := data.DefaultProcessingInfo()
+	processingInfoStruct := data.NewProcessingInfo()
 	// SaveProcessingInfo(&processingInfoFile, processingInfoStruct)
 
 	log.Infof("Created and saved the %v", processingLogName)
 	log.Info("Finished CreateProcessingInfoFile()")
 
-	return &processingInfoFile, processingInfoStruct
-}
-
-// CreatePackageSummaryFile receives packageSummaryStruct and fileNumber
-// then saves the package summary file onto the drive.
-func CreatePackageSummaryFile(
-	absolutePathOutputDirectory string,
-	packageSummaryStruct data.PackageSummary,
-	fileNumber int) {
-	log.Info("Entered CreatePackageSummaryFile()")
-
-	packageSummaryFilename := fmt.Sprintf("package_summary_%v.json", fileNumber)
-	packageAbsolutePath := filepath.Join(absolutePathOutputDirectory, packageSummaryFilename)
-	packageSummaryFile, _ := readOrCreateFile(packageAbsolutePath)
-
-	packageSummaryBytes, err := json.Marshal(packageSummaryStruct)
-	if err != nil {
-		log.WithField("error", err).
-			Fatal("Failed to marshal packageSummaryStruct")
-	}
-	_, err = packageSummaryFile.Write(packageSummaryBytes)
-	if err != nil {
-		log.WithField("error", err).
-			Fatal("Failed to save the packageSummaryFile")
-	}
-
-	err = packageSummaryFile.Close()
-	if err != nil {
-		log.WithField("error", err).
-			Fatal("Failed to cloes the packageSummaryFile")
-	}
-
-	log.Info("Finished CreatePackageSummaryFile()")
+	return &processingInfoFile, processingInfoStruct, nil
 }
 
 // SaveProcessingInfo receives a file and marshals/writes processingInfoStruct into the file.
@@ -135,7 +109,46 @@ func SaveProcessingInfo(
 	}
 
 	log.Info("Finished SaveProcessingInfo()")
+}
 
+// CreatePackageSummaryFile receives packageSummaryStruct and fileNumber
+// then saves the package summary file onto the drive.
+func CreatePackageSummaryFile(
+	absolutePathOutputDirectory string,
+	packageSummaryStruct data.PackageSummary,
+	fileNumber int) error {
+	log.Info("Entered CreatePackageSummaryFile()")
+
+	packageSummaryFilename := fmt.Sprintf("package_summary_%v.json", fileNumber)
+	packageAbsolutePath := filepath.Join(absolutePathOutputDirectory, packageSummaryFilename)
+	packageSummaryFile, _, err := ReadOrCreateFile(packageAbsolutePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR)
+	if err != nil {
+		log.Error("Failed to create the package summary file!")
+		return err
+	}
+
+	packageSummaryBytes, err := json.Marshal(packageSummaryStruct)
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("Failed to marshal packageSummaryStruct")
+		return fmt.Errorf("Failed to marshal packageSummaryStruct: %v", err)
+	}
+	_, err = packageSummaryFile.Write(packageSummaryBytes)
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("Failed to save the packageSummaryFile")
+		return fmt.Errorf("Failed to save the packageSummaryFile: %v", err)
+	}
+
+	err = packageSummaryFile.Close()
+	if err != nil {
+		log.WithField("error", err).
+			Fatal("Failed to cloes the packageSummaryFile")
+		return fmt.Errorf("Failed to close the packageSummaryFile: %v", err)
+	}
+
+	log.Info("Finished CreatePackageSummaryFile()")
+	return nil
 }
 
 // UnmarshalLocaleMapping wraps around unmarshalLocaleFile and returns
@@ -157,16 +170,15 @@ func UnmarshalLocaleMapping(pathToMappingFile string) map[string]interface{} {
 	return localizedMapping
 }
 
-// unmarshalLocaleFile deals with every possible opening and unmarshalling
+// UnmarshalJsonFile deals with every possible opening and unmarshalling
 // problem that might occur when unmarshalling a localization file
 // supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func UnmarshalJsonFile(
-	pathToMappingFile string,
-	mappingToPopulate *map[string]interface{}) bool {
-
+	filepath string,
+	mapToPopulate *map[string]interface{}) bool {
 	log.Info("Entered unmarshalJsonFile()")
 
-	var file, err = os.Open(pathToMappingFile)
+	var file, err = os.Open(filepath)
 	if err != nil {
 		log.WithField("fileError", err.Error()).
 			Info("Failed to open the JSON file.")
@@ -181,13 +193,39 @@ func UnmarshalJsonFile(
 		return false
 	}
 
-	err = json.Unmarshal([]byte(jsonBytes), &mappingToPopulate)
+	err = json.Unmarshal([]byte(jsonBytes), &mapToPopulate)
 	if err != nil {
 		log.WithField("jsonMarshalError", err.Error()).
 			Info("Could not unmarshal the JSON file.")
 	}
 
 	log.Info("Finished unmarshalJsonFile()")
+	return true
+}
+
+// SaveFileToDrive is a helper function that takes
+// the json string of a StarCraft II replay and writes it to drive.
+func SaveFileToDrive(
+	replayString string,
+	replayFile string,
+	absolutePathOutputDirectory string) bool {
+
+	_, replayFileNameWithExt := filepath.Split(replayFile)
+
+	replayFileName := strings.TrimSuffix(
+		replayFileNameWithExt,
+		filepath.Ext(replayFileNameWithExt),
+	)
+
+	jsonAbsPath := filepath.Join(absolutePathOutputDirectory, replayFileName+".json")
+	jsonBytes := []byte(replayString)
+
+	err := os.WriteFile(jsonAbsPath, jsonBytes, 0777)
+	if err != nil {
+		log.WithField("replayFile", replayFile).
+			Error("Failed to write .json to drive!")
+		return false
+	}
 
 	return true
 }

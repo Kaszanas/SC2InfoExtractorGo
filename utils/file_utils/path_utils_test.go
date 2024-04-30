@@ -1,9 +1,10 @@
-package utils
+package file_utils
 
 import (
 	"testing"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 )
 
 func TestGetChunksOfFiles(t *testing.T) {
@@ -14,7 +15,7 @@ func TestGetChunksOfFiles(t *testing.T) {
 
 	// Read all the test input directory:
 	sliceOfFiles := ListFiles(testReplaysPath, ".SC2Replay")
-	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 1)
+	sliceOfChunks, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 1)
 
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")

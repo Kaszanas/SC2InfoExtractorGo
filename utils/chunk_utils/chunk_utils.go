@@ -1,4 +1,4 @@
-package utils
+package chunk_utils
 
 import (
 	"math"

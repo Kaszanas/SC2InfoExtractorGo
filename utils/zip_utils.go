@@ -3,9 +3,7 @@ package utils
 import (
 	"archive/zip"
 	"bytes"
-	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -66,29 +64,6 @@ func SaveFileToArchive(replayString string, replayFile string, compressionMethod
 	}
 
 	log.Info("Finished SaveFileToArchive()")
-
-	return true
-}
-
-// SaveFileToDrive is a helper function that takes the json string of a StarCraft II replay and writes it to drive.
-func SaveFileToDrive(
-	replayString string,
-	replayFile string,
-	absolutePathOutputDirectory string) bool {
-
-	_, replayFileNameWithExt := filepath.Split(replayFile)
-
-	replayFileName := strings.TrimSuffix(replayFileNameWithExt, filepath.Ext(replayFileNameWithExt))
-
-	jsonAbsPath := filepath.Join(absolutePathOutputDirectory, replayFileName+".json")
-	jsonBytes := []byte(replayString)
-
-	err := os.WriteFile(jsonAbsPath, jsonBytes, 0777)
-	if err != nil {
-		log.WithField("replayFile", replayFile).
-			Error("Failed to write .json to drive!")
-		return false
-	}
 
 	return true
 }
