@@ -6,6 +6,8 @@ import (
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,7 +64,7 @@ func mainReturnWithCode() int {
 	// TODO: Move everything that is below to separate functions:
 	// Getting list of absolute paths for files from input
 	// directory filtering them by file extension to be able to extract the data:
-	listOfInputFiles := utils.ListFiles(CLIflags.InputDirectory, ".SC2Replay")
+	listOfInputFiles := file_utils.ListFiles(CLIflags.InputDirectory, ".SC2Replay")
 	lenListOfInputFiles := len(listOfInputFiles)
 	if lenListOfInputFiles < CLIflags.NumberOfPackages {
 		log.WithFields(log.Fields{
@@ -72,18 +74,25 @@ func mainReturnWithCode() int {
 		return 1
 	}
 
-	listOfChunksFiles, packageToZipBool := utils.GetChunkListAndPackageBool(
+	listOfChunksFiles, packageToZipBool := chunk_utils.GetChunkListAndPackageBool(
 		listOfInputFiles,
 		CLIflags.NumberOfPackages,
 		CLIflags.NumberOfThreads,
-		lenListOfInputFiles)
+		lenListOfInputFiles,
+	)
 
+	mapsDirectory := "maps"
+	processedReplaysFile := "processed_replays.json"
+
+	// Compression method to be used for the output packages:
 	var compressionMethod uint16 = 8
 	// Initializing the processing:
 	dataproc.PipelineWrapper(
 		listOfChunksFiles,
 		packageToZipBool,
 		compressionMethod,
+		mapsDirectory,
+		processedReplaysFile,
 		CLIflags,
 	)
 
