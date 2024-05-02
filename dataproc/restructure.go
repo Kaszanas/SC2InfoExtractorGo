@@ -3,7 +3,7 @@ package dataproc
 import (
 	"strings"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
@@ -12,20 +12,20 @@ import (
 // redefineReplayStructure moves arbitrary data into different data structures.
 func redifineReplayStructure(
 	replayData *rep.Rep,
-	englishMapName string) (data.CleanedReplay, bool) {
+	englishMapName string) (replay_data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
 
 	cleanHeader := cleanHeader(replayData)
 	cleanGameDescription, ok := cleanGameDescription(replayData)
 	if !ok {
-		return data.CleanedReplay{}, false
+		return replay_data.CleanedReplay{}, false
 	}
 	cleanInitData, cleanedUserInitDataList, ok := cleanInitData(
 		replayData,
 		cleanGameDescription)
 	if !ok {
-		return data.CleanedReplay{}, false
+		return replay_data.CleanedReplay{}, false
 	}
 	cleanDetails := cleanDetails(replayData)
 	cleanMetadata := cleanMetadata(replayData, englishMapName)
@@ -39,7 +39,7 @@ func redifineReplayStructure(
 	justMessageEvtsErr := replayData.MessageEvtsErr
 	justTrackerEvtsErr := replayData.TrackerEvtsErr
 	justGameEvtsErr := replayData.GameEvtsErr
-	cleanedReplay := data.CleanedReplay{
+	cleanedReplay := replay_data.CleanedReplay{
 		Header:            cleanHeader,
 		InitData:          cleanInitData,
 		Details:           cleanDetails,
@@ -61,7 +61,7 @@ func redifineReplayStructure(
 
 // cleanHeader copies the header,
 // has the capability of removing unescessary fields.
-func cleanHeader(replayData *rep.Rep) data.CleanedHeader {
+func cleanHeader(replayData *rep.Rep) replay_data.CleanedHeader {
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Loops()
 	// TODO: These values of duration are not verified: https://github.com/icza/s2prot/issues/48
@@ -71,7 +71,7 @@ func cleanHeader(replayData *rep.Rep) data.CleanedHeader {
 
 	version := replayData.Header.VersionString()
 
-	cleanHeader := data.CleanedHeader{
+	cleanHeader := replay_data.CleanedHeader{
 		ElapsedGameLoops: uint64(elapsedGameLoops),
 		// DurationNanoseconds: durationNanoseconds,
 		// DurationSeconds:     durationSeconds,
@@ -84,7 +84,7 @@ func cleanHeader(replayData *rep.Rep) data.CleanedHeader {
 // cleanGameDescription copies the game description,
 // partly verifies the integrity of the data.
 // Has the capability to remove unescessary fields.
-func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, bool) {
+func cleanGameDescription(replayData *rep.Rep) (replay_data.CleanedGameDescription, bool) {
 
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
@@ -102,7 +102,7 @@ func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, boo
 	if !okMapSizeX {
 		log.WithField("mapSizeX", mapSizeX).
 			Error("Found that value of mapSizeX exceeds uint32")
-		return data.CleanedGameDescription{}, false
+		return replay_data.CleanedGameDescription{}, false
 	}
 
 	mapSizeY := gameDescription.MapSizeY()
@@ -110,7 +110,7 @@ func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, boo
 	if !okMapSizeY {
 		log.WithField("mapSizeY", mapSizeY).
 			Error("Found that value of mapSizeY exceeds uint32")
-		return data.CleanedGameDescription{}, false
+		return replay_data.CleanedGameDescription{}, false
 	}
 
 	maxPlayers := gameDescription.MaxPlayers()
@@ -118,10 +118,10 @@ func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, boo
 	if !okMaxPlayers {
 		log.WithField("maxPlayers", maxPlayers).
 			Error("Found that value of maxPlayers exceeds uint8")
-		return data.CleanedGameDescription{}, false
+		return replay_data.CleanedGameDescription{}, false
 	}
 
-	cleanedGameDescription := data.CleanedGameDescription{
+	cleanedGameDescription := replay_data.CleanedGameDescription{
 		GameOptions:         gameOptions,
 		GameSpeed:           gameSpeedString,
 		IsBlizzardMap:       isBlizzardMap,
@@ -141,12 +141,12 @@ func cleanGameDescription(replayData *rep.Rep) (data.CleanedGameDescription, boo
 // Has the capability to remove unescessary fields.
 func cleanInitData(
 	replayData *rep.Rep,
-	cleanedGameDescription data.CleanedGameDescription) (
-	data.CleanedInitData,
-	[]data.CleanedUserInitData,
+	cleanedGameDescription replay_data.CleanedGameDescription) (
+	replay_data.CleanedInitData,
+	[]replay_data.CleanedUserInitData,
 	bool) {
 	// Constructing a clean UserInitData without unescessary fields:
-	var cleanedUserInitDataList []data.CleanedUserInitData
+	var cleanedUserInitDataList []replay_data.CleanedUserInitData
 	for _, userInitData := range replayData.InitData.UserInitDatas {
 		// If the name is an empty string ommit the struct and enter next iteration:
 		name := userInitData.Name()
@@ -159,14 +159,14 @@ func cleanInitData(
 		if !okCombinedRaceLevels {
 			log.WithField("combinedRaceLevels", combinedRaceLevels).
 				Error("Found that value of combinedRaceLevels exceeds uint64")
-			return data.CleanedInitData{}, cleanedUserInitDataList, false
+			return replay_data.CleanedInitData{}, cleanedUserInitDataList, false
 		}
 
 		highestLeague := userInitData.HighestLeague().String()
 		clanTag := userInitData.ClanTag()
 		isInClan := checkClan(clanTag)
 
-		userInitDataStruct := data.CleanedUserInitData{
+		userInitDataStruct := replay_data.CleanedUserInitData{
 			CombinedRaceLevels: combinedRaceLevelsChecked,
 			HighestLeague:      highestLeague,
 			Name:               name,
@@ -177,7 +177,7 @@ func cleanInitData(
 		cleanedUserInitDataList = append(cleanedUserInitDataList, userInitDataStruct)
 	}
 
-	cleanInitData := data.CleanedInitData{
+	cleanInitData := replay_data.CleanedInitData{
 		GameDescription: cleanedGameDescription,
 	}
 	log.Info("Defined cleanInitData struct")
@@ -186,7 +186,7 @@ func cleanInitData(
 
 // cleanDetails copies the details,
 // has the capability of removing unescessary fields.
-func cleanDetails(replayData *rep.Rep) data.CleanedDetails {
+func cleanDetails(replayData *rep.Rep) replay_data.CleanedDetails {
 	// Constructing a clean CleanedDetails without unescessary fields
 	detailsGameSpeed := replayData.Details.GameSpeed().String()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
@@ -194,7 +194,7 @@ func cleanDetails(replayData *rep.Rep) data.CleanedDetails {
 	timeUTC := replayData.Details.TimeUTC()
 	// mapNameString := details.Title()
 
-	cleanDetails := data.CleanedDetails{
+	cleanDetails := replay_data.CleanedDetails{
 		GameSpeed:     detailsGameSpeed,
 		IsBlizzardMap: detailsIsBlizzardMap,
 		// PlayerList:    detailsPlayerList, // Information from that part is merged with ToonDescMap
@@ -210,7 +210,7 @@ func cleanDetails(replayData *rep.Rep) data.CleanedDetails {
 // has the capability of removing unescessary fields.
 func cleanMetadata(
 	replayData *rep.Rep,
-	englishMapName string) data.CleanedMetadata {
+	englishMapName string) replay_data.CleanedMetadata {
 	// Constructing a clean CleanedMetadata without unescessary fields:
 	metadataBaseBuild := replayData.Metadata.BaseBuild()
 	metadataDataBuild := replayData.Metadata.DataBuild()
@@ -221,7 +221,7 @@ func cleanMetadata(
 	// metadataMapName := replayData.Metadata.Title()
 	// detailsMapName := details.Title()
 
-	cleanMetadata := data.CleanedMetadata{
+	cleanMetadata := replay_data.CleanedMetadata{
 		BaseBuild: metadataBaseBuild,
 		DataBuild: metadataDataBuild,
 		// Duration:    metadataDuration,
@@ -237,14 +237,14 @@ func cleanMetadata(
 // changes the structure into a more readable form.
 func cleanToonDescMap(
 	replayData *rep.Rep,
-	cleanedUserInitDataList []data.CleanedUserInitData) map[string]data.EnhancedToonDescMap {
+	cleanedUserInitDataList []replay_data.CleanedUserInitData) map[string]replay_data.EnhancedToonDescMap {
 
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 
 	// Merging data-structures to data.EnhancedToonDescMap
-	enhancedToonDescMap := make(map[string]data.EnhancedToonDescMap)
+	enhancedToonDescMap := make(map[string]replay_data.EnhancedToonDescMap)
 	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
-		var initializedToonDescMap data.EnhancedToonDescMap
+		var initializedToonDescMap replay_data.EnhancedToonDescMap
 		enhancedToonDescMap[toonKey] = initializedToonDescMap
 
 		// Merging information held in metadata.Players into data.EnhancedToonDescMap

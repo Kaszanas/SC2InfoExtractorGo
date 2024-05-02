@@ -1,8 +1,6 @@
 package dataproc
 
 import (
-	"strings"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -64,18 +62,11 @@ func contains(s []string, str string) bool {
 
 	for _, v := range s {
 		if v == str {
-			log.Info("Slice contains supplied string, returning true")
+			log.Debug("Slice contains supplied string, returning true")
 			return true
 		}
 	}
 
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
-}
-
-func replaceNewlinesSplitData(input string) []string {
-	replacedNewlines := strings.ReplaceAll(input, "\r\n", "\n")
-	splitFile := strings.Split(replacedNewlines, "\n")
-
-	return splitFile
 }

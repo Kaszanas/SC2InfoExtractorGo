@@ -5,7 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,8 +14,8 @@ import (
 // generateReplaySummary accesses the data that is within cleaned replay
 // and extracts information for visualization purposes.
 func generateReplaySummary(
-	replayData *data.CleanedReplay,
-	summaryStruct *data.ReplaySummary) {
+	replayData *replay_data.CleanedReplay,
+	summaryStruct *persistent_data.ReplaySummary) {
 
 	log.Info("Entered generateReplaySummary()")
 
@@ -116,7 +117,7 @@ func generateReplaySummary(
 // for the matching matchup and returns a boolean that specifies if a matchup was matched.
 func checkMatchupIncrementCount(
 	matchupString string,
-	summaryStruct *data.ReplaySummary,
+	summaryStruct *persistent_data.ReplaySummary,
 	gameTimeString string) bool {
 
 	log.Info("Entered checkMatchup()")

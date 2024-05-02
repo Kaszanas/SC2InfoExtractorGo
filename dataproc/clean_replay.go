@@ -5,7 +5,7 @@ import (
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 )
 
@@ -14,7 +14,7 @@ import (
 func extractReplayData(
 	replayData *rep.Rep,
 	englishMapName string,
-	performCleanupBool bool) (bool, data.CleanedReplay) {
+	performCleanupBool bool) (bool, replay_data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
 
@@ -24,24 +24,24 @@ func extractReplayData(
 		englishMapName)
 	if !redefOk {
 		log.Error("Error in redefining replay structure.")
-		return false, data.CleanedReplay{}
+		return false, replay_data.CleanedReplay{}
 	}
 
 	// Converting coordinates to fit the original map x, y ranges:
 	if !convertCoordinates(&structuredReplayData) {
 		log.Error("Error when converting coordinates.")
-		return false, data.CleanedReplay{}
+		return false, replay_data.CleanedReplay{}
 	}
 
 	// Cleaning unused message and game events
 	if performCleanupBool {
 		if !cleanUnusedMessageEvents(&structuredReplayData) {
 			log.Error("Error in cleaning the message events.")
-			return false, data.CleanedReplay{}
+			return false, replay_data.CleanedReplay{}
 		}
 		if !cleanUnusedGameEvents(&structuredReplayData) {
 			log.Error("Error in cleaning the game events.")
-			return false, data.CleanedReplay{}
+			return false, replay_data.CleanedReplay{}
 		}
 	}
 
@@ -51,7 +51,7 @@ func extractReplayData(
 
 // cleanUnusedMessageEvents iterates over the message events and creates
 // a new structure without the events that were hardcoded as redundant.
-func cleanUnusedMessageEvents(replayData *data.CleanedReplay) bool {
+func cleanUnusedMessageEvents(replayData *replay_data.CleanedReplay) bool {
 
 	log.Info("Entered cleanUnusedMessageEvents()")
 
@@ -70,7 +70,7 @@ func cleanUnusedMessageEvents(replayData *data.CleanedReplay) bool {
 
 // cleanUnusedGameEvents checks against settings.UnusedGameEvents and
 // creates a new GameEvents structure without certain events.
-func cleanUnusedGameEvents(replayData *data.CleanedReplay) bool {
+func cleanUnusedGameEvents(replayData *replay_data.CleanedReplay) bool {
 	log.Info("Entered cleanUnusedGameEvents()")
 
 	var cleanedGameEvents []s2prot.Struct

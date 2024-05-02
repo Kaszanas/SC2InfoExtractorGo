@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	pb "github.com/Kaszanas/SC2InfoExtractorGo/proto"
 	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/icza/s2prot"
@@ -18,7 +18,7 @@ import (
 // anonymizing the replay data. It calls other functions that are
 // responsible for anonymizing chat messages and player information.
 func anonymizeReplay(
-	replayData *data.CleanedReplay,
+	replayData *replay_data.CleanedReplay,
 	grpcAnonymizer *GRPCAnonymizer,
 	performChatAnonymizationBool bool) bool {
 
@@ -144,12 +144,12 @@ func grpcGetAnonymizeID(
 }
 
 func anonymizePlayers(
-	replayData *data.CleanedReplay,
+	replayData *replay_data.CleanedReplay,
 	grpcAnonymizer *GRPCAnonymizer) bool {
 
 	log.Info("Entererd anonymizePlayers().")
 
-	var newToonDescMap = make(map[string]data.EnhancedToonDescMap)
+	var newToonDescMap = make(map[string]replay_data.EnhancedToonDescMap)
 
 	// Iterate over players:
 	log.Info("Starting to iterate over replayData.Details.PlayerList.")
@@ -184,7 +184,7 @@ func anonymizePlayers(
 
 // anonymizeMessageEvents checks against settings.UnusedMessageEvents
 // and creates a new clean version without specified events.
-func anonimizeMessageEvents(replayData *data.CleanedReplay) bool {
+func anonimizeMessageEvents(replayData *replay_data.CleanedReplay) bool {
 
 	log.Info("Entered anonimizeMessageEvents().")
 	var anonymizedMessageEvents []s2prot.Struct
