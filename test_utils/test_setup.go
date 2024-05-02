@@ -7,6 +7,8 @@ import (
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -56,13 +58,13 @@ func SetTestCLIFlags(t *testing.T) (
 	}
 	log.WithField("testOutputDir", testOutputDir).Info("Output dir was set.")
 
-	sliceOfFiles := utils.ListFiles(testInputDir, ".SC2Replay")
+	sliceOfFiles := file_utils.ListFiles(testInputDir, ".SC2Replay")
 	if len(sliceOfFiles) < 1 {
 		t.Fatalf("Could not detect test files! Verify if they exist.")
 	}
 	log.WithField("n_files", len(sliceOfFiles)).Info("Number of detected files.")
 
-	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
+	chunks, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		t.Fatalf("Test Failed! Could not produce chunks of files!")
 	}
