@@ -13,7 +13,7 @@ import (
 // "cleaning" of replay structure and cleans up events that are unused.
 func extractReplayData(
 	replayData *rep.Rep,
-	englishMapName string,
+	englishToForeignMapping map[string]string,
 	performCleanupBool bool) (bool, replay_data.CleanedReplay) {
 
 	log.Info("Entered cleanReplay()")
@@ -21,7 +21,8 @@ func extractReplayData(
 	// Restructure replay:
 	structuredReplayData, redefOk := redifineReplayStructure(
 		replayData,
-		englishMapName)
+		englishToForeignMapping,
+	)
 	if !redefOk {
 		log.Error("Error in redefining replay structure.")
 		return false, replay_data.CleanedReplay{}
