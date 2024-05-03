@@ -1,6 +1,7 @@
 package dataproc
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
@@ -12,7 +13,8 @@ import (
 // redefineReplayStructure moves arbitrary data into different data structures.
 func redifineReplayStructure(
 	replayData *rep.Rep,
-	englishMapName string) (replay_data.CleanedReplay, bool) {
+	englishToForeignMapping map[string]string,
+) (replay_data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
 
@@ -28,7 +30,10 @@ func redifineReplayStructure(
 		return replay_data.CleanedReplay{}, false
 	}
 	cleanDetails := cleanDetails(replayData)
-	cleanMetadata := cleanMetadata(replayData, englishMapName)
+	cleanMetadata, err := cleanMetadata(replayData, englishToForeignMapping)
+	if err != nil {
+		return replay_data.CleanedReplay{}, false
+	}
 
 	enhancedToonDescMap := cleanToonDescMap(replayData, cleanedUserInitDataList)
 
@@ -210,15 +215,23 @@ func cleanDetails(replayData *rep.Rep) replay_data.CleanedDetails {
 // has the capability of removing unescessary fields.
 func cleanMetadata(
 	replayData *rep.Rep,
-	englishMapName string) replay_data.CleanedMetadata {
+	englishToForeignMapping map[string]string,
+) (replay_data.CleanedMetadata, error) {
 	// Constructing a clean CleanedMetadata without unescessary fields:
 	metadataBaseBuild := replayData.Metadata.BaseBuild()
 	metadataDataBuild := replayData.Metadata.DataBuild()
 	// metadataDuration := replayData.Metadata.DurationSec()
 	metadataGameVersion := replayData.Metadata.GameVersion()
 
+	metadataMapName := replayData.Metadata.Title()
+	englishMapName, ok := englishToForeignMapping[metadataMapName]
+	if !ok {
+		log.WithField("metadataMapName", metadataMapName).
+			Error("Map name not found in englishToForeignMapping!")
+		return replay_data.CleanedMetadata{},
+			fmt.Errorf("map name not found in englishToForeignMapping")
+	}
 	// REVIEW: Will this be needed?
-	// metadataMapName := replayData.Metadata.Title()
 	// detailsMapName := details.Title()
 
 	cleanMetadata := replay_data.CleanedMetadata{
@@ -230,7 +243,7 @@ func cleanMetadata(
 		MapName: englishMapName,
 	}
 	log.Info("Defined cleanMetadata struct")
-	return cleanMetadata
+	return cleanMetadata, nil
 }
 
 // cleanToonDescMap copies the toon description map,
