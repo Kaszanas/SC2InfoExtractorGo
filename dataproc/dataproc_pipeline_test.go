@@ -9,8 +9,11 @@ import (
 	"testing"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,15 +43,50 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 		if maybeDir.IsDir() {
 			dirName := maybeDir.Name()
 			if !contains(TEST_BYPASS_THESE_DIRS, dirName) {
-				absoluteReplayDir := filepath.Join(testInputDir, dirName)
+				absoluteTestReplayDir := filepath.Join(testInputDir, dirName)
 				t.Run(dirName, func(t *testing.T) {
 					// WARNING: Cannot run tests in parallel
 					// because of the downloading logic, it reads from a common
 					// maps directory:
 					// t.Parallel()
+
+					// This and all below is done here because
+					// the logging should be set before the test starts.
+					// Otherwise part of the logs will be saved in the previous tests log.
+					testOutputDir, err := settings.GetTestOutputDirectory()
+					if err != nil {
+						t.Fatal("Test Failed! Could not get the test output directory.")
+					}
+
+					thisTestOutputDir := testOutputDir + "/" + dirName + "/"
+					log.WithField("thisTestOutputDir", thisTestOutputDir).
+						Info("Defined a path for the output of the test.")
+					if _, err := os.Stat(thisTestOutputDir); os.IsNotExist(err) {
+						log.WithField("thisTestOutputDir", thisTestOutputDir).
+							Info("Test output dir does not exist, attempting to create.")
+						err = os.Mkdir(thisTestOutputDir, 0755)
+						if err != nil {
+							t.Fatal("Test Failed! Could not create output directory for test!")
+						}
+					}
+
+					logFlags := utils.LogFlags{
+						LogLevelValue: datastruct.Info,
+						LogPath:       thisTestOutputDir,
+					}
+
+					logFile, logOk := utils.SetLogging(thisTestOutputDir, int(logFlags.LogLevelValue))
+					defer logFile.Close()
+					if !logOk {
+						t.Fatal("Test Failed! Could not perform SetLogging.")
+					}
+
 					testOk, reason := testPipelineWrapperWithDir(
-						absoluteReplayDir,
+						testOutputDir,
+						absoluteTestReplayDir,
 						dirName,
+						logFile,
+						logFlags,
 						removeTestOutputs)
 					if !testOk {
 						t.Fatalf("Test Failed! %s", reason)
@@ -63,17 +101,19 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 // testPipelineWrapperWithDir is a helper function to test the pipeline wrapper
 // on a single replaypack directory.
 func testPipelineWrapperWithDir(
+	thisTestOutputDir string,
 	replayInputPath string,
 	replaypackName string,
-	removeTestOutputs bool) (bool, string) {
+	logFile *os.File,
+	logFlags utils.LogFlags,
+	removeTestOutputs bool,
+) (bool, string) {
 
-	testOutputDir, err := settings.GetTestOutputDirectory()
-	if err != nil {
-		return false, "Could not get the test output directory."
-	}
-	log.WithField("testOutputDir", testOutputDir).
-		Info("Got test output directory from settings.")
+	log.WithFields(log.Fields{"testOutputDir": thisTestOutputDir}).
+		Info("Entered testPipelineWrapperWithDir()")
 
+	// TODO: This should be refactored, new hybrid approach should be applied
+	// https://github.com/Kaszanas/SC2InfoExtractorGo/issues/49
 	testLocalizationFilePath, err := settings.GetTestLocalizationFilePath()
 	if err != nil {
 		return false, "Could not get the test localization file path."
@@ -81,36 +121,14 @@ func testPipelineWrapperWithDir(
 	log.WithField("testLocalizationFilePath", testLocalizationFilePath).
 		Info("Got test localization filepath from settings.")
 
-	sliceOfFiles := utils.ListFiles(replayInputPath, ".SC2Replay")
-	chunksOfFiles, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
+	sliceOfFiles := file_utils.ListFiles(replayInputPath, ".SC2Replay")
+	chunksOfFiles, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
 	}
 	log.WithFields(log.Fields{
 		"n_files":      len(sliceOfFiles),
 		"sliceOfFiles": sliceOfFiles}).Info("Got files to test.")
-
-	thisTestOutputDir := testOutputDir + "/" + replaypackName + "/"
-	log.WithField("thisTestOutputDir", thisTestOutputDir).
-		Info("Defined a path for the output of the test.")
-	if _, err := os.Stat(thisTestOutputDir); os.IsNotExist(err) {
-		log.WithField("thisTestOutputDir", thisTestOutputDir).
-			Info("Test output dir does not exist, attempting to create.")
-		err = os.Mkdir(thisTestOutputDir, 0755)
-		if err != nil {
-			return false, "Could not create output directory for test!"
-		}
-	}
-
-	logFlags := utils.LogFlags{
-		LogLevelValue: datastruct.Info,
-		LogPath:       thisTestOutputDir,
-	}
-
-	logFile, logOk := utils.SetLogging(thisTestOutputDir, int(logFlags.LogLevelValue))
-	if !logOk {
-		return false, "Could not perform SetLogging."
-	}
 
 	// REVIEW: Hardcoded flags for test? I suppose that these
 	// should come from a specific test case.
@@ -135,24 +153,20 @@ func testPipelineWrapperWithDir(
 	packageToZip := true
 	compressionMethod := uint16(8)
 
-	localizedMapsMap := map[string]interface{}(nil)
-	localizedMapsMap = utils.UnmarshalLocaleMapping(testLocalizationFilePath)
-	if localizedMapsMap == nil {
-		return false, "Could not unmarshall the localization mapping file."
-	}
-
 	PipelineWrapper(
 		chunksOfFiles,
 		packageToZip,
 		compressionMethod,
+		"maps",
+		"processed_replays.json",
 		flags,
 	)
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
 	logFileMap := map[string]interface{}(nil)
 	processedFailedPath := thisTestOutputDir + "processed_failed_0.log"
-	unmarshalOk := utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
-	if !unmarshalOk {
+	err = file_utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
+	if err != nil {
 		return false, "Could not unmrshal processed_failed file."
 	}
 
@@ -185,7 +199,7 @@ func testPipelineWrapperWithDir(
 	}
 
 	// Read and verify if the created summaries contain the same count as the processed files
-	var summary datastruct.PackageSummary
+	var summary persistent_data.PackageSummary
 	pathToSummaryFile := thisTestOutputDir + "/" + "package_summary_0.json"
 	log.WithField("pathToSummaryFile", pathToSummaryFile).
 		Info("Set the path to the summary file.")
@@ -193,7 +207,7 @@ func testPipelineWrapperWithDir(
 		pathToSummaryFile,
 		&summary)
 	if err != nil {
-		log.WithField("err", err.Error()).
+		log.WithField("error", err.Error()).
 			Info(reason)
 		return false, reason
 	}
@@ -251,7 +265,7 @@ func pipelineTestCleanup(
 			return "Cannot delete output path.", err
 		}
 	} else {
-		filesToClean := utils.ListFiles(testOutputPath, "")
+		filesToClean := file_utils.ListFiles(testOutputPath, "")
 		for _, file := range filesToClean {
 			err = os.Remove(file)
 			if err != nil {
@@ -265,7 +279,7 @@ func pipelineTestCleanup(
 
 func unmarshalSummaryFile(
 	pathToSummaryFile string,
-	mappingToPopulate *datastruct.PackageSummary) (string, error) {
+	mappingToPopulate *persistent_data.PackageSummary) (string, error) {
 
 	log.Info("Entered unmarshalJsonFile()")
 
