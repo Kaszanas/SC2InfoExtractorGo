@@ -35,17 +35,18 @@ func (prtm *ProcessedReplaysToMaps) AddReplayToProcessed(
 	}
 
 	// Getting map URL and hash before mutexing, this operation is not thread safe:
-	mapURL, mapHashAndExtension, ok := sc2_map_processing.GetMapURLAndHashFromReplayData(replayData)
+	mapURL, mapHashAndExtension, ok := sc2_map_processing.
+		GetMapURLAndHashFromReplayData(replayData)
 	if !ok {
 		log.Error("getMapURLAndHashFromReplayData() failed.")
 		return fmt.Errorf("getMapURLAndHashFromReplayData() failed")
 	}
 
-	englishMapName := downloader.GetEnglishMapNameDownloadIfNotExists(
+	ok = downloader.GetEnglishMapNameDownloadIfNotExists(
 		downloaderSharedState,
 		mapHashAndExtension,
 		mapURL)
-	if englishMapName == "" {
+	if !ok {
 		log.WithField("file", replayPath).
 			Error("Failed to get English map name.")
 
