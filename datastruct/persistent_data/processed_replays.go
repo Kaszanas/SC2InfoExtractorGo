@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
@@ -164,7 +165,8 @@ func (prtm *ProcessedReplaysToFileInfo) DownloadMapAddReplayToProcessed(
 		LastModified: fileInfo.ModTime().Unix(),
 		Size:         fileInfo.Size(),
 	}
-	prtm.ProcessedFiles[replayPath] = fileInfoToCheck
+	replayFilenameAndExtension := filepath.Base(replayPath)
+	prtm.ProcessedFiles[replayFilenameAndExtension] = fileInfoToCheck
 
 	return nil
 }
