@@ -2,7 +2,6 @@ package file_utils
 
 import (
 	"io/fs"
-	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -20,19 +19,27 @@ func ListFiles(
 		"filterFileExtension": filterFileExtension}).
 		Info("Entered ListFiles()")
 
-	files, err := os.ReadDir(inputPath)
-	if err != nil {
-		log.WithField("error", err).Error("Error reading directory")
-		return nil, err
-	}
+	// files, err := os.ReadDir(inputPath)
+	// if err != nil {
+	// 	log.WithField("error", err).Error("Error reading directory")
+	// 	return nil, err
+	// }
 
 	var listOfFiles []string
 	if filterFileExtension == "" {
-		listOfFiles = getAllFiles(files, inputPath)
+		listOfFiles, err := getAllFiles(inputPath)
+		if err != nil {
+			log.WithField("error", err).Error("Error getting list of files")
+			return nil, err
+		}
 		return listOfFiles, nil
 	}
 
-	listOfFiles = getFilesByExtension(files, inputPath, filterFileExtension)
+	listOfFiles, err := getFilesByExtension(inputPath, filterFileExtension)
+	if err != nil {
+		log.WithField("error", err).Error("Error getting list of files")
+		return nil, err
+	}
 
 	log.WithField("n_files", len(listOfFiles)).Info("Finished ListFiles()")
 	return listOfFiles, nil
@@ -66,35 +73,50 @@ func ExistingFilesSet(
 	return existingFilesSet, nil
 }
 
-// getFilesByExtension filters files by extension and returns a slice of filepaths
 func getFilesByExtension(
-	files []fs.DirEntry,
 	inputPath string,
-	filterFileExtension string) []string {
+	filterFileExtension string,
+) ([]string, error) {
 	var listOfFiles []string
-	for _, file := range files {
-		if !file.IsDir() {
-			filename := file.Name()
-			fileExtension := filepath.Ext(filename)
-			if fileExtension == filterFileExtension {
-				absoluteReplayPath := filepath.Join(inputPath, filename)
-				listOfFiles = append(listOfFiles, absoluteReplayPath)
+
+	err := filepath.WalkDir(
+		inputPath,
+		func(path string, dirEntry fs.DirEntry, err error) error {
+			if err != nil {
+				return err
 			}
-		}
+			if !dirEntry.IsDir() &&
+				filepath.Ext(dirEntry.Name()) == filterFileExtension {
+				listOfFiles = append(listOfFiles, path)
+			}
+			return nil
+		})
+
+	if err != nil {
+		return nil, err
 	}
-	return listOfFiles
+
+	return listOfFiles, nil
 }
 
-// getAllFiles returns a slice of filepaths for all files in a directory
-func getAllFiles(files []fs.DirEntry, inputPath string) []string {
+func getAllFiles(inputPath string) ([]string, error) {
 	var listOfFiles []string
-	for _, file := range files {
-		if !file.IsDir() {
-			filename := file.Name()
-			absoluteReplayPath := filepath.Join(inputPath, filename)
-			listOfFiles = append(listOfFiles, absoluteReplayPath)
-		}
+
+	err := filepath.WalkDir(
+		inputPath,
+		func(path string, dirEntry fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if !dirEntry.IsDir() {
+				listOfFiles = append(listOfFiles, path)
+			}
+			return nil
+		})
+
+	if err != nil {
+		return nil, err
 	}
-	log.Info("Finished ListFiles()")
-	return listOfFiles
+
+	return listOfFiles, nil
 }
