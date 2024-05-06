@@ -1,7 +1,10 @@
 package persistent_data
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/fs"
+	"os"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
@@ -10,17 +13,111 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ProcessedReplaysToMaps
-type ProcessedReplaysToMaps struct {
+// ProcessedReplaysToFileInfo Used to store replays that were processed in previous runs.
+// Holds file information in the values of the map to compare against current files.
+// This is so that the maps for them are not re-downloaded.
+// This is used in a pre-processing step,
+// before the final processing of the replays and data extraction is performed.
+type ProcessedReplaysToFileInfo struct {
 	ProcessedFiles map[string]interface{} `json:"processedReplays"`
 }
 
-func (prtm *ProcessedReplaysToMaps) CheckIfReplayWasProcessed(replayPath string) bool {
-	_, ok := prtm.ProcessedFiles[replayPath]
-	return ok
+type FileInformationToCheck struct {
+	LastModified int64 `json:"lastModified"`
+	Size         int64 `json:"size"`
 }
 
-func (prtm *ProcessedReplaysToMaps) AddReplayToProcessed(
+// OpenOrCreateProcessedReplaysToFileInfo Initializes and populates
+// a ProcessedReplaysToFileInfo structure.
+func OpenOrCreateProcessedReplaysToFileInfo(
+	filepath string,
+	mapDirectory string,
+	fileChunks [][]string,
+) (ProcessedReplaysToFileInfo, error) {
+
+	// check if the file exists:
+	mapToPopulateFromPersistentJSON := make(map[string]interface{})
+	_, _, err := file_utils.ReadOrCreateFile(filepath)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to read or create the processed_replays.json file.")
+		return ProcessedReplaysToFileInfo{}, err
+	}
+	err = file_utils.UnmarshalJsonFile(filepath, &mapToPopulateFromPersistentJSON)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to unmarshal the processed_replays.json file.")
+		return ProcessedReplaysToFileInfo{}, err
+	}
+
+	prtm := ProcessedReplaysToFileInfo{
+		ProcessedFiles: mapToPopulateFromPersistentJSON,
+	}
+
+	for _, chunk := range fileChunks {
+		for _, replayFile := range chunk {
+			fileInfo, err := os.Stat(replayFile)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error":      err,
+					"replayFile": replayFile,
+				}).Error("Failed to get file info.")
+				return ProcessedReplaysToFileInfo{}, err
+			}
+			fileInfoToCheck, ok := prtm.CheckIfReplayWasProcessed(replayFile)
+			// Replay was processed so no need to check it again:
+			if ok {
+				// Check if the file was modified since the last time it was processed:
+				if checkFileInfoEq(fileInfo, fileInfoToCheck) {
+					// It is the same so continue
+					continue
+				}
+			}
+			// It wasn't the same so the replay should be processed again:
+			delete(prtm.ProcessedFiles, replayFile)
+		}
+	}
+
+	return prtm, nil
+}
+
+func checkFileInfoEq(
+	fileInfo fs.FileInfo,
+	fileInfoToCheck FileInformationToCheck,
+) bool {
+	return fileInfo.ModTime().Unix() == fileInfoToCheck.LastModified &&
+		fileInfo.Size() == fileInfoToCheck.Size
+}
+
+func (prtm *ProcessedReplaysToFileInfo) CheckIfReplayWasProcessed(
+	replayPath string,
+) (FileInformationToCheck, bool) {
+	fileInfo, ok := prtm.ProcessedFiles[replayPath]
+	if !ok {
+		return FileInformationToCheck{}, ok
+	}
+
+	fileInfoToCheck, ok := fileInfo.(FileInformationToCheck)
+	if !ok {
+		log.WithField("fileInfo", fileInfo).
+			Error("Failed to cast fileInfo to FileInformationToCheck.")
+		return FileInformationToCheck{}, ok
+	}
+
+	return fileInfoToCheck, ok
+}
+
+func (prtm *ProcessedReplaysToFileInfo) AddReplayToProcessed(
+	replayPath string,
+	fileInfo fs.FileInfo,
+) {
+	prtm.ProcessedFiles[replayPath] = FileInformationToCheck{
+		LastModified: fileInfo.ModTime().Unix(),
+		Size:         fileInfo.Size(),
+	}
+}
+
+func (prtm *ProcessedReplaysToFileInfo) DownloadMapAddReplayToProcessed(
 	replayPath string,
 	downloaderSharedState *downloader.DownloaderSharedState,
 ) error {
@@ -42,69 +139,59 @@ func (prtm *ProcessedReplaysToMaps) AddReplayToProcessed(
 		return fmt.Errorf("getMapURLAndHashFromReplayData() failed")
 	}
 
-	ok = downloader.GetEnglishMapNameDownloadIfNotExists(
+	err = downloader.DownloadMapIfNotExists(
 		downloaderSharedState,
 		mapHashAndExtension,
 		mapURL)
-	if !ok {
+	if err != nil {
 		log.WithField("file", replayPath).
 			Error("Failed to get English map name.")
-
-		log.Error("getEnglishMapNameDownloadIfNotExists() failed.")
-		return fmt.Errorf("getEnglishMapNameDownloadIfNotExists() failed")
+		return fmt.Errorf("getEnglishMapNameDownloadIfNotExists() failed: %v", err)
 	}
+
+	fileInfo, err := os.Stat(replayPath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":      err,
+			"replayPath": replayPath,
+		}).Error("Failed to get file info.")
+		return err
+	}
+
+	// Map was downloaded successfully,
+	// add the replay to the processed replays:
+	fileInfoToCheck := FileInformationToCheck{
+		LastModified: fileInfo.ModTime().Unix(),
+		Size:         fileInfo.Size(),
+	}
+	prtm.ProcessedFiles[replayPath] = fileInfoToCheck
 
 	return nil
 }
 
-// NewProcessedReplaysToMaps returns empty ProcessingInfo struct.
-func NewProcessedReplaysToMaps(
+func (prtm *ProcessedReplaysToFileInfo) SaveProcessedReplaysFile(
 	filepath string,
-	mapDirectory string,
-) (ProcessedReplaysToMaps, error) {
+) error {
 
-	// check if the file exists:
-	mapToPopulate := make(map[string]interface{})
-	// TODO: These _ skipped variables could be used in unmarshalling:
-	_, _, err := file_utils.ReadOrCreateFile(filepath)
+	jsonBytes, err := json.Marshal(prtm.ProcessedFiles)
 	if err != nil {
 		log.WithField("error", err).
-			Error("Failed to read or create the processed_replays.json file.")
-		return ProcessedReplaysToMaps{}, err
+			Error("Failed to marshal the processedReplays map.")
+		return err
 	}
-	err = file_utils.UnmarshalJsonFile(filepath, &mapToPopulate)
+
+	processedReplaysFile, err := file_utils.CreateTruncateFile(filepath)
+	if err != nil {
+		log.Error("Failed to create the package summary file!")
+		return err
+	}
+
+	_, err = processedReplaysFile.Write(jsonBytes)
 	if err != nil {
 		log.WithField("error", err).
-			Error("Failed to unmarshal the processed_replays.json file.")
-		return ProcessedReplaysToMaps{}, err
+			Error("Failed to save the processedReplaysFile")
+		return err
 	}
 
-	// Check if number of unique values in the map is equal to the number of files in the map directory
-	// if not then delete and start from scratch.
-	uniqueValues := make(map[interface{}]struct{})
-	for key := range mapToPopulate {
-		uniqueValues[key] = struct{}{}
-	}
-
-	// list the files in the map directory:
-	files := file_utils.ListFiles(mapDirectory, ".s2ma")
-
-	//
-	if len(uniqueValues) != len(files) {
-		log.WithFields(log.Fields{
-			"lenUniqueValues": len(uniqueValues),
-			"lenFiles":        len(files),
-		}).
-			Info("Unique values in the map are not equal to the number of files in the map directory.")
-		_, err := file_utils.CreateTruncateFile(filepath)
-		if err != nil {
-			log.WithField("error", err).
-				Error("Failed to create the processed_replays.json file.")
-			return ProcessedReplaysToMaps{}, err
-		}
-	}
-
-	return ProcessedReplaysToMaps{
-		ProcessedFiles: mapToPopulate,
-	}, nil
+	return nil
 }

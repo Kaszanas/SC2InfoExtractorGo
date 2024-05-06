@@ -64,7 +64,15 @@ func mainReturnWithCode() int {
 	// TODO: Move everything that is below to separate functions:
 	// Getting list of absolute paths for files from input
 	// directory filtering them by file extension to be able to extract the data:
-	listOfInputFiles := file_utils.ListFiles(CLIflags.InputDirectory, ".SC2Replay")
+	listOfInputFiles, err := file_utils.ListFiles(
+		CLIflags.InputDirectory,
+		".SC2Replay",
+	)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get list of files.")
+		return 1
+	}
+
 	lenListOfInputFiles := len(listOfInputFiles)
 	if lenListOfInputFiles < CLIflags.NumberOfPackages {
 		log.WithFields(log.Fields{
@@ -81,8 +89,8 @@ func mainReturnWithCode() int {
 		lenListOfInputFiles,
 	)
 
-	mapsDirectory := "maps"
-	processedReplaysFile := "processed_replays.json"
+	mapsDirectoryPath := "maps"
+	processedReplaysFilepath := "processed_replays.json"
 
 	// Compression method to be used for the output packages:
 	var compressionMethod uint16 = 8
@@ -91,8 +99,8 @@ func mainReturnWithCode() int {
 		listOfChunksFiles,
 		packageToZipBool,
 		compressionMethod,
-		mapsDirectory,
-		processedReplaysFile,
+		mapsDirectoryPath,
+		processedReplaysFilepath,
 		CLIflags,
 	)
 

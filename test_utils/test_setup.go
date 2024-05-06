@@ -58,7 +58,10 @@ func SetTestCLIFlags(t *testing.T) (
 	}
 	log.WithField("testOutputDir", testOutputDir).Info("Output dir was set.")
 
-	sliceOfFiles := file_utils.ListFiles(testInputDir, ".SC2Replay")
+	sliceOfFiles, err := file_utils.ListFiles(testInputDir, ".SC2Replay")
+	if err != nil {
+		t.Fatalf("Could not get the list of files.")
+	}
 	if len(sliceOfFiles) < 1 {
 		t.Fatalf("Could not detect test files! Verify if they exist.")
 	}

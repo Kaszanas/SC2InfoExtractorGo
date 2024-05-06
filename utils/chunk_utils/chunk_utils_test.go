@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// TestGetChunksOfFiles tests the GetChunksOfFiles function by passing a zero number of chunks.
+// This should return a single chunk with all the files.
 func TestGetChunksOfFilesZero(t *testing.T) {
 
 	// Read all the test input directory:
@@ -20,6 +22,8 @@ func TestGetChunksOfFilesZero(t *testing.T) {
 
 }
 
+// TestGetChunksOfFilesMinus tests the GetChunksOfFiles function
+// by passing a negative number of chunks.
 func TestGetChunksOfFilesMinus(t *testing.T) {
 
 	// Read all the test input directory:

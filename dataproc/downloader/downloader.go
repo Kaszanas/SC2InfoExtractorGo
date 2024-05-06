@@ -35,16 +35,16 @@ type DownloaderSharedState struct {
 // NewDownloaderSharedState creates a new DownloaderSharedState.
 func NewDownloaderSharedState(
 	mapsDirectory string,
-	existingMapFilesList []string,
+	existingFilesMapsSet map[string]struct{},
 	downloadedMapsSet map[string]struct{},
 	maxPoolCapacity int) (DownloaderSharedState, error) {
 
 	log.WithFields(log.Fields{
-		"mapsDirectory":          mapsDirectory,
-		"lenExistingMapFileList": len(existingMapFilesList)}).
+		"mapsDirectory":        mapsDirectory,
+		"existingFilesMapsSet": len(existingFilesMapsSet)}).
 		Info("Entered NewDownloaderSharedState()")
 
-	for _, existingMapFilepath := range existingMapFilesList {
+	for existingMapFilepath := range existingFilesMapsSet {
 		_, err := sc2_map_processing.
 			ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 				existingMapFilepath,
@@ -54,15 +54,15 @@ func NewDownloaderSharedState(
 		if err != nil {
 			log.WithField("error", err).
 				Error("Error reading map name from drive. Map could not be processed")
+			// File is removed to assure that
+			// if it is corrupted it will be re-downloaded:
+			delete(existingFilesMapsSet, existingMapFilepath)
 			continue
 		}
 
-		// TODO: This has to be merging multiple maps together:
-		// I am no longer using the map hash and extension as the key
-		// This is because chinese servers do not exist
-		// any more and multiple different hashes
-		// can point to the same map.
 		mapFilenameAndExtension := filepath.Base(existingMapFilepath)
+		// Separate downloaded maps set is created to assure that
+		// Downloaded maps set is
 		downloadedMapsSet[mapFilenameAndExtension] = struct{}{}
 	}
 
@@ -85,15 +85,17 @@ type DownloadTaskState struct {
 	sharedRWMutex        *sync.RWMutex
 }
 
-// DownloadTaskReturnChannelInfo holds the information needed to return after the download finishes.
+// DownloadTaskReturnChannelInfo holds the information needed to return
+// after the download finishes.
 type DownloadTaskReturnChannelInfo struct {
 	err error
 }
 
-func GetEnglishMapNameDownloadIfNotExists(
+// TODO: Change name:
+func DownloadMapIfNotExists(
 	downloaderSharedState *DownloaderSharedState,
 	mapHashAndExtension string,
-	mapURL url.URL) bool {
+	mapURL url.URL) error {
 	log.WithFields(
 		log.Fields{
 			"downloaderSharedState": downloaderSharedState,
@@ -102,23 +104,23 @@ func GetEnglishMapNameDownloadIfNotExists(
 		},
 	).Info("Entered getEnglishMapNameDownloadIfNotExists()")
 
-	ok, downloadTaskInfoChannel := dispatchMapDownloadTask(
+	downloadTaskInfoChannel := dispatchMapDownloadTask(
 		*downloaderSharedState,
 		mapHashAndExtension,
 		mapURL)
-	if !ok {
-		return ok
+	if downloadTaskInfoChannel == nil {
+		return nil
 	}
 
 	// Wait for channel to finish downloading the map.
 	taskStatus := <-downloadTaskInfoChannel
 	if taskStatus.err != nil {
 		log.WithField("error", taskStatus.err).Error("Error downloading map")
-		return false
+		return fmt.Errorf("error downloading map: %v", taskStatus.err)
 	}
 
 	log.Info("Finished getEnglishMapNameDownloadIfNotExists()")
-	return true
+	return nil
 }
 
 // dispatchMapDownloadTask handles dispatching of the map download task, if
@@ -126,7 +128,7 @@ func GetEnglishMapNameDownloadIfNotExists(
 func dispatchMapDownloadTask(
 	downloaderSharedState DownloaderSharedState,
 	mapHashAndExtension string,
-	mapURL url.URL) (bool, chan DownloadTaskReturnChannelInfo) {
+	mapURL url.URL) chan DownloadTaskReturnChannelInfo {
 
 	// Locking access to shared state:
 	downloaderSharedState.SharedRWMutex.Lock()
@@ -137,7 +139,7 @@ func dispatchMapDownloadTask(
 	if ok {
 		log.WithField("mapHashAndExtension", mapHashAndExtension).
 			Info("Map name was already processed in mapHashAndExtensionToName, returning.")
-		return true, nil
+		return nil
 	}
 
 	// Create channel
@@ -164,7 +166,8 @@ func dispatchMapDownloadTask(
 		}
 		// if it is not then add key to the map and create one element
 		// slice with the channel and submit the download task to the worker pool:
-		(*downloaderSharedState.CurrentlyDownloading)[mapHashAndExtension] = []chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
+		(*downloaderSharedState.CurrentlyDownloading)[mapHashAndExtension] =
+			[]chan DownloadTaskReturnChannelInfo{downloadTaskInfoChannel}
 		downloaderSharedState.WorkerPool.Submit(
 			func() {
 				// Errors are written to directly to the channel,
@@ -175,15 +178,14 @@ func dispatchMapDownloadTask(
 		)
 	}
 
-	log.WithField("downloadTaskInfoChannel", downloadTaskInfoChannel).
-		Info("Finished dispatchMapDownloadTask()")
-	return false, downloadTaskInfoChannel
+	log.Info("Finished dispatchMapDownloadTask()")
+	return downloadTaskInfoChannel
 }
 
 // downloadSingleMap handles downloading a single map based on an URL passed through
 // the task state.
 func downloadSingleMap(taskState DownloadTaskState) {
-	log.WithField("taskState", taskState).Info("Entered downloadSingleMap()")
+	log.Info("Entered downloadSingleMap()")
 
 	outputFilepath := filepath.Join(
 		taskState.mapDownloadDirectory,

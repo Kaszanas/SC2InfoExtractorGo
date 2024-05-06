@@ -33,29 +33,34 @@ func PipelineWrapper(
 	fileChunks [][]string,
 	packageToZipBool bool,
 	compressionMethod uint16,
-	mapsDirectory string,
-	processedReplaysFile string,
+	mapsDirectoryPath string,
+	processedReplaysFilepath string,
 	cliFlags utils.CLIFlags,
 ) {
 
 	log.Info("Entered PipelineWrapper()")
 	// Create maps directory if it doesn't exist:
-	err := file_utils.GetOrCreateDirectory(mapsDirectory)
+	err := file_utils.GetOrCreateDirectory(mapsDirectoryPath)
 	if err != nil {
 		log.WithField("error", err).Error("Failed to create maps directory.")
 		return
 	}
 
-	existingMapFiles := file_utils.ListFiles(mapsDirectory, ".s2ma")
+	// REVIEW: Start Review:
+	existingMapFilesSet, err := file_utils.ExistingFilesSet(
+		mapsDirectoryPath, ".s2ma",
+	)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get existing map files set.")
+		return
+	}
 
 	// Shared state for the downloader:
-	mapHashAndExtensionSet := make(map[string]struct{})
-
+	downloadedMapFilesSet := make(map[string]struct{})
 	downloaderSharedState, err := downloader.NewDownloaderSharedState(
-		mapsDirectory,
-		existingMapFiles,
-		mapHashAndExtensionSet,
-
+		mapsDirectoryPath,
+		existingMapFilesSet,
+		downloadedMapFilesSet,
 		cliFlags.NumberOfThreads*2)
 	defer downloaderSharedState.WorkerPool.StopAndWait()
 	if err != nil {
@@ -63,10 +68,12 @@ func PipelineWrapper(
 		return
 	}
 
-	_, err = donwloadAllSC2Maps(
+	// STAGE ONE PRE-PROCESS:
+	// Download all SC2 maps from the replays if they were not processed before:
+	existingMapFilesSet, err = donwloadAllSC2MapsHandleProcessedReplays(
 		&downloaderSharedState,
-		mapsDirectory,
-		processedReplaysFile,
+		mapsDirectoryPath,
+		processedReplaysFilepath,
 		fileChunks,
 		cliFlags,
 	)
@@ -75,10 +82,11 @@ func PipelineWrapper(
 		return
 	}
 
-	// List maps again:
-	existingMapFiles = file_utils.ListFiles(mapsDirectory, ".s2ma")
+	// STAGE TWO PRE-PROCESS:
+	// Read all of the map names from the drive and create a mapping
+	// from foreign to english names:
 	mainForeignToEnglishMapping := make(map[string]string)
-	for _, existingMapFilepath := range existingMapFiles {
+	for existingMapFilepath := range existingMapFilesSet {
 		foreignToEnglishMapping, err := sc2_map_processing.
 			ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 				existingMapFilepath,
@@ -88,12 +96,14 @@ func PipelineWrapper(
 				Error("Error reading map name from drive. Map could not be processed")
 			return
 		}
+
 		// Fill out the mapping, these maps won't be opened again:
 		for foreignName, englishName := range foreignToEnglishMapping {
 			mainForeignToEnglishMapping[foreignName] = englishName
 		}
-
 	}
+
+	// REVIEW: Finish Review
 
 	// If it is specified by the user to perform the processing without
 	// multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
@@ -154,15 +164,16 @@ func MultiprocessingChunkPipeline(
 	processingInfoFile, processingInfoStruct, err := persistent_data.CreateProcessingInfoFile(
 		cliFlags.LogFlags.LogPath,
 		chunkIndex)
-	defer processingInfoFile.Close()
 	if err != nil {
 		log.WithField("error", err).Error("Failed to create processingInfoFile.")
 		return
 	}
+	defer processingInfoFile.Close()
 
 	// Initializing grpc connection if the user chose to perform anonymization.
 	grpcAnonymizer := checkAnonymizationInitializeGRPC(cliFlags.PerformChatAnonymization)
-	// In order to free up resources We are defering the connection closing when all of the files have been processed:
+	// In order to free up resources We are defering the connection closing when
+	// all of the files have been processed:
 	if grpcAnonymizer != nil {
 		defer grpcAnonymizer.Connection.Close()
 	}
@@ -173,7 +184,8 @@ func MultiprocessingChunkPipeline(
 	processedCounter := 0
 	saveErrorCounter := 0
 
-	// Helper method returning bytes buffer and zip writer which will be used to save the processing results into:
+	// Helper method returning bytes buffer and zip writer which will be
+	// used to save the processing results into:
 	var buffer *bytes.Buffer
 	var writer *zip.Writer
 	var packageSummary persistent_data.PackageSummary
@@ -361,7 +373,6 @@ func FileProcessingPipeline(
 	}
 
 	// REVIEW: Start Review, New implementation of map translation below:
-
 	// Clean replay structure:
 	cleanOk, cleanReplayStructure := extractReplayData(
 		replayData,

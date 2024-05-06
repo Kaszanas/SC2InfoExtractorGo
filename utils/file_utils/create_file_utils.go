@@ -19,7 +19,7 @@ func ReadOrCreateFile(filepath string) (os.File, []byte, error) {
 
 	_, err := os.Stat(filepath)
 	// File Doesn't exist:
-	if !os.IsNotExist(err) {
+	if os.IsNotExist(err) {
 		// Create the file:
 		createdFile, err := CreateTruncateFile(filepath)
 		if err != nil {

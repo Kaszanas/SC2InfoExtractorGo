@@ -10,7 +10,10 @@ import (
 
 // ListFiles creates a slice of filepaths from a give input directory
 // based filtering supplied fileExtension
-func ListFiles(inputPath string, filterFileExtension string) []string {
+func ListFiles(
+	inputPath string,
+	filterFileExtension string,
+) ([]string, error) {
 
 	log.WithFields(log.Fields{
 		"inputPath":           inputPath,
@@ -19,19 +22,48 @@ func ListFiles(inputPath string, filterFileExtension string) []string {
 
 	files, err := os.ReadDir(inputPath)
 	if err != nil {
-		log.Fatal(err)
+		log.WithField("error", err).Error("Error reading directory")
+		return nil, err
 	}
 
 	var listOfFiles []string
 	if filterFileExtension == "" {
 		listOfFiles = getAllFiles(files, inputPath)
-		return listOfFiles
+		return listOfFiles, nil
 	}
 
 	listOfFiles = getFilesByExtension(files, inputPath, filterFileExtension)
 
 	log.WithField("n_files", len(listOfFiles)).Info("Finished ListFiles()")
-	return listOfFiles
+	return listOfFiles, nil
+}
+
+// ExistingFilesSet creates a set of existing files in a directory.
+func ExistingFilesSet(
+	inputPath string,
+	fiterFileExtension string,
+) (map[string]struct{}, error) {
+
+	log.WithFields(log.Fields{
+		"inputPath":           inputPath,
+		"filterFileExtension": fiterFileExtension}).
+		Info("Entered ExistingFilesSet()")
+
+	// List the files in the selected directory:
+	listOfFiles, err := ListFiles(inputPath, fiterFileExtension)
+	if err != nil {
+		log.WithField("error", err).Error("Error getting list of files")
+		return nil, err
+	}
+
+	// Convert from a slice (list) to a set (map),
+	// by default files should not be duplicates:
+	existingFilesSet := make(map[string]struct{})
+	for _, file := range listOfFiles {
+		existingFilesSet[file] = struct{}{}
+	}
+
+	return existingFilesSet, nil
 }
 
 // getFilesByExtension filters files by extension and returns a slice of filepaths

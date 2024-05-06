@@ -121,7 +121,11 @@ func testPipelineWrapperWithDir(
 	log.WithField("testLocalizationFilePath", testLocalizationFilePath).
 		Info("Got test localization filepath from settings.")
 
-	sliceOfFiles := file_utils.ListFiles(replayInputPath, ".SC2Replay")
+	sliceOfFiles, err := file_utils.ListFiles(replayInputPath, ".SC2Replay")
+	if err != nil {
+		return false, "Could not get the list of files."
+	}
+
 	chunksOfFiles, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
@@ -265,7 +269,11 @@ func pipelineTestCleanup(
 			return "Cannot delete output path.", err
 		}
 	} else {
-		filesToClean := file_utils.ListFiles(testOutputPath, "")
+		filesToClean, err := file_utils.ListFiles(testOutputPath, "")
+		if err != nil {
+			return "Cannot get the files in the cleanup directory.", err
+		}
+
 		for _, file := range filesToClean {
 			err = os.Remove(file)
 			if err != nil {
