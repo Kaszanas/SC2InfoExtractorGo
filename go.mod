@@ -6,6 +6,7 @@ require (
 	github.com/alitto/pond v1.8.3
 	github.com/icza/mpq v0.0.0-20230330132843-d3cdc0b651b7
 	github.com/icza/s2prot v1.5.1-0.20220316175339-a0ac41576dbb
+	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.11.0 // indirect
 	google.golang.org/genproto v0.0.0-20230629202037-9506855d4529 // indirect
