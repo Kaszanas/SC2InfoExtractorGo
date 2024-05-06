@@ -17,6 +17,9 @@ RUN --mount=type=cache,target=/go go mod download
 
 COPY . .
 
+# Required for the tests:
+ENV WORKSPACE_DIR=/app
+
 # Build the project:
 RUN --mount=type=cache,target=/go go build
 
