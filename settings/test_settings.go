@@ -1,23 +1,29 @@
 package settings
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
+
+	"github.com/joho/godotenv"
 )
 
 var DELETE_TEST_OUTPUT = false
 
-// REVIEW: Is it better to have an environment variable for the workspace directory?
-// Or is it better to have that in a .env file?
-// How to load a .env file? that is outside of the package?
 // GetWorkspaceDirectory returns the path to the workspace directory.
+// If the WORKSPACE_DIR environment variable is not set,
+// it returns a default (not always reliable) value.
 func GetWorkspaceDirectory() (string, error) {
-
-	// REVIEW: Will this consistently point to the workspace?
-	workspace, err := filepath.Abs("../")
+	err := godotenv.Load("../../.env")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error loading .env file")
 	}
 
+	workspace, exists := os.LookupEnv("WORKSPACE_DIR")
+	if !exists {
+		// Set a default value
+		workspace = "../../"
+	}
 	return workspace, nil
 }
 
