@@ -14,6 +14,25 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+// checkAnonymizationInitializeGRPC verifies if the anonymization should
+// be performed and returns a pointer to GRPCAnonymizer.
+func checkAnonymizationInitializeGRPC(
+	performAnonymizationBool bool) *GRPCAnonymizer {
+	if !performAnonymizationBool {
+		return nil
+	}
+
+	log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
+	grpcAnonymizer := GRPCAnonymizer{}
+	if !grpcAnonymizer.grpcDialConnect() {
+		log.Error("Could not connect to the gRPC server!")
+	}
+	grpcAnonymizer.grpcInitializeClient()
+	grpcAnonymizer.Cache = make(map[string]string)
+
+	return &grpcAnonymizer
+}
+
 // anonymizeReplay is the main function that is responsible for
 // anonymizing the replay data. It calls other functions that are
 // responsible for anonymizing chat messages and player information.
