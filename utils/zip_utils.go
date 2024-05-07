@@ -25,7 +25,12 @@ func InitBufferWriter() (*bytes.Buffer, *zip.Writer) {
 }
 
 // SaveFileToArchive creates a file header and saves replayString (JSON) bytes into the zip writer
-func SaveFileToArchive(replayString string, replayFile string, compressionMethod uint16, writer *zip.Writer) bool {
+func SaveFileToArchive(
+	replayString string,
+	replayFile string,
+	compressionMethod uint16,
+	writer *zip.Writer,
+) bool {
 
 	log.Info("Entered saveFileToArchive()")
 
@@ -49,7 +54,8 @@ func SaveFileToArchive(replayString string, replayFile string, compressionMethod
 	if err != nil {
 		log.WithFields(log.Fields{
 			"file":  replayFile,
-			"error": err}).Error("Got error when adding a file header to the archive.")
+			"error": err}).
+			Error("Got error when adding a file header to the archive.")
 		return false
 	}
 
