@@ -26,6 +26,19 @@ func NewProcessingInfo() ProcessingInfo {
 	}
 }
 
+// TODO: Use this:
+func (processingInfo *ProcessingInfo) AddToProcessed(fileName string) {
+	return
+}
+
+// TODO: Use this:
+func (processingInfo *ProcessingInfo) AddToFailed(
+	fileName string,
+	reason string,
+) {
+	return
+}
+
 // CreateProcessingInfoFile receives a fileNumber and creates a processing info
 // file holding the information on which files were processed successfully and which failed.
 func CreateProcessingInfoFile(
