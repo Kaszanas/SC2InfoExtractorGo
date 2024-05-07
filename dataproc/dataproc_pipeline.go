@@ -227,10 +227,10 @@ func MultiprocessingChunkPipeline(
 				"pipelineErrorCounter": pipelineErrorCounter,
 				"replayFile":           replayFile,
 			}).Error("Failed to perform FileProcessingPipeline()!")
-			replayFileNameAndExtension := filepath.Base(replayFile)
-			processingInfoStruct.FailedToProcess = append(
-				processingInfoStruct.FailedToProcess,
-				map[string]string{replayFileNameAndExtension: failureReason})
+			processingInfoStruct.AddToFailed(
+				replayFile,
+				failureReason,
+			)
 			continue
 		}
 
@@ -258,10 +258,7 @@ func MultiprocessingChunkPipeline(
 			}
 
 			processedCounter++
-			replayFileNameAndExtension := filepath.Base(replayFile)
-			processingInfoStruct.ProcessedFiles = append(
-				processingInfoStruct.ProcessedFiles,
-				replayFileNameAndExtension)
+			processingInfoStruct.AddToProcessed(replayFile)
 			log.Info("Added file to zip archive.")
 			continue
 		}
@@ -282,10 +279,7 @@ func MultiprocessingChunkPipeline(
 
 		processedCounter++
 		replayFileNameAndExtension := filepath.Base(replayFile)
-		processingInfoStruct.ProcessedFiles = append(
-			processingInfoStruct.ProcessedFiles,
-			replayFileNameAndExtension,
-		)
+		processingInfoStruct.AddToProcessed(replayFileNameAndExtension)
 	}
 
 	// Saving processingInfo to know which files failed to process:

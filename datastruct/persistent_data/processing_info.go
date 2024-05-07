@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	log "github.com/sirupsen/logrus"
@@ -26,24 +27,37 @@ func NewProcessingInfo() ProcessingInfo {
 	}
 }
 
-// TODO: Use this:
-func (processingInfo *ProcessingInfo) AddToProcessed(fileName string) {
-	return
+// AddToProcessed adds a replay file path to the list of processed files.
+func (processingInfo *ProcessingInfo) AddToProcessed(replayFilePath string) {
+	replayFileNameAndExtension := filepath.Base(replayFilePath)
+
+	processingInfo.ProcessedFiles = append(
+		processingInfo.ProcessedFiles,
+		replayFileNameAndExtension,
+	)
 }
 
-// TODO: Use this:
+// AddToFailed adds a replay file path to the list of failed files.
+// Includes a reason for failure.
 func (processingInfo *ProcessingInfo) AddToFailed(
-	fileName string,
+	replayFilePath string,
 	reason string,
 ) {
-	return
+	replayFileNameAndExtension := filepath.Base(replayFilePath)
+
+	processingInfo.FailedToProcess = append(
+		processingInfo.FailedToProcess, map[string]string{
+			"fileName": replayFileNameAndExtension,
+			"reason":   reason,
+		})
 }
 
 // CreateProcessingInfoFile receives a fileNumber and creates a processing info
 // file holding the information on which files were processed successfully and which failed.
 func CreateProcessingInfoFile(
 	logsFilepath string,
-	fileNumber int) (*os.File, ProcessingInfo, error) {
+	fileNumber int,
+) (*os.File, ProcessingInfo, error) {
 
 	log.Info("Entered CreateProcessingInfoFile()")
 
@@ -71,7 +85,8 @@ func CreateProcessingInfoFile(
 // and marshals/writes processingInfoStruct into the file.
 func SaveProcessingInfoToFile(
 	processingInfoFile *os.File,
-	processingInfoStruct ProcessingInfo) {
+	processingInfoStruct ProcessingInfo,
+) {
 
 	log.Info("Entered SaveProcessingInfo()")
 

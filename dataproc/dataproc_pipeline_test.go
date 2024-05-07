@@ -222,7 +222,8 @@ func testPipelineWrapperWithDir(
 	}
 
 	if histogramGameVersionCount != processedFilesCount {
-		return false, "gameVersion histogram count is different from number of processed files."
+		return false,
+			"gameVersion histogram count is different from number of processed files."
 	}
 
 	if removeTestOutputs {
@@ -289,7 +290,7 @@ func unmarshalSummaryFile(
 	pathToSummaryFile string,
 	mappingToPopulate *persistent_data.PackageSummary) (string, error) {
 
-	log.Info("Entered unmarshalJsonFile()")
+	log.Info("Entered unmarshalSummaryFile()")
 
 	var file, err = os.Open(pathToSummaryFile)
 	if err != nil {
@@ -307,7 +308,7 @@ func unmarshalSummaryFile(
 		return "Could not unmarshal the JSON file.", err
 	}
 
-	log.Info("Finished unmarshalJsonFile()")
+	log.Info("Finished unmarshalSummaryFile()")
 
 	return "", nil
 }
