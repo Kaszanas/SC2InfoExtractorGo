@@ -14,9 +14,20 @@ var DELETE_TEST_OUTPUT = false
 // If the WORKSPACE_DIR environment variable is not set,
 // it returns a default (not always reliable) value.
 func GetWorkspaceDirectory() (string, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return "", fmt.Errorf("error loading .env file")
+
+	possibleEnvPaths := []string{"../../.env", "../.env"}
+	for _, envPath := range possibleEnvPaths {
+		// Getting absolute path for debugging:
+		absoluteEnvPath, err := filepath.Abs(envPath)
+		if err != nil {
+			return "", fmt.Errorf("error getting absolute path of .env file")
+		}
+
+		// Cannot load env file at this path, continue to try another path:
+		err = godotenv.Load(absoluteEnvPath)
+		if err == nil {
+			break
+		}
 	}
 
 	workspace, exists := os.LookupEnv("WORKSPACE_DIR")
@@ -24,7 +35,13 @@ func GetWorkspaceDirectory() (string, error) {
 		// Set a default value
 		workspace = "../../"
 	}
-	return workspace, nil
+
+	absoluteWorkspace, err := filepath.Abs(workspace)
+	if err != nil {
+		return "", fmt.Errorf("error getting absolute path of workspace directory")
+	}
+
+	return absoluteWorkspace, nil
 }
 
 // GetTestFilesDirectory returns the path to the test_files directory.
