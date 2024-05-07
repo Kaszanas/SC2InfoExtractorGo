@@ -82,7 +82,7 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 					}
 
 					testOk, reason := testPipelineWrapperWithDir(
-						testOutputDir,
+						thisTestOutputDir,
 						absoluteTestReplayDir,
 						dirName,
 						logFile,
