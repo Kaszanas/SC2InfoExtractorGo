@@ -152,7 +152,8 @@ func dispatchMapDownloadTask(
 		// Map is being downloaded, add it to the list of currently downloading maps:
 		log.WithField("mapHashAndExtension", mapHashAndExtension).
 			Info("Map is being downloaded, adding channel to receive the result.")
-		(*downloaderSharedState.CurrentlyDownloading)[mapHashAndExtension] = append(listOfChannels, downloadTaskInfoChannel)
+		(*downloaderSharedState.CurrentlyDownloading)[mapHashAndExtension] =
+			append(listOfChannels, downloadTaskInfoChannel)
 	} else {
 		log.WithField("mapHashAndExtension", mapHashAndExtension).
 			Info("Map is not being downloaded, adding to download queue.")

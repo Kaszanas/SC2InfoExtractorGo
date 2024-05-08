@@ -20,6 +20,7 @@ type LogFlags struct {
 type CLIFlags struct {
 	InputDirectory             string
 	OutputDirectory            string
+	OnlyMapsDownload           bool
 	NumberOfThreads            int
 	NumberOfPackages           int
 	PerformIntegrityCheck      bool
@@ -44,6 +45,12 @@ func ParseFlags() (CLIFlags, bool) {
 		"output",
 		"./replays/output",
 		"Output directory where compressed zip packages will be saved.")
+
+	onlyMapDownload := flag.Bool(
+		"only_map_download",
+		false,
+		"Specifies if the tool is supposed to only download the maps and not process the replays.")
+
 	numberOfPackagesFlag := flag.Int(
 		"number_of_packages",
 		1,
@@ -132,6 +139,7 @@ func ParseFlags() (CLIFlags, bool) {
 	flags := CLIFlags{
 		InputDirectory:             absoluteInputDirectory,
 		OutputDirectory:            absolutePathOutputDirectory,
+		OnlyMapsDownload:           *onlyMapDownload,
 		NumberOfPackages:           *numberOfPackagesFlag,
 		PerformIntegrityCheck:      *performIntegrityCheckFlag,
 		PerformValidityCheck:       *performValidityCheckFlag,

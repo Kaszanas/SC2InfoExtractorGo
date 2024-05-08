@@ -3,16 +3,159 @@ package sc2_map_processing
 import (
 	"fmt"
 	"net/url"
+	"os"
+	"runtime"
 	"strings"
+	"sync"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/icza/mpq"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
+// ReplayProcessingChannelContents is a struct that is used to pass data
+// between the orchestrator and the workers in the pipeline.
+type ReplayMapProcessingChannelContents struct {
+	Index        int
+	ChunkOfFiles []string
+}
+
+func GetAllReplaysMapURLs(
+	fileChunks [][]string,
+	processedReplaysFilepath string,
+	mapsDirectory string,
+	cliFlags utils.CLIFlags,
+) (
+	map[url.URL]string,
+	persistent_data.ProcessedReplaysToFileInfo,
+	error,
+) {
+
+	// If it is specified by the user to perform the processing without
+	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
+	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
+	var channel = make(chan ReplayMapProcessingChannelContents, cliFlags.NumberOfThreads+1)
+	var wg sync.WaitGroup
+	// Adding a task for each of the supplied chunks to speed up the processing:
+	wg.Add(cliFlags.NumberOfThreads)
+
+	// Create a sync.Map to store the URLs
+	urls := &sync.Map{}
+
+	processedReplays, err := persistent_data.OpenOrCreateProcessedReplaysToFileInfo(
+		processedReplaysFilepath,
+		mapsDirectory,
+		fileChunks,
+	)
+	if err != nil {
+		return nil, persistent_data.ProcessedReplaysToFileInfo{}, err
+	}
+
+	processedReplaysSyncMap := processedReplays.ConvertToSyncMap()
+
+	// Spin up workers waiting for chunks to process:
+	for i := 0; i < cliFlags.NumberOfThreads; i++ {
+		go func() {
+			for {
+				channelContents, ok := <-channel
+				if !ok {
+					wg.Done()
+					return
+				}
+				// Process the chunk of files and add the URLs to the map
+				for _, file := range channelContents.ChunkOfFiles {
+
+					// Check if the replay was already processed:
+					fileInfo, err := os.Stat(file)
+					if err != nil {
+						log.WithFields(log.Fields{
+							"error":      err,
+							"replayFile": file,
+						}).Error("Failed to get file info.")
+						continue
+					}
+					fileInfoToCheck, ok := processedReplaysSyncMap.Load(file)
+					if ok {
+						// Check if the file was modified since the last time it was processed:
+						if persistent_data.CheckFileInfoEq(
+							fileInfo,
+							fileInfoToCheck.(persistent_data.FileInformationToCheck),
+						) {
+							// It is the same so continue
+							continue
+						}
+						// It wasn't the same so the replay should be processed again:
+						processedReplaysSyncMap.Delete(file)
+					}
+
+					// Assume getURLsFromReplay is a function that
+					// returns a slice of URLs from a replay file
+					replayData, err := rep.NewFromFile(file)
+					if err != nil {
+						log.WithFields(log.Fields{"file": file, "error": err}).
+							Error("Failed to read replay file to retrieve map data")
+						continue
+					}
+
+					mapURL, mapHashAndExtension, ok :=
+						GetMapURLAndHashFromReplayData(replayData)
+					if !ok {
+						log.WithField("file", file).
+							Error("Failed to get map URL and hash from replay data")
+						continue
+					}
+					urls.Store(mapURL, mapHashAndExtension)
+				}
+			}
+		}()
+	}
+
+	// Passing the chunks to the workers:
+	for index, chunk := range fileChunks {
+		channel <- ReplayMapProcessingChannelContents{
+			Index:        index,
+			ChunkOfFiles: chunk}
+	}
+
+	close(channel)
+	wg.Wait()
+
+	processedReplaysReturn := persistent_data.
+		FromSyncMapToProcessedReplaysToFileInfo(processedReplaysSyncMap)
+
+	urlMapToFilename := convertFromSyncMapToURLMap(urls)
+
+	// Save the processed replays to the file:
+	err = processedReplays.SaveProcessedReplaysFile(processedReplaysFilepath)
+	if err != nil {
+		log.WithField("processedReplaysFile", processedReplaysFilepath).
+			Error("Failed to save the processed replays file.")
+		return nil, persistent_data.ProcessedReplaysToFileInfo{}, err
+	}
+
+	// Return all of the URLs
+	return urlMapToFilename, processedReplaysReturn, nil
+}
+
+// convertFromSyncMapToURLMap converts a sync.Map to a map[url.URL]string.
+func convertFromSyncMapToURLMap(
+	urls *sync.Map,
+) map[url.URL]string {
+	urlMap := make(map[url.URL]string)
+	urls.Range(func(key, value interface{}) bool {
+		urlMap[key.(url.URL)] = value.(string)
+		return true
+	})
+	return urlMap
+}
+
 // GetMapURLAndHashFromReplayData extracts the map URL,
 // hash, and file extension from the replay data.
-func GetMapURLAndHashFromReplayData(replayData *rep.Rep) (url.URL, string, bool) {
+func GetMapURLAndHashFromReplayData(
+	replayData *rep.Rep,
+) (url.URL, string, bool) {
 	log.Info("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
 

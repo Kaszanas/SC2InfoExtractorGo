@@ -2,15 +2,11 @@ package persistent_data
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
+	"sync"
 
-	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
-	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
-	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -69,7 +65,7 @@ func OpenOrCreateProcessedReplaysToFileInfo(
 			// Replay was processed so no need to check it again:
 			if ok {
 				// Check if the file was modified since the last time it was processed:
-				if checkFileInfoEq(fileInfo, fileInfoToCheck) {
+				if CheckFileInfoEq(fileInfo, fileInfoToCheck) {
 					// It is the same so continue
 					continue
 				}
@@ -82,7 +78,10 @@ func OpenOrCreateProcessedReplaysToFileInfo(
 	return prtm, nil
 }
 
-func checkFileInfoEq(
+// CheckFileInfoEq compares the fs.FileInfo contents with FileInfoToCheck.
+// Returns true if the contents are the same.
+// This is used to verify if the file changed since last processing.
+func CheckFileInfoEq(
 	fileInfo fs.FileInfo,
 	fileInfoToCheck FileInformationToCheck,
 ) bool {
@@ -90,6 +89,32 @@ func checkFileInfoEq(
 		fileInfo.Size() == fileInfoToCheck.Size
 }
 
+// ConvertToSyncMap Converts a ProcessedReplaysToFileInfo to a sync.Map.
+func (prtm *ProcessedReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
+	syncMap := &sync.Map{}
+	for key, value := range prtm.ProcessedFiles {
+		syncMap.Store(key, value)
+	}
+	return syncMap
+}
+
+// FromSyncMapToProcessedReplaysToFileInfo Converts a
+// sync.Map to a ProcessedReplaysToFileInfo.
+func FromSyncMapToProcessedReplaysToFileInfo(
+	syncMap *sync.Map,
+) ProcessedReplaysToFileInfo {
+	processedReplays := make(map[string]interface{})
+	syncMap.Range(func(key, value interface{}) bool {
+		processedReplays[key.(string)] = value.(FileInformationToCheck)
+		return true
+	})
+
+	return ProcessedReplaysToFileInfo{
+		ProcessedFiles: processedReplays,
+	}
+}
+
+// CheckIfReplayWasProcessed checks if the replay was processed before.
 func (prtm *ProcessedReplaysToFileInfo) CheckIfReplayWasProcessed(
 	replayPath string,
 ) (FileInformationToCheck, bool) {
@@ -108,6 +133,8 @@ func (prtm *ProcessedReplaysToFileInfo) CheckIfReplayWasProcessed(
 	return fileInfoToCheck, ok
 }
 
+// AddReplayToProcessed adds a replay with its file information to the processed replays.
+// used to check if the replay was processed before.
 func (prtm *ProcessedReplaysToFileInfo) AddReplayToProcessed(
 	replayPath string,
 	fileInfo fs.FileInfo,
@@ -116,59 +143,6 @@ func (prtm *ProcessedReplaysToFileInfo) AddReplayToProcessed(
 		LastModified: fileInfo.ModTime().Unix(),
 		Size:         fileInfo.Size(),
 	}
-}
-
-func (prtm *ProcessedReplaysToFileInfo) DownloadMapAddReplayToProcessed(
-	replayPath string,
-	downloaderSharedState *downloader.DownloaderSharedState,
-) error {
-
-	replayData, err := rep.NewFromFile(replayPath)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err":        err,
-			"replayPath": replayPath}).
-			Error("Failed to get replay data.")
-		return err
-	}
-
-	// Getting map URL and hash before mutexing, this operation is not thread safe:
-	mapURL, mapHashAndExtension, ok := sc2_map_processing.
-		GetMapURLAndHashFromReplayData(replayData)
-	if !ok {
-		log.Error("getMapURLAndHashFromReplayData() failed.")
-		return fmt.Errorf("getMapURLAndHashFromReplayData() failed")
-	}
-
-	err = downloader.DownloadMapIfNotExists(
-		downloaderSharedState,
-		mapHashAndExtension,
-		mapURL)
-	if err != nil {
-		log.WithField("file", replayPath).
-			Error("Failed to get English map name.")
-		return fmt.Errorf("getEnglishMapNameDownloadIfNotExists() failed: %v", err)
-	}
-
-	fileInfo, err := os.Stat(replayPath)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":      err,
-			"replayPath": replayPath,
-		}).Error("Failed to get file info.")
-		return err
-	}
-
-	// Map was downloaded successfully,
-	// add the replay to the processed replays:
-	fileInfoToCheck := FileInformationToCheck{
-		LastModified: fileInfo.ModTime().Unix(),
-		Size:         fileInfo.Size(),
-	}
-	replayFilenameAndExtension := filepath.Base(replayPath)
-	prtm.ProcessedFiles[replayFilenameAndExtension] = fileInfoToCheck
-
-	return nil
 }
 
 func (prtm *ProcessedReplaysToFileInfo) SaveProcessedReplaysFile(

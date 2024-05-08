@@ -68,12 +68,26 @@ func PipelineWrapper(
 		return
 	}
 
+	// Get all map URLs into a set:
+	URLToFileNameMap, processedReplays, err := sc2_map_processing.
+		GetAllReplaysMapURLs(
+			fileChunks,
+			processedReplaysFilepath,
+			mapsDirectoryPath,
+			cliFlags,
+		)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get all map URLs.")
+		return
+	}
+
 	// STAGE ONE PRE-PROCESS:
 	// Download all SC2 maps from the replays if they were not processed before:
-	existingMapFilesSet, err = donwloadAllSC2MapsHandleProcessedReplays(
+	existingMapFilesSet, err = DownloadAllSC2Maps(
 		&downloaderSharedState,
 		mapsDirectoryPath,
-		processedReplaysFilepath,
+		processedReplays,
+		URLToFileNameMap,
 		fileChunks,
 		cliFlags,
 	)
@@ -105,8 +119,14 @@ func PipelineWrapper(
 
 	// REVIEW: Finish Review
 
+	// Stop all processing if the user chose to only download the maps:
+	if cliFlags.OnlyMapsDownload {
+		log.Info("Only maps download was chosen. Exiting.")
+		return
+	}
+
 	// If it is specified by the user to perform the processing without
-	// multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
+	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
 	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
 	var channel = make(chan ReplayProcessingChannelContents, cliFlags.NumberOfThreads+1)
 	var wg sync.WaitGroup
