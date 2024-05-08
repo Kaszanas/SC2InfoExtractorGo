@@ -93,7 +93,13 @@ func CheckFileInfoEq(
 func (prtm *ProcessedReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
 	syncMap := &sync.Map{}
 	for key, value := range prtm.ProcessedFiles {
-		syncMap.Store(key, value)
+		valueMap := value.(map[string]interface{})
+		// JSON is unmarshaled to float64 so we need to cast it to int64:
+		infoToCheck := FileInformationToCheck{
+			LastModified: int64(valueMap["lastModified"].(float64)),
+			Size:         int64(valueMap["size"].(float64)),
+		}
+		syncMap.Store(key, infoToCheck)
 	}
 	return syncMap
 }
@@ -105,7 +111,11 @@ func FromSyncMapToProcessedReplaysToFileInfo(
 ) ProcessedReplaysToFileInfo {
 	processedReplays := make(map[string]interface{})
 	syncMap.Range(func(key, value interface{}) bool {
-		processedReplays[key.(string)] = value.(FileInformationToCheck)
+
+		keyStr := key.(string)
+		valueFileInformationToCheck, _ := value.(FileInformationToCheck)
+
+		processedReplays[keyStr] = valueFileInformationToCheck
 		return true
 	})
 
