@@ -19,12 +19,6 @@ func ListFiles(
 		"filterFileExtension": filterFileExtension}).
 		Info("Entered ListFiles()")
 
-	// files, err := os.ReadDir(inputPath)
-	// if err != nil {
-	// 	log.WithField("error", err).Error("Error reading directory")
-	// 	return nil, err
-	// }
-
 	var listOfFiles []string
 	if filterFileExtension == "" {
 		listOfFiles, err := getAllFiles(inputPath)
@@ -73,6 +67,8 @@ func ExistingFilesSet(
 	return existingFilesSet, nil
 }
 
+// getFilesByExtension returns a slice of filepaths filtering them by the supplied
+// file extension.
 func getFilesByExtension(
 	inputPath string,
 	filterFileExtension string,
@@ -99,6 +95,7 @@ func getFilesByExtension(
 	return listOfFiles, nil
 }
 
+// getAllFiles returns a slice of all filepaths in a given directory.
 func getAllFiles(inputPath string) ([]string, error) {
 	var listOfFiles []string
 
