@@ -49,12 +49,18 @@ func ParseFlags() (CLIFlags, bool) {
 	onlyMapDownload := flag.Bool(
 		"only_map_download",
 		false,
-		"Specifies if the tool is supposed to only download the maps and not process the replays.")
+		`Specifies if the tool is supposed to only download
+		the maps and not process the replays.`,
+	)
 
 	numberOfPackagesFlag := flag.Int(
 		"number_of_packages",
 		1,
-		"Provide a number of zip packages to be created and compressed into a zip archive. Please remember that this number needs to be lower than the number of processed files. If set to 0, will ommit the zip packaging and output .json directly to drive.")
+		`Provide a number of zip packages to be created and compressed
+		into a zip archive. Please remember that this number needs to be lower
+		than the number of processed files. If set to 0, will ommit the
+		zip packaging and output .json directly to drive.`,
+	)
 
 	// Boolean Flags:
 	help := flag.Bool(
@@ -64,19 +70,29 @@ func ParseFlags() (CLIFlags, bool) {
 	performIntegrityCheckFlag := flag.Bool(
 		"perform_integrity_checks",
 		false,
-		"If the software is supposed to check the hardcoded integrity checks for the provided replays")
+		`If the software is supposed to check the hardcoded
+		integrity checks for the provided replays`,
+	)
 	performValidityCheckFlag := flag.Bool(
 		"perform_validity_checks",
 		false,
-		"Provide if the tool is supposed to use hardcoded validity checks and verify if the replay file variables are within 'common sense' ranges.")
+		`Provide if the tool is supposed to use hardcoded validity checks
+		and verify if the replay file variables are within 'common sense' ranges.`,
+	)
 	performCleanupFlag := flag.Bool(
 		"perform_cleanup",
 		false,
-		"Provide if the tool is supposed to perform the cleaning functions within the processing pipeline.")
+		`Provide if the tool is supposed to perform the cleaning
+		functions within the processing pipeline.`,
+	)
 	performPlayerAnonymizationFlag := flag.Bool(
 		"perform_player_anonymization",
 		false,
-		"Specifies if the tool is supposed to perform player anonymization functions within the processing pipeline. If set to true please remember to download and run an anonymization server: https://doi.org/10.5281/zenodo.5138313")
+		`Specifies if the tool is supposed to perform player anonymization
+		functions within the processing pipeline.
+		If set to true please remember to download and run
+		an anonymization server: https://doi.org/10.5281/zenodo.5138313`,
+	)
 	performChatAnonymizationFlag := flag.Bool(
 		"perform_chat_anonymization",
 		false,
@@ -86,11 +102,15 @@ func ParseFlags() (CLIFlags, bool) {
 	performFilteringFlag := flag.Bool(
 		"perform_filtering",
 		false,
-		"Specifies if the pipeline ought to verify different hard coded game modes. If set to false completely bypasses the filtering.")
+		`Specifies if the pipeline ought to verify different hard coded game modes.
+		If set to false completely bypasses the filtering.`,
+	)
 	gameModeFilterFlag := flag.Int(
 		"game_mode_filter",
 		0b11111111,
-		"Specifies which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111")
+		`Specifies which game mode should be included from the processed files
+		in a format of a binary flag: AllGameModes: 0b11111111`,
+	)
 
 	// processWithMultiprocessingFlag := flag.Bool("with_multiprocessing", false, "Specifies if the processing is supposed to be perform with maximum amount of available cores. If set to false, the program will use one core.")
 	numberOfThreadsUsedFlag := flag.Int(
@@ -102,7 +122,11 @@ func ParseFlags() (CLIFlags, bool) {
 	logLevelFlag := flag.Int(
 		"log_level",
 		4,
-		"Specifies a log level from 1-7. Panic - 1, Fatal - 2, Error - 3, Warn - 4, Info - 5, Debug - 6, Trace - 7")
+		`Specifies a log level from 1-7: Panic - 1, Fatal - 2,
+		Error - 3, Warn - 4,
+		Info - 5, Debug - 6,
+		Trace - 7`,
+	)
 	logDirectoryFlag := flag.String(
 		"log_dir",
 		"./logs/",
@@ -110,7 +134,9 @@ func ParseFlags() (CLIFlags, bool) {
 	performCPUProfilingFlag := flag.String(
 		"with_cpu_profiler",
 		"",
-		"Set path to the file where pprof cpu profiler will save its information. If this is empty no profiling is performed.")
+		`Set path to the file where pprof cpu profiler will save its information.
+		If this is empty no profiling is performed.`,
+	)
 
 	flag.Parse()
 
@@ -121,13 +147,15 @@ func ParseFlags() (CLIFlags, bool) {
 
 	absoluteInputDirectory, err := filepath.Abs(*inputDirectory)
 	if err != nil {
-		log.WithField("inputDirectory", *inputDirectory).Error("Failed to get the absolute path to the input directory!")
+		log.WithField("inputDirectory", *inputDirectory).
+			Error("Failed to get the absolute path to the input directory!")
 		return CLIFlags{}, false
 	}
 
 	absolutePathOutputDirectory, err := filepath.Abs(*outputDirectory)
 	if err != nil {
-		log.WithField("outputDirectory", *outputDirectory).Error("Failed to get the absolute path to the output directory!")
+		log.WithField("outputDirectory", *outputDirectory).
+			Error("Failed to get the absolute path to the output directory!")
 		return CLIFlags{}, false
 	}
 
