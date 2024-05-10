@@ -7,12 +7,10 @@ require (
 	github.com/icza/mpq v0.0.0-20230330132843-d3cdc0b651b7
 	github.com/icza/s2prot v1.5.1-0.20220316175339-a0ac41576dbb
 	github.com/joho/godotenv v1.5.1
-	github.com/jxskiss/mcli v0.9.5 // indirect
-	github.com/schollz/progressbar/v3 v3.14.2 // indirect
+	github.com/schollz/progressbar/v3 v3.14.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/net v0.11.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.20.0 // indirect
 	google.golang.org/genproto v0.0.0-20230629202037-9506855d4529 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230629202037-9506855d4529 // indirect
