@@ -85,7 +85,12 @@ func GetAllReplaysMapURLs(
 					// deferred progress bar increment:
 					func() {
 						// Defer the progress bar increment:
-						defer progressBar.Add(1)
+						defer func() {
+							if err := progressBar.Add(1); err != nil {
+								log.WithField("error", err).
+									Error("Error updating progress bar in GetAllReplaysMapURLs")
+							}
+						}()
 						replayFilename := filepath.Base(replayFullFilepath)
 
 						// Check if the replay was already processed:
@@ -222,7 +227,12 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	mapFilepath string,
 	progressBar *progressbar.ProgressBar,
 ) (map[string]string, error) {
-	defer progressBar.Add(1)
+	defer func() {
+		if err := progressBar.Add(1); err != nil {
+			log.WithField("error", err).
+				Error("Error updating progress bar in ReadLocalizedDataFromMapGetForeignToEnglishMapping()")
+		}
+	}()
 	log.Info("Entered readLocalizedDataFromMap()")
 
 	mpqArchive, err := mpq.NewFromFile(mapFilepath)

@@ -107,7 +107,12 @@ func DownloadMapIfNotExists(
 	progressBar *progressbar.ProgressBar,
 ) error {
 	// Defer the progress bar increment:
-	defer progressBar.Add(1)
+	defer func() {
+		if err := progressBar.Add(1); err != nil {
+			log.WithField("error", err).
+				Error("Error updating progress bar in DownloadMapIfNotExists")
+		}
+	}()
 
 	log.WithFields(
 		log.Fields{

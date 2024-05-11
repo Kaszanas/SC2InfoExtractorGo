@@ -248,88 +248,96 @@ func MultiprocessingChunkPipeline(
 
 	// Processing file:
 	for _, replayFile := range listOfFiles {
-		// Checking if the file was previously processed:
-		if contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			continue
-		}
+		func() {
+			// Defer the progress bar increment:
+			defer func() {
+				if err := progressBar.Add(1); err != nil {
+					log.WithField("error", err).
+						Error("Error updating progress bar in DownloadMapIfNotExists")
+				}
+			}()
+			// Checking if the file was previously processed:
+			if contains(processingInfoStruct.ProcessedFiles, replayFile) {
+				return
+			}
 
-		// Running all of the processing logic and verifying if it worked:
-		didWork, cleanReplayStructure, replaySummary, failureReason := FileProcessingPipeline(
-			replayFile,
-			grpcAnonymizer,
-			englishToForeignMapping,
-			cliFlags,
-		)
-
-		// Create final replay string:
-		stringifyOk, replayString := stringifyReplay(&cleanReplayStructure)
-		if !stringifyOk {
-			log.WithField("file", replayFile).
-				Error("Failed to stringify the replay.")
-			continue
-		}
-
-		if !didWork {
-			pipelineErrorCounter++
-			log.WithFields(log.Fields{
-				"pipelineErrorCounter": pipelineErrorCounter,
-				"replayFile":           replayFile,
-			}).Error("Failed to perform FileProcessingPipeline()!")
-			processingInfoStruct.AddToFailed(
+			// Running all of the processing logic and verifying if it worked:
+			didWork, cleanReplayStructure, replaySummary, failureReason := FileProcessingPipeline(
 				replayFile,
-				failureReason,
+				grpcAnonymizer,
+				englishToForeignMapping,
+				cliFlags,
 			)
-			continue
-		}
 
-		// Saving output to zip archive:
-		if packageToZipBool {
-			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
-			persistent_data.AddReplaySummToPackageSumm(
-				&replaySummary,
-				&packageSummary,
-			)
-			log.Info("Added replaySummary to packageSummary")
+			// Create final replay string:
+			stringifyOk, replayString := stringifyReplay(&cleanReplayStructure)
+			if !stringifyOk {
+				log.WithField("file", replayFile).
+					Error("Failed to stringify the replay.")
+				return
+			}
 
-			savedSuccess := utils.SaveFileToArchive(
+			if !didWork {
+				pipelineErrorCounter++
+				log.WithFields(log.Fields{
+					"pipelineErrorCounter": pipelineErrorCounter,
+					"replayFile":           replayFile,
+				}).Error("Failed to perform FileProcessingPipeline()!")
+				processingInfoStruct.AddToFailed(
+					replayFile,
+					failureReason,
+				)
+				return
+			}
+
+			// Saving output to zip archive:
+			if packageToZipBool {
+				// Append it to a list and when a package is created create a package summary and clear the list for next iterations
+				persistent_data.AddReplaySummToPackageSumm(
+					&replaySummary,
+					&packageSummary,
+				)
+				log.Info("Added replaySummary to packageSummary")
+
+				savedSuccess := utils.SaveFileToArchive(
+					replayString,
+					replayFile,
+					compressionMethod,
+					writer)
+				if !savedSuccess {
+					compressionErrorCounter++
+					log.WithFields(log.Fields{
+						"compressionErrorCounter": compressionErrorCounter,
+						"replayFile":              replayFile,
+					}).Error("Failed to save file to archive! Skipping.")
+					return
+				}
+
+				processedCounter++
+				processingInfoStruct.AddToProcessed(replayFile)
+				log.Info("Added file to zip archive.")
+				return
+			}
+
+			okSaveToDrive := file_utils.SaveReplayJSONFileToDrive(
 				replayString,
 				replayFile,
-				compressionMethod,
-				writer)
-			if !savedSuccess {
-				compressionErrorCounter++
+				cliFlags.OutputDirectory)
+			if !okSaveToDrive {
+				saveErrorCounter++
 				log.WithFields(log.Fields{
-					"compressionErrorCounter": compressionErrorCounter,
-					"replayFile":              replayFile,
-				}).Error("Failed to save file to archive! Skipping.")
-				continue
+					"replayFile":               replayFile,
+					"cliFlags.OutputDirectory": cliFlags.OutputDirectory,
+					"saveErrorCounter":         saveErrorCounter,
+				}).Error("Failed to save .json to drive!")
+				return
 			}
 
 			processedCounter++
-			processingInfoStruct.AddToProcessed(replayFile)
-			log.Info("Added file to zip archive.")
-			continue
-		}
+			replayFileNameAndExtension := filepath.Base(replayFile)
+			processingInfoStruct.AddToProcessed(replayFileNameAndExtension)
 
-		okSaveToDrive := file_utils.SaveReplayJSONFileToDrive(
-			replayString,
-			replayFile,
-			cliFlags.OutputDirectory)
-		if !okSaveToDrive {
-			saveErrorCounter++
-			log.WithFields(log.Fields{
-				"replayFile":               replayFile,
-				"cliFlags.OutputDirectory": cliFlags.OutputDirectory,
-				"saveErrorCounter":         saveErrorCounter,
-			}).Error("Failed to save .json to drive!")
-			continue
-		}
-
-		processedCounter++
-		replayFileNameAndExtension := filepath.Base(replayFile)
-		processingInfoStruct.AddToProcessed(replayFileNameAndExtension)
-		// REVIEW: Could be adding the len of the chunk at the end instead of 1:
-		progressBar.Add(1)
+		}()
 	}
 
 	// Saving processingInfo to know which files failed to process:
@@ -340,17 +348,26 @@ func MultiprocessingChunkPipeline(
 	log.Info("Saved processing.log")
 
 	if packageToZipBool {
-		// Writing PackageSummaryFile to drive:
-		persistent_data.CreatePackageSummaryFile(
-			cliFlags.OutputDirectory,
-			packageSummary,
-			chunkIndex)
 
 		// Writing the zip archive to drive:
 		writer.Close()
 		packagePath := filepath.Join(
 			cliFlags.OutputDirectory,
-			"package_"+strconv.Itoa(chunkIndex)+".zip")
+			"package_"+strconv.Itoa(chunkIndex)+".zip",
+		)
+
+		// Writing PackageSummaryFile to drive:
+		err := persistent_data.CreatePackageSummaryFile(
+			cliFlags.OutputDirectory,
+			packageSummary,
+			chunkIndex)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"packagePath": packagePath,
+			}).Error("Failed to save package summary to drive!")
+		}
+
 		packageAbsPath, err := filepath.Abs(packagePath)
 		if err != nil {
 			log.WithFields(log.Fields{
