@@ -10,7 +10,9 @@ import (
 	"sync"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/alitto/pond"
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,9 +47,15 @@ func NewDownloaderSharedState(
 		Info("Entered NewDownloaderSharedState()")
 
 	for existingMapFilepath := range existingFilesMapsSet {
+		progressBarInitializeDownloader := utils.NewProgressBar(
+			len(existingFilesMapsSet),
+			"[0/4] Initializing downloader: ",
+		)
+
 		_, err := sc2_map_processing.
 			ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 				existingMapFilepath,
+				progressBarInitializeDownloader,
 			)
 		// if the map exists but cannot be read then it will automatically be
 		// re-downloaded as it is not added to downloaded maps set
@@ -95,7 +103,12 @@ type DownloadTaskReturnChannelInfo struct {
 func DownloadMapIfNotExists(
 	downloaderSharedState *DownloaderSharedState,
 	mapHashAndExtension string,
-	mapURL url.URL) error {
+	mapURL url.URL,
+	progressBar *progressbar.ProgressBar,
+) error {
+	// Defer the progress bar increment:
+	defer progressBar.Add(1)
+
 	log.WithFields(
 		log.Fields{
 			"downloaderSharedState": downloaderSharedState,

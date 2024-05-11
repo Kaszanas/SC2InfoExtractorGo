@@ -17,6 +17,7 @@ import (
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	"github.com/icza/s2prot/rep"
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -51,7 +52,8 @@ func PipelineWrapper(
 		mapsDirectoryPath, ".s2ma",
 	)
 	if err != nil {
-		log.WithField("error", err).Error("Failed to get existing map files set.")
+		log.WithField("error", err).
+			Error("Failed to get existing map files set.")
 		return
 	}
 
@@ -68,6 +70,7 @@ func PipelineWrapper(
 		return
 	}
 
+	// STAGE ONE PRE-PROCESS:
 	// Get all map URLs into a set:
 	URLToFileNameMap, processedReplays, err := sc2_map_processing.
 		GetAllReplaysMapURLs(
@@ -81,12 +84,13 @@ func PipelineWrapper(
 		return
 	}
 
-	// STAGE ONE PRE-PROCESS:
+	// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
 	// Download all SC2 maps from the replays if they were not processed before:
 	existingMapFilesSet, err = DownloadAllSC2Maps(
 		&downloaderSharedState,
 		mapsDirectoryPath,
 		processedReplays,
+		processedReplaysFilepath,
 		URLToFileNameMap,
 		fileChunks,
 		cliFlags,
@@ -96,14 +100,20 @@ func PipelineWrapper(
 		return
 	}
 
-	// STAGE TWO PRE-PROCESS:
+	// STAGE-Three PRE-PROCESS:
 	// Read all of the map names from the drive and create a mapping
 	// from foreign to english names:
+	progressBarReadLocalizedData := utils.NewProgressBar(
+		len(existingMapFilesSet),
+		"[3/4] Reading map names from drive: ",
+	)
 	mainForeignToEnglishMapping := make(map[string]string)
 	for existingMapFilepath := range existingMapFilesSet {
+
 		foreignToEnglishMapping, err := sc2_map_processing.
 			ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 				existingMapFilepath,
+				progressBarReadLocalizedData,
 			)
 		if err != nil {
 			log.WithField("error", err).
@@ -116,7 +126,6 @@ func PipelineWrapper(
 			mainForeignToEnglishMapping[foreignName] = englishName
 		}
 	}
-
 	// REVIEW: Finish Review
 
 	// Stop all processing if the user chose to only download the maps:
@@ -124,6 +133,19 @@ func PipelineWrapper(
 		log.Info("Only maps download was chosen. Exiting.")
 		return
 	}
+
+	// Progress bar logic:
+	nChunks := len(fileChunks)
+	nFiles := 0
+	for _, chunk := range fileChunks {
+		nFiles += len(chunk)
+	}
+	progressBarLen := nChunks * nFiles
+	progressBar := utils.NewProgressBar(
+		progressBarLen,
+		"[4/4] Processing replays to JSON: ",
+	)
+	defer progressBar.Close()
 
 	// If it is specified by the user to perform the processing without
 	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
@@ -148,6 +170,7 @@ func PipelineWrapper(
 					compressionMethod,
 					channelContents.Index,
 					mainForeignToEnglishMapping,
+					progressBar,
 					cliFlags,
 				)
 			}
@@ -156,11 +179,15 @@ func PipelineWrapper(
 
 	// Passing the chunks to the workers:
 	for index, chunk := range fileChunks {
-		channel <- ReplayProcessingChannelContents{Index: index, ChunkOfFiles: chunk}
+		channel <- ReplayProcessingChannelContents{
+			Index:        index,
+			ChunkOfFiles: chunk,
+		}
 	}
 
 	close(channel)
 	wg.Wait()
+	progressBar.Close()
 
 	log.Info("Finished PipelineWrapper()")
 }
@@ -174,6 +201,7 @@ func MultiprocessingChunkPipeline(
 	compressionMethod uint16,
 	chunkIndex int,
 	englishToForeignMapping map[string]string,
+	progressBar *progressbar.ProgressBar,
 	cliFlags utils.CLIFlags,
 ) {
 
@@ -300,6 +328,8 @@ func MultiprocessingChunkPipeline(
 		processedCounter++
 		replayFileNameAndExtension := filepath.Base(replayFile)
 		processingInfoStruct.AddToProcessed(replayFileNameAndExtension)
+		// REVIEW: Could be adding the len of the chunk at the end instead of 1:
+		progressBar.Add(1)
 	}
 
 	// Saving processingInfo to know which files failed to process:

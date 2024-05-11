@@ -13,6 +13,7 @@ import (
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/icza/mpq"
 	"github.com/icza/s2prot/rep"
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,6 +57,18 @@ func GetAllReplaysMapURLs(
 
 	processedReplaysSyncMap := processedReplays.ConvertToSyncMap()
 
+	// Progress bar logic:
+	nChunks := len(fileChunks)
+	nFiles := 0
+	for _, chunk := range fileChunks {
+		nFiles += len(chunk)
+	}
+	progressBarLen := nChunks * nFiles
+	progressBar := utils.NewProgressBar(
+		progressBarLen,
+		"[1/4] Retrieving all map URLs: ",
+	)
+	defer progressBar.Close()
 	// Spin up workers waiting for chunks to process:
 	for i := 0; i < cliFlags.NumberOfThreads; i++ {
 		go func() {
@@ -68,56 +81,64 @@ func GetAllReplaysMapURLs(
 				// Process the chunk of files and add the URLs to the map
 				for _, replayFullFilepath := range channelContents.ChunkOfFiles {
 
-					replayFilename := filepath.Base(replayFullFilepath)
+					// Lambda to process the replay file to have
+					// deferred progress bar increment:
+					func() {
+						// Defer the progress bar increment:
+						defer progressBar.Add(1)
+						replayFilename := filepath.Base(replayFullFilepath)
 
-					// Check if the replay was already processed:
-					fileInfo, err := os.Stat(replayFullFilepath)
-					if err != nil {
-						log.WithFields(log.Fields{
-							"error":      err,
-							"replayFile": replayFullFilepath,
-						}).Error("Failed to get file info.")
-						continue
-					}
-					fileInfoToCheck, alreadyProcessed :=
-						processedReplaysSyncMap.Load(replayFilename)
-					if alreadyProcessed {
-						// Check if the file was modified since the last time it was processed:
-						if persistent_data.CheckFileInfoEq(
-							fileInfo,
-							fileInfoToCheck.(persistent_data.FileInformationToCheck),
-						) {
-							// It is the same so continue
-							continue
+						// Check if the replay was already processed:
+						fileInfo, err := os.Stat(replayFullFilepath)
+						if err != nil {
+							log.WithFields(log.Fields{
+								"error":      err,
+								"replayFile": replayFullFilepath,
+							}).Error("Failed to get file info.")
+							return
 						}
-						// It wasn't the same so the replay should be processed again:
-						processedReplaysSyncMap.Delete(replayFilename)
-					}
+						fileInfoToCheck, alreadyProcessed :=
+							processedReplaysSyncMap.Load(replayFilename)
+						if alreadyProcessed {
+							// Check if the file was modified since the last time it was processed:
+							if persistent_data.CheckFileInfoEq(
+								fileInfo,
+								fileInfoToCheck.(persistent_data.FileInformationToCheck),
+							) {
+								// It is the same so continue
+								return
+							}
+							// It wasn't the same so the replay should be processed again:
+							log.WithField("file", replayFullFilepath).
+								Warn("Replay was modified since the last time it was processed")
+							processedReplaysSyncMap.Delete(replayFilename)
+						}
 
-					// Assume getURLsFromReplay is a function that
-					// returns a slice of URLs from a replay file
-					replayData, err := rep.NewFromFile(replayFullFilepath)
-					if err != nil {
-						log.WithFields(log.Fields{"file": replayFullFilepath, "error": err}).
-							Error("Failed to read replay file to retrieve map data")
-						continue
-					}
+						// Assume getURLsFromReplay is a function that
+						// returns a slice of URLs from a replay file
+						replayData, err := rep.NewFromFile(replayFullFilepath)
+						if err != nil {
+							log.WithFields(log.Fields{"file": replayFullFilepath, "error": err}).
+								Error("Failed to read replay file to retrieve map data")
+							return
+						}
 
-					mapURL, mapHashAndExtension, mapRetrieved :=
-						GetMapURLAndHashFromReplayData(replayData)
-					if !mapRetrieved {
-						log.WithField("file", replayFullFilepath).
-							Error("Failed to get map URL and hash from replay data")
-						continue
-					}
-					urls.Store(mapURL, mapHashAndExtension)
-					processedReplaysSyncMap.Store(
-						replayFilename,
-						persistent_data.FileInformationToCheck{
-							LastModified: fileInfo.ModTime().Unix(),
-							Size:         fileInfo.Size(),
-						},
-					)
+						mapURL, mapHashAndExtension, mapRetrieved :=
+							GetMapURLAndHashFromReplayData(replayData)
+						if !mapRetrieved {
+							log.WithField("file", replayFullFilepath).
+								Error("Failed to get map URL and hash from replay data")
+							return
+						}
+						urls.Store(mapURL, mapHashAndExtension)
+						processedReplaysSyncMap.Store(
+							replayFilename,
+							persistent_data.FileInformationToCheck{
+								LastModified: fileInfo.ModTime().Unix(),
+								Size:         fileInfo.Size(),
+							},
+						)
+					}()
 				}
 			}
 		}()
@@ -132,19 +153,12 @@ func GetAllReplaysMapURLs(
 
 	close(channel)
 	wg.Wait()
+	progressBar.Close()
 
 	processedReplaysReturn := persistent_data.
 		FromSyncMapToProcessedReplaysToFileInfo(processedReplaysSyncMap)
 
 	urlMapToFilename := convertFromSyncMapToURLMap(urls)
-
-	// Save the processed replays to the file:
-	err = processedReplaysReturn.SaveProcessedReplaysFile(processedReplaysFilepath)
-	if err != nil {
-		log.WithField("processedReplaysFile", processedReplaysFilepath).
-			Error("Failed to save the processed replays file.")
-		return nil, persistent_data.ProcessedReplaysToFileInfo{}, err
-	}
 
 	// Return all of the URLs
 	return urlMapToFilename, processedReplaysReturn, nil
@@ -206,7 +220,9 @@ func GetMapURLAndHashFromReplayData(
 // reads the map name and returns it.
 func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	mapFilepath string,
+	progressBar *progressbar.ProgressBar,
 ) (map[string]string, error) {
+	defer progressBar.Add(1)
 	log.Info("Entered readLocalizedDataFromMap()")
 
 	mpqArchive, err := mpq.NewFromFile(mapFilepath)
@@ -255,6 +271,7 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 		}
 		foreignToEnglishMapName[mapName] = englishMapName
 	}
+	mpqArchive.Close()
 
 	log.Info("Finished readLocalizedDataFromMap()")
 	return foreignToEnglishMapName, nil
