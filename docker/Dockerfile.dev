@@ -1,5 +1,5 @@
 FROM kaszanas/sc2replaytestdata:latest AS sc2replaytestdata
-FROM golang:1.21 as build_sc2_info_extractor
+FROM golang:1.23.3 as build_sc2_info_extractor
 
 # Install rsync for file copying:
 RUN apt-get update && apt-get install -y rsync
