@@ -3,13 +3,14 @@ package dataproc
 import (
 	"encoding/json"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/icza/s2prot"
 	log "github.com/sirupsen/logrus"
 )
 
-// convertCoordinates accesses the data from GameEvents and recalculates the x,y,z coordinates of events
-func convertCoordinates(replayData *data.CleanedReplay) bool {
+// convertCoordinates accesses the data from GameEvents
+// and recalculates the x,y,z coordinates of events
+func convertCoordinates(replayData *replay_data.CleanedReplay) bool {
 	log.Info("Entered convertCoordinates()")
 
 	var newSliceOfEvents []s2prot.Struct

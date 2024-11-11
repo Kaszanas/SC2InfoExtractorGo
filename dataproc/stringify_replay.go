@@ -3,12 +3,12 @@ package dataproc
 import (
 	"encoding/json"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	log "github.com/sirupsen/logrus"
 )
 
 // stringifyReplay performs marshaling of all of CleanedReplay information into a string.
-func stringifyReplay(replayData *data.CleanedReplay) (bool, string) {
+func stringifyReplay(replayData *replay_data.CleanedReplay) (bool, string) {
 
 	log.Info("Entered stringifyReplay()")
 

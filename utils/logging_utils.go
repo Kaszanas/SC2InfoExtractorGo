@@ -6,7 +6,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// setLogging contains logic that is used to initialize logging to a specified file with a specified level.
+// setLogging contains logic that is used to initialize
+// logging to a specified file with a specified level.
 func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 
 	logDirectoryString := logPath
@@ -27,5 +28,4 @@ func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 	log.Info("Set logging level.")
 
 	return logFile, true
-
 }

@@ -29,3 +29,8 @@ processed_mapping.json
 SC2InfoExtractorGo
 
 package_summary*
+test_replays_output/
+*.s2ma
+maps/
+processed_replays.json
+.env

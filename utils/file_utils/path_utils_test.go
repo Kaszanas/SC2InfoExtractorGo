@@ -1,11 +1,13 @@
-package utils
+package file_utils
 
 import (
 	"testing"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 )
 
+// TestGetChunksOfFiles tests the GetChunksOfFiles function.
 func TestGetChunksOfFiles(t *testing.T) {
 	testReplaysPath, err := settings.GetTestInputDirectory()
 	if err != nil {
@@ -13,9 +15,11 @@ func TestGetChunksOfFiles(t *testing.T) {
 	}
 
 	// Read all the test input directory:
-	sliceOfFiles := ListFiles(testReplaysPath, ".SC2Replay")
-	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 1)
-
+	sliceOfFiles, err := ListFiles(testReplaysPath, ".SC2Replay")
+	if err != nil {
+		t.Fatalf("Test Failed! Couldn't get the list of files.")
+	}
+	sliceOfChunks, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 1)
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
 	}

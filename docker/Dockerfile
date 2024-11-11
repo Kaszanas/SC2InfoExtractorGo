@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as build_sc2_info_extractor
+FROM golang:1.23.3-alpine as build_sc2_info_extractor
 
 WORKDIR /app
 

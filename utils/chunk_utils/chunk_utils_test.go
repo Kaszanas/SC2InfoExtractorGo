@@ -1,21 +1,15 @@
-package utils
+package chunk_utils
 
 import (
 	"testing"
-
-	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 )
 
+// TestGetChunksOfFiles tests the GetChunksOfFiles function by passing a zero number of chunks.
+// This should return a single chunk with all the files.
 func TestGetChunksOfFilesZero(t *testing.T) {
 
-	testReplaysPath, err := settings.GetTestInputDirectory()
-	if err != nil {
-		t.Fatalf("Test Failed! Couldn't get the test input directory.")
-	}
-
 	// Read all the test input directory:
-	sliceOfFiles := ListFiles(testReplaysPath, ".SC2Replay")
-	// TODO: Split this from getting SC2Replay files just pass a list of strings representing files.
+	sliceOfFiles := []string{"test_file.txt"}
 	sliceOfChunks, getOk := GetChunksOfFiles(sliceOfFiles, 0)
 
 	if !getOk {
@@ -28,14 +22,12 @@ func TestGetChunksOfFilesZero(t *testing.T) {
 
 }
 
+// TestGetChunksOfFilesMinus tests the GetChunksOfFiles function
+// by passing a negative number of chunks.
 func TestGetChunksOfFilesMinus(t *testing.T) {
-	testReplaysPath, err := settings.GetTestInputDirectory()
-	if err != nil {
-		t.Fatalf("Test Failed! Couldn't get the test input directory.")
-	}
 
 	// Read all the test input directory:
-	sliceOfFiles := ListFiles(testReplaysPath, ".SC2Replay")
+	sliceOfFiles := []string{"test_file.txt"}
 	_, getOk := GetChunksOfFiles(sliceOfFiles, -1)
 
 	if getOk {

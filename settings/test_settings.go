@@ -1,24 +1,47 @@
 package settings
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
+
+	"github.com/joho/godotenv"
 )
 
 var DELETE_TEST_OUTPUT = false
 
-// REVIEW: Is it better to have an environment variable for the workspace directory?
-// Or is it better to have that in a .env file?
-// How to load a .env file? that is outside of the package?
 // GetWorkspaceDirectory returns the path to the workspace directory.
+// If the WORKSPACE_DIR environment variable is not set,
+// it returns a default (not always reliable) value.
 func GetWorkspaceDirectory() (string, error) {
 
-	// REVIEW: Will this consistently point to the workspace?
-	workspace, err := filepath.Abs("../")
-	if err != nil {
-		return "", err
+	possibleEnvPaths := []string{"../../.env", "../.env"}
+	for _, envPath := range possibleEnvPaths {
+		// Getting absolute path for debugging:
+		absoluteEnvPath, err := filepath.Abs(envPath)
+		if err != nil {
+			return "", fmt.Errorf("error getting absolute path of .env file")
+		}
+
+		// Cannot load env file at this path, continue to try another path:
+		err = godotenv.Load(absoluteEnvPath)
+		if err == nil {
+			break
+		}
 	}
 
-	return workspace, nil
+	workspace, exists := os.LookupEnv("WORKSPACE_DIR")
+	if !exists {
+		// Set a default value
+		workspace = "../../"
+	}
+
+	absoluteWorkspace, err := filepath.Abs(workspace)
+	if err != nil {
+		return "", fmt.Errorf("error getting absolute path of workspace directory")
+	}
+
+	return absoluteWorkspace, nil
 }
 
 // GetTestFilesDirectory returns the path to the test_files directory.

@@ -4,12 +4,28 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
+
 	log "github.com/sirupsen/logrus"
 )
 
-func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, uint16, string, string, string, string, int) {
+// SetTestCLIFlags sets the CLI flags for tests.
+func SetTestCLIFlags(t *testing.T) (
+	utils.CLIFlags,
+	[][]string,
+	*os.File,
+	bool,
+	uint16,
+	string,
+	string,
+	string,
+	string,
+	int) {
+
 	testInputDir, err := settings.GetTestInputDirectory()
 	if err != nil {
 		t.Fatalf("Could not get the test input directory.")
@@ -42,13 +58,16 @@ func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, 
 	}
 	log.WithField("testOutputDir", testOutputDir).Info("Output dir was set.")
 
-	sliceOfFiles := utils.ListFiles(testInputDir, ".SC2Replay")
+	sliceOfFiles, err := file_utils.ListFiles(testInputDir, ".SC2Replay")
+	if err != nil {
+		t.Fatalf("Could not get the list of files.")
+	}
 	if len(sliceOfFiles) < 1 {
 		t.Fatalf("Could not detect test files! Verify if they exist.")
 	}
 	log.WithField("n_files", len(sliceOfFiles)).Info("Number of detected files.")
 
-	chunks, getOk := utils.GetChunksOfFiles(sliceOfFiles, 0)
+	chunks, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
 	if !getOk {
 		t.Fatalf("Test Failed! Could not produce chunks of files!")
 	}
@@ -72,10 +91,9 @@ func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, 
 		PerformChatAnonymization:   false,
 		PerformFiltering:           false,
 		FilterGameMode:             gameModeCheckFlag,
-		LocalizationMapFile:        testLocalizationFilePath,
 		LogFlags: utils.LogFlags{
-			LogLevel: 5,
-			LogPath:  testLogsDir,
+			LogLevelValue: datastruct.Info,
+			LogPath:       testLogsDir,
 		},
 		CPUProfilingPath: "",
 	}
@@ -83,5 +101,14 @@ func SetTestCLIFlags(t *testing.T) (utils.CLIFlags, [][]string, *os.File, bool, 
 	packageToZip := true
 	compressionMethod := uint16(8)
 
-	return flags, chunks, logFile, packageToZip, compressionMethod, testLocalizationFilePath, testProcessedFailedlog, testLogsDir, testOutputDir, len(sliceOfFiles)
+	return flags,
+		chunks,
+		logFile,
+		packageToZip,
+		compressionMethod,
+		testLocalizationFilePath,
+		testProcessedFailedlog,
+		testLogsDir,
+		testOutputDir,
+		len(sliceOfFiles)
 }
