@@ -2,10 +2,6 @@ name: Continuous Integration (CI)
 
 on: [pull_request, workflow_dispatch]
 
-# To successfully find the files that are required for testing:
-env:
-  TEST_WORKSPACE: ${{ github.workspace }}
-
 jobs:
   ci:
     # Set up operating system
@@ -18,14 +14,13 @@ jobs:
       # Check if the main dockerfile builds:
       - name: Build "Production" Docker Image
         run: |
-          make build
+          make docker_build
         # Check if the main dockerfile builds:
-      - name: Build "Development" Docker Image
+      - name: Build "Development" Docker Image Using Compose
         run: |
-          make build_dev
+          make compose_build_dev
 
       # TODO: Running containerized tests:
       # - name: Run Docker Tests With Compose
       #   run: |
       #     make action_compose_test
-

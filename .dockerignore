@@ -1,3 +1,13 @@
-DEMOS
+.git/
 
+
+DEMOS
 logs/
+input/
+
+*.zip
+*.log
+*.exe
+
+
+__debug_bin

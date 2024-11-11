@@ -36,6 +36,10 @@ If you are proposing a feature:
 * Remember that this is a volunteer-driven project, and that contributions
   are welcome :)
 
+## Dockerized Development
+
+Setting up the development environment can be a tiresome process. Due to this we have prepared a dockerfile that can be used as a devcontainer. You can find it under `docker/Dockerfile.dev`. This image should have all of the base dependencies that are required for development.
+
 ## Build from source
 
 Our working solution was built by using ```go build``` command on 64 bit version of Windows 10

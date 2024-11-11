@@ -1,15 +1,24 @@
-version: '3'
 services:
-
-  sc2infoextractorgo:
+  sc2infoextractorgo-dev:
     build:
-      context: '../'
-      dockerfile: './docker/Dockerfile.dev'
-    container_name: sc2infoextractorgo_dev
+      context: "../"
+      dockerfile: "./docker/Dockerfile.dev"
     volumes:
-      - ../replays:/app/media
-      - ../logs:/app/logs
-      - ../operation_files:/app/operation_files
+      - ..:/app
+    command:
+      [
+        "-c",
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/; exec /bin/bash",
+      ]
 
-volumes:
-  logs:
+  sc2infoextractorgo-test:
+    build:
+      context: "../"
+      dockerfile: "./docker/Dockerfile.dev"
+    volumes:
+      - ..:/app
+    command:
+      [
+        "-c",
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/ && go test ./... -v -race",
+      ]

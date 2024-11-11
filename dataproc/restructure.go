@@ -4,17 +4,69 @@ import (
 	"fmt"
 	"strings"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/icza/s2prot"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
 )
 
 // redefineReplayStructure moves arbitrary data into different data structures.
-func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]interface{}) (data.CleanedReplay, bool) {
+func redifineReplayStructure(
+	replayData *rep.Rep,
+	englishToForeignMapping map[string]string,
+) (replay_data.CleanedReplay, bool) {
 
 	log.Info("Entered redefineReplayStructure()")
 
+	cleanHeader := cleanHeader(replayData)
+	cleanGameDescription, ok := cleanGameDescription(replayData)
+	if !ok {
+		return replay_data.CleanedReplay{}, false
+	}
+	cleanInitData, cleanedUserInitDataList, ok := cleanInitData(
+		replayData,
+		cleanGameDescription)
+	if !ok {
+		return replay_data.CleanedReplay{}, false
+	}
+	cleanDetails := cleanDetails(replayData)
+	cleanMetadata, err := cleanMetadata(replayData, englishToForeignMapping)
+	if err != nil {
+		return replay_data.CleanedReplay{}, false
+	}
+
+	enhancedToonDescMap := cleanToonDescMap(replayData, cleanedUserInitDataList)
+
+	messageEventsStructs := cleanMessageEvents(replayData)
+	gameEventsStructs := cleanGameEvents(replayData)
+	trackerEventsStructs := cleanTrackerEvents(replayData)
+
+	justMessageEvtsErr := replayData.MessageEvtsErr
+	justTrackerEvtsErr := replayData.TrackerEvtsErr
+	justGameEvtsErr := replayData.GameEvtsErr
+	cleanedReplay := replay_data.CleanedReplay{
+		Header:            cleanHeader,
+		InitData:          cleanInitData,
+		Details:           cleanDetails,
+		Metadata:          cleanMetadata,
+		MessageEvents:     messageEventsStructs,
+		GameEvents:        gameEventsStructs,
+		TrackerEvents:     trackerEventsStructs,
+		ToonPlayerDescMap: enhancedToonDescMap,
+		GameEvtsErr:       justGameEvtsErr,
+		MessageEvtsErr:    justMessageEvtsErr,
+		TrackerEvtsErr:    justTrackerEvtsErr,
+	}
+	log.Info("Defined cleanedReplay struct")
+
+	log.Info("Finished cleanReplayStructure()")
+
+	return cleanedReplay, true
+}
+
+// cleanHeader copies the header,
+// has the capability of removing unescessary fields.
+func cleanHeader(replayData *rep.Rep) replay_data.CleanedHeader {
 	// Constructing a clean replay header without unescessary fields:
 	elapsedGameLoops := replayData.Header.Loops()
 	// TODO: These values of duration are not verified: https://github.com/icza/s2prot/issues/48
@@ -24,13 +76,20 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 
 	version := replayData.Header.VersionString()
 
-	cleanHeader := data.CleanedHeader{
+	cleanHeader := replay_data.CleanedHeader{
 		ElapsedGameLoops: uint64(elapsedGameLoops),
 		// DurationNanoseconds: durationNanoseconds,
 		// DurationSeconds:     durationSeconds,
 		Version: version,
 	}
 	log.Info("Defined cleanHeader struct")
+	return cleanHeader
+}
+
+// cleanGameDescription copies the game description,
+// partly verifies the integrity of the data.
+// Has the capability to remove unescessary fields.
+func cleanGameDescription(replayData *rep.Rep) (replay_data.CleanedGameDescription, bool) {
 
 	// Constructing a clean GameDescription without unescessary fields:
 	gameDescription := replayData.InitData.GameDescription
@@ -46,25 +105,28 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	mapSizeX := gameDescription.MapSizeX()
 	mapSizeXChecked, okMapSizeX := checkUint32(mapSizeX)
 	if !okMapSizeX {
-		log.WithField("mapSizeX", mapSizeX).Error("Found that value of mapSizeX exceeds uint32")
-		return data.CleanedReplay{}, false
+		log.WithField("mapSizeX", mapSizeX).
+			Error("Found that value of mapSizeX exceeds uint32")
+		return replay_data.CleanedGameDescription{}, false
 	}
 
 	mapSizeY := gameDescription.MapSizeY()
 	mapSizeYChecked, okMapSizeY := checkUint32(mapSizeY)
 	if !okMapSizeY {
-		log.WithField("mapSizeY", mapSizeY).Error("Found that value of mapSizeY exceeds uint32")
-		return data.CleanedReplay{}, false
+		log.WithField("mapSizeY", mapSizeY).
+			Error("Found that value of mapSizeY exceeds uint32")
+		return replay_data.CleanedGameDescription{}, false
 	}
 
 	maxPlayers := gameDescription.MaxPlayers()
 	maxPlayersChecked, okMaxPlayers := checkUint8(maxPlayers)
 	if !okMaxPlayers {
-		log.WithField("maxPlayers", maxPlayers).Error("Found that value of maxPlayers exceeds uint8")
-		return data.CleanedReplay{}, false
+		log.WithField("maxPlayers", maxPlayers).
+			Error("Found that value of maxPlayers exceeds uint8")
+		return replay_data.CleanedGameDescription{}, false
 	}
 
-	cleanedGameDescription := data.CleanedGameDescription{
+	cleanedGameDescription := replay_data.CleanedGameDescription{
 		GameOptions:         gameOptions,
 		GameSpeed:           gameSpeedString,
 		IsBlizzardMap:       isBlizzardMap,
@@ -76,8 +138,20 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 	}
 	log.Info("Defined cleanedGameDescription struct")
 
+	return cleanedGameDescription, true
+}
+
+// cleanInitData copies the init data,
+// partly verifies the integrity of the data.
+// Has the capability to remove unescessary fields.
+func cleanInitData(
+	replayData *rep.Rep,
+	cleanedGameDescription replay_data.CleanedGameDescription) (
+	replay_data.CleanedInitData,
+	[]replay_data.CleanedUserInitData,
+	bool) {
 	// Constructing a clean UserInitData without unescessary fields:
-	var cleanedUserInitDataList []data.CleanedUserInitData
+	var cleanedUserInitDataList []replay_data.CleanedUserInitData
 	for _, userInitData := range replayData.InitData.UserInitDatas {
 		// If the name is an empty string ommit the struct and enter next iteration:
 		name := userInitData.Name()
@@ -86,18 +160,12 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 		}
 
 		combinedRaceLevels := userInitData.CombinedRaceLevels()
-		combinedRaceLevelsChecked, okCombinedRaceLevels := checkUint64(combinedRaceLevels)
-		if !okCombinedRaceLevels {
-			log.WithField("combinedRaceLevels", combinedRaceLevels).Error("Found that value of combinedRaceLevels exceeds uint64")
-			return data.CleanedReplay{}, false
-		}
-
 		highestLeague := userInitData.HighestLeague().String()
 		clanTag := userInitData.ClanTag()
 		isInClan := checkClan(clanTag)
 
-		userInitDataStruct := data.CleanedUserInitData{
-			CombinedRaceLevels: combinedRaceLevelsChecked,
+		userInitDataStruct := replay_data.CleanedUserInitData{
+			CombinedRaceLevels: uint64(combinedRaceLevels),
 			HighestLeague:      highestLeague,
 			Name:               name,
 			IsInClan:           isInClan,
@@ -107,20 +175,24 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 		cleanedUserInitDataList = append(cleanedUserInitDataList, userInitDataStruct)
 	}
 
-	cleanInitData := data.CleanedInitData{
+	cleanInitData := replay_data.CleanedInitData{
 		GameDescription: cleanedGameDescription,
 	}
 	log.Info("Defined cleanInitData struct")
+	return cleanInitData, cleanedUserInitDataList, true
+}
 
+// cleanDetails copies the details,
+// has the capability of removing unescessary fields.
+func cleanDetails(replayData *rep.Rep) replay_data.CleanedDetails {
 	// Constructing a clean CleanedDetails without unescessary fields
-	details := replayData.Details
-	detailsGameSpeed := details.GameSpeed().String()
-	detailsIsBlizzardMap := details.IsBlizzardMap()
+	detailsGameSpeed := replayData.Details.GameSpeed().String()
+	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
 
-	timeUTC := details.TimeUTC()
+	timeUTC := replayData.Details.TimeUTC()
 	// mapNameString := details.Title()
 
-	cleanDetails := data.CleanedDetails{
+	cleanDetails := replay_data.CleanedDetails{
 		GameSpeed:     detailsGameSpeed,
 		IsBlizzardMap: detailsIsBlizzardMap,
 		// PlayerList:    detailsPlayerList, // Information from that part is merged with ToonDescMap
@@ -129,62 +201,61 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 		// MapName: mapNameString, // This is unused
 	}
 	log.Info("Defined cleanDetails struct")
+	return cleanDetails
+}
 
+// cleanMetadata copies the metadata,
+// has the capability of removing unescessary fields.
+func cleanMetadata(
+	replayData *rep.Rep,
+	englishToForeignMapping map[string]string,
+) (replay_data.CleanedMetadata, error) {
 	// Constructing a clean CleanedMetadata without unescessary fields:
-	metadata := replayData.Metadata
-	metadataBaseBuild := metadata.BaseBuild()
-	metadataDataBuild := metadata.DataBuild()
-	// metadataDuration := metadata.DurationSec()
-	metadataGameVersion := metadata.GameVersion()
-	metadataMapName := metadata.Title()
+	metadataBaseBuild := replayData.Metadata.BaseBuild()
+	metadataDataBuild := replayData.Metadata.DataBuild()
+	// metadataDuration := replayData.Metadata.DurationSec()
+	metadataGameVersion := replayData.Metadata.GameVersion()
 
-	// Verifying if it is possible to localize the map and localizing if possible:
-	if localizedMapsMap != nil {
-		detailsMapName := details.Title()
-		localizedDetailsMap, detailsOk := verifyLocalizedMapName(detailsMapName, localizedMapsMap)
-
-		localizedMetadataMap, metadataOk := verifyLocalizedMapName(metadataMapName, localizedMapsMap)
-
-		if metadataOk && detailsOk {
-			metadataMapName = localizedMetadataMap
-		}
-		if metadataOk && !detailsOk {
-			metadataMapName = localizedMetadataMap
-		}
-		if !metadataOk && detailsOk {
-			metadataMapName = localizedDetailsMap
-		}
-		if !metadataOk && !detailsOk {
-			log.WithFields(log.Fields{"metadataMapName": metadataMapName, "detailsMapName": detailsMapName}).Error("Not possible to localize the map!")
-			return data.CleanedReplay{}, false
-		}
+	metadataMapName := replayData.Metadata.Title()
+	englishMapName, ok := englishToForeignMapping[metadataMapName]
+	if !ok {
+		log.WithField("metadataMapName", metadataMapName).
+			Error("Map name not found in englishToForeignMapping!")
+		return replay_data.CleanedMetadata{},
+			fmt.Errorf("map name not found in englishToForeignMapping")
 	}
+	// REVIEW: Will this be needed?
+	// detailsMapName := details.Title()
 
-	cleanMetadata := data.CleanedMetadata{
+	cleanMetadata := replay_data.CleanedMetadata{
 		BaseBuild: metadataBaseBuild,
 		DataBuild: metadataDataBuild,
 		// Duration:    metadataDuration,
 		GameVersion: metadataGameVersion,
 		// Players:     metadataCleanedPlayersList, // This is unused.
-		MapName: metadataMapName,
+		MapName: englishMapName,
 	}
 	log.Info("Defined cleanMetadata struct")
+	return cleanMetadata, nil
+}
 
-	dirtyMessageEvents := replayData.MessageEvts
-	dirtyGameEvents := replayData.GameEvts
-	dirtyTrackerEvents := replayData.TrackerEvts.Evts
+// cleanToonDescMap copies the toon description map,
+// changes the structure into a more readable form.
+func cleanToonDescMap(
+	replayData *rep.Rep,
+	cleanedUserInitDataList []replay_data.CleanedUserInitData) map[string]replay_data.EnhancedToonDescMap {
+
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 
 	// Merging data-structures to data.EnhancedToonDescMap
-	enhancedToonDescMap := make(map[string]data.EnhancedToonDescMap)
+	enhancedToonDescMap := make(map[string]replay_data.EnhancedToonDescMap)
 	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
-		var initializedToonDescMap data.EnhancedToonDescMap
+		var initializedToonDescMap replay_data.EnhancedToonDescMap
 		enhancedToonDescMap[toonKey] = initializedToonDescMap
 
 		// Merging information held in metadata.Players into data.EnhancedToonDescMap
-		for _, player := range metadata.Players() {
+		for _, player := range replayData.Metadata.Players() {
 			if player.PlayerID() == playerDescription.PlayerID {
-				// TODO: can this be a reference?
 				metadataToonDescMap := enhancedToonDescMap[toonKey]
 				// Filling out struct fields:
 				metadataToonDescMap.PlayerID = playerDescription.PlayerID
@@ -199,13 +270,12 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 				metadataToonDescMap.APM = player.APM()
 				metadataToonDescMap.MMR = player.MMR()
 				metadataToonDescMap.Result = player.Result()
-				// TODO: if using a reference, this is not needed:
 				enhancedToonDescMap[toonKey] = metadataToonDescMap
 			}
 		}
 
 		// Merging information contained in the details part of the replay:
-		for _, player := range details.Players() {
+		for _, player := range replayData.Details.Players() {
 			if player.Toon.String() == toonKey {
 				detailsEnhancedToonDescMap := enhancedToonDescMap[toonKey]
 
@@ -256,62 +326,43 @@ func redifineReplayStructure(replayData *rep.Rep, localizedMapsMap map[string]in
 				}
 			}
 		}
-
 	}
 
-	justGameEvtsErr := replayData.GameEvtsErr
-
-	var messageEventsStructs []s2prot.Struct
-	for _, messageEvent := range dirtyMessageEvents {
-		messageEventsStructs = append(messageEventsStructs, messageEvent.Struct)
-	}
-
-	var gameEventsStructs []s2prot.Struct
-	for _, gameEvent := range dirtyGameEvents {
-		gameEventsStructs = append(gameEventsStructs, gameEvent.Struct)
-	}
-
-	var trackerEventsStructs []s2prot.Struct
-	for _, trackerEvent := range dirtyTrackerEvents {
-		trackerEventsStructs = append(trackerEventsStructs, trackerEvent.Struct)
-	}
-
-	justMessageEvtsErr := replayData.MessageEvtsErr
-	justTrackerEvtsErr := replayData.TrackerEvtsErr
-
-	cleanedReplay := data.CleanedReplay{
-		Header:            cleanHeader,
-		InitData:          cleanInitData,
-		Details:           cleanDetails,
-		Metadata:          cleanMetadata,
-		MessageEvents:     messageEventsStructs,
-		GameEvents:        gameEventsStructs,
-		TrackerEvents:     trackerEventsStructs,
-		ToonPlayerDescMap: enhancedToonDescMap,
-		GameEvtsErr:       justGameEvtsErr,
-		MessageEvtsErr:    justMessageEvtsErr,
-		TrackerEvtsErr:    justTrackerEvtsErr,
-	}
-	log.Info("Defined cleanedReplay struct")
-
-	log.Info("Finished cleanReplayStructure()")
-
-	return cleanedReplay, true
+	return enhancedToonDescMap
 }
 
-// Using mapping from a separate tool for map name extraction
-// Please refer to: https://github.com/Kaszanas/SC2MapLocaleExtractor
-// verifyLocalizedMapName attempts to read a English map name and return it.
-func verifyLocalizedMapName(mapName string, localizedMaps map[string]interface{}) (string, bool) {
-	log.Info("Entered verifyLocalizedMapName()")
-
-	value, ok := localizedMaps[mapName]
-	if !ok {
-		log.Debug("Cannot localize map! English map name was not found!")
-		return "", false
+// cleanMessageEvents copies the message events,
+// has the capability of removing unescessary fields.
+func cleanMessageEvents(replayData *rep.Rep) []s2prot.Struct {
+	// Constructing a clean MessageEvents without unescessary fields:
+	var messageEventsStructs []s2prot.Struct
+	for _, messageEvent := range replayData.MessageEvts {
+		messageEventsStructs = append(messageEventsStructs, messageEvent.Struct)
 	}
-	stringEngMapName := fmt.Sprintf("%v", value)
+	log.Info("Defined cleanMessageEvents struct")
+	return messageEventsStructs
+}
 
-	log.Info("Finished verifyLocalizedMapName()")
-	return stringEngMapName, true
+// cleanGameEvents copies the game events,
+// has the capability of removing unescessary fields.
+func cleanGameEvents(replayData *rep.Rep) []s2prot.Struct {
+	// Constructing a clean GameEvents without unescessary fields:
+	var gameEventsStructs []s2prot.Struct
+	for _, gameEvent := range replayData.GameEvts {
+		gameEventsStructs = append(gameEventsStructs, gameEvent.Struct)
+	}
+	log.Info("Defined cleanGameEvents struct")
+	return gameEventsStructs
+}
+
+// cleanTrackerEvents copies the tracker events,
+// has the capability of removing unescessary fields.
+func cleanTrackerEvents(replayData *rep.Rep) []s2prot.Struct {
+	// Constructing a clean TrackerEvents without unescessary fields:
+	var trackerEventsStructs []s2prot.Struct
+	for _, trackerEvent := range replayData.TrackerEvts.Evts {
+		trackerEventsStructs = append(trackerEventsStructs, trackerEvent.Struct)
+	}
+	log.Info("Defined cleanTrackerEvents struct")
+	return trackerEventsStructs
 }
