@@ -2,6 +2,7 @@ PWD := `pwd`
 
 DEPLOY_DIR = ./docker
 TEST_COMPOSE = $(DEPLOY_DIR)/docker-dev-compose.yml
+PROJECT_NAME = sc2infoextractorgo
 
 # REVIEW: Should this be ran with Docker Compose instead?
 process_replays: ## Runs the container to process replays.
@@ -35,18 +36,18 @@ test_locally:
 	go test ./... -v -race
 
 compose_build_dev:
-	docker compose -f $(TEST_COMPOSE) build
+	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) build
 
 compose_run_dev_it:
-	docker compose -f $(TEST_COMPOSE) run -it --rm sc2infoextractorgo-dev
+	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) run -it --rm sc2infoextractorgo-dev
 
 compose_run_dev: compose_build_dev compose_run_dev_it
 
 action_compose_test: ## Runs the tests in a container.
-	docker compose -f $(TEST_COMPOSE) run --rm sc2infoextractorgo-test
+	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) run --rm sc2infoextractorgo-test
 
 compose_remove: ## Stops and removes the testing containers, images, volumes.
-	docker compose -f $(TEST_COMPOSE) down --volumes --remove-orphans
+	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) down --volumes --remove-orphans
 
 compose_test: compose_build_dev action_compose_test compose_remove
 
