@@ -160,19 +160,12 @@ func cleanInitData(
 		}
 
 		combinedRaceLevels := userInitData.CombinedRaceLevels()
-		combinedRaceLevelsChecked, okCombinedRaceLevels := checkUint64(combinedRaceLevels)
-		if !okCombinedRaceLevels {
-			log.WithField("combinedRaceLevels", combinedRaceLevels).
-				Error("Found that value of combinedRaceLevels exceeds uint64")
-			return replay_data.CleanedInitData{}, cleanedUserInitDataList, false
-		}
-
 		highestLeague := userInitData.HighestLeague().String()
 		clanTag := userInitData.ClanTag()
 		isInClan := checkClan(clanTag)
 
 		userInitDataStruct := replay_data.CleanedUserInitData{
-			CombinedRaceLevels: combinedRaceLevelsChecked,
+			CombinedRaceLevels: uint64(combinedRaceLevels),
 			HighestLeague:      highestLeague,
 			Name:               name,
 			IsInClan:           isInClan,

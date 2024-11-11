@@ -85,10 +85,10 @@ func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 	log.Info("Entered GRPCAnonymizer.grpcDialConnect()")
 
 	// Set up a connection to the server:
-	conn, err := grpc.Dial(
-		settings.GrpcServerAddress,
+	conn, err := grpc.NewClient(settings.GrpcServerAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
+	)
+
 	if err != nil {
 		log.WithField("error", err).
 			Fatal("Failed to connect to grpc anonymization service")

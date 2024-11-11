@@ -41,21 +41,6 @@ func checkUint32(intToCheck int64) (uint32, bool) {
 	}
 }
 
-// checkUint64 verifies if an int64 can fit into uint32
-// and returns a converted variable and a boolean.
-func checkUint64(intToCheck int64) (uint64, bool) {
-	log.Info("Entered checkUint64()")
-
-	// Hard to verify as int64 will always fit in uint64!!!
-	if intToCheck < 0 || intToCheck > 9223372036854775807 {
-		log.Info("Value does not fit in uint64, returning 0")
-		return uint64(0), false
-	} else {
-		log.Info("Value fits in uint64, converting")
-		return uint64(intToCheck), true
-	}
-}
-
 // contains is a helper function checking if a slice contains a string.
 func contains(s []string, str string) bool {
 	log.Info("Entered contains()")
