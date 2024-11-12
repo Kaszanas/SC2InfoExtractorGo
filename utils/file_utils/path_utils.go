@@ -95,25 +95,27 @@ func getFilesByExtension(
 	return listOfFiles, nil
 }
 
-// getAllFiles returns a slice of all filepaths in a given directory.
+// getAllFiles returns a slice of all filepaths (recursively) in a given directory.
 func getAllFiles(inputPath string) ([]string, error) {
 	var listOfFiles []string
 
+	// Walk the initial input directory,
+	// get all files and directories:
 	err := filepath.WalkDir(
 		inputPath,
 		func(path string, dirEntry fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
+			// Entry is just a file, we want to save it:
 			if !dirEntry.IsDir() {
 				listOfFiles = append(listOfFiles, path)
 			}
+
 			return nil
 		})
-
 	if err != nil {
 		return nil, err
 	}
-
 	return listOfFiles, nil
 }
