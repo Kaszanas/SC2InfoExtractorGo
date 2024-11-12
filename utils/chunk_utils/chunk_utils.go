@@ -39,8 +39,10 @@ func GetChunksOfFiles(slice []string, chunkSize int) ([][]string, bool) {
 // will be processed and a boolean specifying if the chunking process was a success.
 func GetChunkListAndPackageBool(
 	listOfInputFiles []string,
-	numberOfPackages int, numberOfThreads int,
-	lenListOfInputFiles int) ([][]string, bool) {
+	numberOfPackages int,
+	numberOfThreads int,
+	lenListOfInputFiles int,
+) ([][]string, bool) {
 
 	log.Info("Entered getChunkListAndPackageBool()")
 
