@@ -1,7 +1,6 @@
 package dataproc
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
@@ -29,9 +28,16 @@ func redifineReplayStructure(
 	if !ok {
 		return replay_data.CleanedReplay{}, false
 	}
-	cleanDetails := cleanDetails(replayData)
-	cleanMetadata, err := cleanMetadata(replayData, englishToForeignMapping)
-	if err != nil {
+	cleanDetails, detailsReplayMapField := cleanDetails(replayData)
+	cleanMetadata, metadataReplayMapField := cleanMetadata(replayData)
+
+	mapFields := []replay_data.ReplayMapField{
+		detailsReplayMapField,
+		metadataReplayMapField,
+	}
+	ok = adjustMapName(mapFields, englishToForeignMapping, &cleanMetadata)
+	if !ok {
+		log.Error("Failed to adjust map name!")
 		return replay_data.CleanedReplay{}, false
 	}
 
@@ -62,6 +68,35 @@ func redifineReplayStructure(
 	log.Info("Finished cleanReplayStructure()")
 
 	return cleanedReplay, true
+}
+
+// adjustMapName takes multiple map fields, finds the first non-empty one
+// and adjusts the map name in CleanedMetadata with the version available
+// in englishToForeignMapping.
+func adjustMapName(
+	mapFields []replay_data.ReplayMapField,
+	englishToForeignMapping map[string]string,
+	cleanMetadata *replay_data.CleanedMetadata,
+) bool {
+
+	// Got map name from metadata and details, searching for the first non-empty one:
+	foreignMapName := replay_data.CombineReplayMapFields(mapFields)
+	if foreignMapName == "" {
+		log.Error("Failed to combine map name!")
+		return false
+	}
+	// Attempting to acquire the english map name:
+	englishMapName, ok := englishToForeignMapping[foreignMapName]
+	if !ok {
+		log.WithField("foreignMapName", foreignMapName).
+			Error("Map name not found in englishToForeignMapping!")
+		return false
+	}
+
+	// Adjusting the map name in CleanedMetadata:
+	cleanMetadata.MapName = englishMapName
+
+	return true
 }
 
 // cleanHeader copies the header,
@@ -99,6 +134,9 @@ func cleanGameDescription(replayData *rep.Rep) (replay_data.CleanedGameDescripti
 
 	isBlizzardMap := gameDescription.IsBlizzardMap()
 	mapAuthorName := gameDescription.MapAuthorName()
+
+	// mapFilename := gameDescription.MapFileName()
+	// log.WithField("mapFilename", mapFilename).Info("Found mapFilename")
 
 	mapFileSyncChecksum := gameDescription.MapFileSyncChecksum()
 
@@ -172,7 +210,10 @@ func cleanInitData(
 			ClanTag:            clanTag,
 		}
 
-		cleanedUserInitDataList = append(cleanedUserInitDataList, userInitDataStruct)
+		cleanedUserInitDataList = append(
+			cleanedUserInitDataList,
+			userInitDataStruct,
+		)
 	}
 
 	cleanInitData := replay_data.CleanedInitData{
@@ -184,13 +225,19 @@ func cleanInitData(
 
 // cleanDetails copies the details,
 // has the capability of removing unescessary fields.
-func cleanDetails(replayData *rep.Rep) replay_data.CleanedDetails {
+func cleanDetails(replayData *rep.Rep) (replay_data.CleanedDetails, replay_data.ReplayMapField) {
 	// Constructing a clean CleanedDetails without unescessary fields
 	detailsGameSpeed := replayData.Details.GameSpeed().String()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
 
+	// mapFileName := replayData.Details.MapFileName()
+	// log.WithField("mapFileName", mapFileName).Info("Found mapFileName")
+
 	timeUTC := replayData.Details.TimeUTC()
-	// mapNameString := details.Title()
+	mapNameString := replayData.Details.Title()
+	replayMapField := replay_data.ReplayMapField{
+		MapName: mapNameString,
+	}
 
 	cleanDetails := replay_data.CleanedDetails{
 		GameSpeed:     detailsGameSpeed,
@@ -201,31 +248,24 @@ func cleanDetails(replayData *rep.Rep) replay_data.CleanedDetails {
 		// MapName: mapNameString, // This is unused
 	}
 	log.Info("Defined cleanDetails struct")
-	return cleanDetails
+	return cleanDetails, replayMapField
 }
 
 // cleanMetadata copies the metadata,
 // has the capability of removing unescessary fields.
 func cleanMetadata(
 	replayData *rep.Rep,
-	englishToForeignMapping map[string]string,
-) (replay_data.CleanedMetadata, error) {
+) (replay_data.CleanedMetadata, replay_data.ReplayMapField) {
 	// Constructing a clean CleanedMetadata without unescessary fields:
 	metadataBaseBuild := replayData.Metadata.BaseBuild()
 	metadataDataBuild := replayData.Metadata.DataBuild()
 	// metadataDuration := replayData.Metadata.DurationSec()
 	metadataGameVersion := replayData.Metadata.GameVersion()
 
-	metadataMapName := replayData.Metadata.Title()
-	englishMapName, ok := englishToForeignMapping[metadataMapName]
-	if !ok {
-		log.WithField("metadataMapName", metadataMapName).
-			Error("Map name not found in englishToForeignMapping!")
-		return replay_data.CleanedMetadata{},
-			fmt.Errorf("map name not found in englishToForeignMapping")
+	foreignMetadataMapName := replayData.Metadata.Title()
+	mapNameField := replay_data.ReplayMapField{
+		MapName: foreignMetadataMapName,
 	}
-	// REVIEW: Will this be needed?
-	// detailsMapName := details.Title()
 
 	cleanMetadata := replay_data.CleanedMetadata{
 		BaseBuild: metadataBaseBuild,
@@ -233,10 +273,10 @@ func cleanMetadata(
 		// Duration:    metadataDuration,
 		GameVersion: metadataGameVersion,
 		// Players:     metadataCleanedPlayersList, // This is unused.
-		MapName: englishMapName,
+		MapName: foreignMetadataMapName,
 	}
 	log.Info("Defined cleanMetadata struct")
-	return cleanMetadata, nil
+	return cleanMetadata, mapNameField
 }
 
 // cleanToonDescMap copies the toon description map,

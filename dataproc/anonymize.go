@@ -140,7 +140,8 @@ func (anonymizer *GRPCAnonymizer) anonymizeToon(toonString string) (string, bool
 func grpcGetAnonymizeID(
 	toonString string,
 	grpcClient pb.AnonymizeServiceClient,
-	grpcConnection *grpc.ClientConn) (string, bool) {
+	grpcConnection *grpc.ClientConn,
+) (string, bool) {
 
 	log.Info("Entered grpcAnonymize()")
 
