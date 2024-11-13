@@ -369,8 +369,8 @@ func cleanTrackerEvents(replayData *rep.Rep) []s2prot.Struct {
 			stats := trackerEvent.Struct["stats"].(s2prot.Struct)
 
 			// Get values:
-			foodUsed := stats["scoreValueFoodUsed"].(uint64) / 4096
-			foodMade := stats["scoreValueFoodMade"].(uint64) / 4096
+			foodUsed := stats["scoreValueFoodUsed"].(int64) / 4096
+			foodMade := stats["scoreValueFoodMade"].(int64) / 4096
 
 			// Overwrite values:
 			trackerEvent.Struct["stats"].(s2prot.Struct)["scoreValueFoodUsed"] = foodUsed
