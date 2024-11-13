@@ -22,52 +22,49 @@ The following flags are available:
 ```
   -help
     Show command usage
+  -game_mode_filter int
+    Specifies which game mode should be included from the processed files
+    in a format of a binary flag: AllGameModes: 0b11111111 (default 0b11111111) (default 255)
   -input string
     Input directory where .SC2Replay files are held. (default "./replays/input")
   -log_dir string
     Specifies directory which will hold the logging information. (default "./logs/")
   -log_level int
-    Specifies a log level from 1-7: 
+    Specifies a log level from 1-7:
     Panic - 1, Fatal - 2,
     Error - 3, Warn - 4,
     Info - 5, Debug - 6,
     Trace - 7 (default 4)
   -max_procs int
-    Specifies the number of logic cores of a processor
-    that will be used for processing. (default 24)
+    Specifies the number of logic cores of a processor that will be used for processing (default runtime.NumCPU()). (default 24)
   -number_of_packages int
     Provide a number of zip packages to be created and compressed
     into a zip archive. Please remember that this number needs to be lower
     than the number of processed files. If set to 0, will ommit the
     zip packaging and output .json directly to drive. (default 1)
-  -only_map_download bool
-    Specifies if the tool is supposed to only download
+  -only_map_download
+    Flag specifying if the tool is supposed to only download
     the maps and not process the replays.
   -output string
-    Output directory where compressed zip packages
-    will be saved. (default "./replays/output")
-  -perform_chat_anonymization bool
-    Specifies if the chat anonymization should be performed.
-  -perform_cleanup bool
-    Provide if the tool is supposed to perform the cleaning
+    Output directory where compressed zip packages will be saved. (default "./replays/output")
+  -perform_chat_anonymization
+    Flag, specifying if the chat anonymization should be performed.
+  -perform_cleanup
+    Flag specifying if the tool is supposed to perform the cleaning
     functions within the processing pipeline.
-  -perform_filtering bool
-    Specifies if the pipeline ought to verify different hard coded game modes.
+  -perform_filtering
+    Flag, specifying if the pipeline ought to verify different hard coded game modes.
     If set to false completely bypasses the filtering.
-  -game_mode_filter int
-    Specifies which game mode should be included from
-    the processed files in a format of a
-    binary flag: AllGameModes: 0b11111111 (default 255)
-  -perform_integrity_checks bool
-    If the software is supposed to check the hardcoded
+  -perform_integrity_checks
+    Flag specifying if the software is supposed to check the hardcoded
     integrity checks for the provided replays
-  -perform_player_anonymization bool
-    Specifies if the tool is supposed to perform player anonymization
+  -perform_player_anonymization
+    Flag specifying if the tool is supposed to perform player anonymization
     functions within the processing pipeline.
     If set to true please remember to download and run
     an anonymization server: https://doi.org/10.5281/zenodo.5138313
-  -perform_validity_checks bool
-    Provide if the tool is supposed to use hardcoded validity checks
+  -perform_validity_checks
+    Flag, specifying if the tool is supposed to use hardcoded validity checks
     and verify if the replay file variables are within 'common sense' ranges.
   -with_cpu_profiler string
     Set path to the file where pprof cpu profiler will save its information.
