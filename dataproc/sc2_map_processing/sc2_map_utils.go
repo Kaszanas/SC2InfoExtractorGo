@@ -1,6 +1,7 @@
 package sc2_map_processing
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	"github.com/icza/mpq"
 	"github.com/icza/s2prot/rep"
 	"github.com/schollz/progressbar/v3"
@@ -426,4 +428,35 @@ func replaceNewlinesSplitData(input string) []string {
 	splitFile := strings.Split(replacedNewlines, "\n")
 
 	return splitFile
+}
+
+func SaveForeignToEnglishMappingToDrive(
+	filepath string,
+	foreignToEnglishMapping map[string]string,
+) error {
+
+	// Create or read the file:
+	fileHandle, _, err := file_utils.ReadOrCreateFile(filepath)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to read or create the processed_replays.json file.")
+		return err
+	}
+
+	// Save the mapping:
+	mappingJSON, err := json.Marshal(foreignToEnglishMapping)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to marshal the foreignToEnglishMapping.")
+		return err
+	}
+
+	_, err = fileHandle.Write(mappingJSON)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to write the foreignToEnglishMapping to the file.")
+		return err
+	}
+
+	return nil
 }
