@@ -36,6 +36,7 @@ func PipelineWrapper(
 	compressionMethod uint16,
 	mapsDirectoryPath string,
 	processedReplaysFilepath string,
+	foreignToEnglishMappingFilepath string,
 	cliFlags utils.CLIFlags,
 ) {
 
@@ -126,6 +127,17 @@ func PipelineWrapper(
 			mainForeignToEnglishMapping[foreignName] = englishName
 		}
 	}
+	// Save the mapping to the drive:
+	err = sc2_map_processing.SaveForeignToEnglishMappingToDrive(
+		foreignToEnglishMappingFilepath,
+		mainForeignToEnglishMapping,
+	)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to save foreign to english mapping to drive.")
+		return
+	}
+
 	// REVIEW: Finish Review
 
 	// Stop all processing if the user chose to only download the maps:
