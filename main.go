@@ -91,6 +91,7 @@ func mainReturnWithCode() int {
 
 	mapsDirectoryPath := "maps"
 	processedReplaysFilepath := "processed_replays.json"
+	foreignToEnglishMappingFilepath := "map_foreign_to_english_mapping.json"
 
 	// Compression method to be used for the output packages:
 	var compressionMethod uint16 = 8
@@ -101,6 +102,7 @@ func mainReturnWithCode() int {
 		compressionMethod,
 		mapsDirectoryPath,
 		processedReplaysFilepath,
+		foreignToEnglishMappingFilepath,
 		CLIflags,
 	)
 

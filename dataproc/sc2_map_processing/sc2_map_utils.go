@@ -1,6 +1,7 @@
 package sc2_map_processing
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	"github.com/icza/mpq"
 	"github.com/icza/s2prot/rep"
 	"github.com/schollz/progressbar/v3"
@@ -316,7 +318,11 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	// Create the mapping from the foreign map name to the english map name:
 	foreignToEnglishMapName := make(map[string]string)
 	for _, localizationMPQFileName := range listOfLocaleFiles {
-		mapName, err := readLocaleFileGetMapName(mpqArchive, localizationMPQFileName)
+		// Get the foreign map name:
+		mapName, err := readLocaleFileGetMapName(
+			mpqArchive,
+			localizationMPQFileName,
+		)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"mapFilepath":             mapFilepath,
@@ -326,6 +332,11 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 				Error("Finished readLocalizedDataFromMap() Couldn't get one of the map names.")
 			return nil, fmt.Errorf("couldn't find map name: %s", err)
 		}
+
+		// https://github.com/Kaszanas/SC2InfoExtractorGo/issues/67
+		// Clean the foreign map name:
+		mapName = cleanMapName(mapName)
+
 		foreignToEnglishMapName[mapName] = englishMapName
 	}
 	mpqArchive.Close()
@@ -392,6 +403,24 @@ func readLocaleFileGetMapName(mpqArchive *mpq.MPQ, localeFileName string) (strin
 	return mapName, nil
 }
 
+// cleanMapName splits the map name by "\\\", and returns the first element
+// (foreign map name) from the map name, otherwise the same map name will be returned.
+func cleanMapName(mapName string) string {
+
+	// Check if "\\\" exists in the map name, if it does
+	// Check if the map name contains the substring "\\\"
+	if !strings.Contains(mapName, "///") {
+		return mapName
+	}
+	// Keep the left side of the string before "\\\".
+	// Split the string by "\\\\" and keep only the first part
+	mapName = strings.Split(mapName, "///")[0]
+	// right trim the string to remove any trailing spaces
+	mapName = strings.TrimRight(mapName, " ")
+
+	return mapName
+}
+
 // getMapNameFromLocaleFile reads the english map name
 // from the bytes of opened locale file.
 func getMapNameFromLocaleFile(MPQLocaleFileBytes []byte) (string, error) {
@@ -426,4 +455,35 @@ func replaceNewlinesSplitData(input string) []string {
 	splitFile := strings.Split(replacedNewlines, "\n")
 
 	return splitFile
+}
+
+func SaveForeignToEnglishMappingToDrive(
+	filepath string,
+	foreignToEnglishMapping map[string]string,
+) error {
+
+	// Create or read the file:
+	fileHandle, _, err := file_utils.ReadOrCreateFile(filepath)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to read or create the processed_replays.json file.")
+		return err
+	}
+
+	// Save the mapping:
+	mappingJSON, err := json.Marshal(foreignToEnglishMapping)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to marshal the foreignToEnglishMapping.")
+		return err
+	}
+
+	_, err = fileHandle.Write(mappingJSON)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to write the foreignToEnglishMapping to the file.")
+		return err
+	}
+
+	return nil
 }

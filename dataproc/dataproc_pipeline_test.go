@@ -163,6 +163,7 @@ func testPipelineWrapperWithDir(
 		compressionMethod,
 		"maps",
 		"processed_replays.json",
+		"map_foreign_to_english_mapping.json",
 		flags,
 	)
 
