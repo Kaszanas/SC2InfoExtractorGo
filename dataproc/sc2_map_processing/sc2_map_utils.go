@@ -318,7 +318,11 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	// Create the mapping from the foreign map name to the english map name:
 	foreignToEnglishMapName := make(map[string]string)
 	for _, localizationMPQFileName := range listOfLocaleFiles {
-		mapName, err := readLocaleFileGetMapName(mpqArchive, localizationMPQFileName)
+		// Get the foreign map name:
+		mapName, err := readLocaleFileGetMapName(
+			mpqArchive,
+			localizationMPQFileName,
+		)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"mapFilepath":             mapFilepath,
@@ -328,6 +332,11 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 				Error("Finished readLocalizedDataFromMap() Couldn't get one of the map names.")
 			return nil, fmt.Errorf("couldn't find map name: %s", err)
 		}
+
+		// https://github.com/Kaszanas/SC2InfoExtractorGo/issues/67
+		// Clean the foreign map name:
+		mapName = cleanMapName(mapName)
+
 		foreignToEnglishMapName[mapName] = englishMapName
 	}
 	mpqArchive.Close()
@@ -392,6 +401,24 @@ func readLocaleFileGetMapName(mpqArchive *mpq.MPQ, localeFileName string) (strin
 	}
 
 	return mapName, nil
+}
+
+// cleanMapName splits the map name by "\\\", and returns the first element
+// (foreign map name) from the map name, otherwise the same map name will be returned.
+func cleanMapName(mapName string) string {
+
+	// Check if "\\\" exists in the map name, if it does
+	// Check if the map name contains the substring "\\\"
+	if !strings.Contains(mapName, "///") {
+		return mapName
+	}
+	// Keep the left side of the string before "\\\".
+	// Split the string by "\\\\" and keep only the first part
+	mapName = strings.Split(mapName, "///")[0]
+	// right trim the string to remove any trailing spaces
+	mapName = strings.TrimRight(mapName, " ")
+
+	return mapName
 }
 
 // getMapNameFromLocaleFile reads the english map name
