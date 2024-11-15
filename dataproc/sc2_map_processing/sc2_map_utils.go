@@ -116,9 +116,37 @@ func createMapExtractingGoroutines(
 			wg.Done()
 			return
 		}
-		// Process the chunk of files and add the URLs to the map
+
+		// TODO: THIS IS NOT FINISHED:
+		// Define the urls map and processed replays map:
+
+		chunkUrls := map[url.URL]string{}
+		chunkProcessedReplays := map[string]persistent_data.FileInformationToCheck{}
+
+		// Seed chunkUrls from the sync.Map
+		urls.Range(func(key, value interface{}) bool {
+			urlKey, okKey := key.(url.URL)
+			valueStr, okValue := value.(string)
+			if okKey && okValue {
+				chunkUrls[urlKey] = valueStr
+			}
+			return true
+		})
+
+		// Seed chunkProcessedReplays from the sync.Map
+		processedReplaysSyncMap.Range(func(key, value interface{}) bool {
+			keyStr, okKey := key.(string)
+			valueInfo, okValue := value.(persistent_data.FileInformationToCheck)
+			if okKey && okValue {
+				chunkProcessedReplays[keyStr] = valueInfo
+			}
+			return true
+		})
+
+		// Process the chunk of files and add the URLs to the map:
 		for _, replayFullFilepath := range channelContents.ChunkOfFiles {
 
+			// Do not use the sync map here per file:
 			processFileExtractMap(
 				progressBar,
 				replayFullFilepath,
@@ -127,6 +155,9 @@ func createMapExtractingGoroutines(
 			)
 
 		}
+		// Instead of using the sync map per file, use it per chunk:
+		// TODO: Adding to the sync maps per chunk:
+
 	}
 
 }
@@ -140,60 +171,63 @@ func processFileExtractMap(
 
 	// Lambda to process the replay file to have
 	// deferred progress bar increment:
-	func() {
-		// Defer the progress bar increment:
-		defer func() {
-			if err := progressBar.Add(1); err != nil {
-				log.WithField("error", err).
-					Error("Error updating progress bar in GetAllReplaysMapURLs")
-			}
-		}()
-		replayFilename := filepath.Base(replayFullFilepath)
 
-		// Check if the replay was already processed:
-		fileInfo, err := os.Stat(replayFullFilepath)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":      err,
-				"replayFile": replayFullFilepath,
-			}).Error("Failed to get file info.")
-			return
+	// Defer the progress bar increment:
+	defer func() {
+		if err := progressBar.Add(1); err != nil {
+			log.WithField("error", err).
+				Error("Error updating progress bar in GetAllReplaysMapURLs")
 		}
-		fileInfoToCheck, alreadyProcessed :=
-			processedReplaysSyncMap.Load(replayFilename)
-		if alreadyProcessed {
-			// Check if the file was modified since the last time it was processed:
-			if persistent_data.CheckFileInfoEq(
-				fileInfo,
-				fileInfoToCheck.(persistent_data.FileInformationToCheck),
-			) {
-				// It is the same so continue
-				return
-			}
-			// It wasn't the same so the replay should be processed again:
-			log.WithField("file", replayFullFilepath).
-				Warn("Replay was modified since the last time it was processed")
-			processedReplaysSyncMap.Delete(replayFilename)
-		}
-
-		mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":      err,
-				"replayFile": replayFullFilepath,
-			}).Error("Failed to get map URL from replay")
-			return
-		}
-
-		urls.Store(mapURL, mapHashAndExtension)
-		processedReplaysSyncMap.Store(
-			replayFilename,
-			persistent_data.FileInformationToCheck{
-				LastModified: fileInfo.ModTime().Unix(),
-				Size:         fileInfo.Size(),
-			},
-		)
 	}()
+	replayFilename := filepath.Base(replayFullFilepath)
+
+	// Check if the replay was already processed:
+	fileInfo, err := os.Stat(replayFullFilepath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":      err,
+			"replayFile": replayFullFilepath,
+		}).Error("Failed to get file info.")
+		return
+	}
+	fileInfoToCheck, alreadyProcessed :=
+		processedReplaysSyncMap.Load(replayFilename)
+	if alreadyProcessed {
+		// Check if the file was modified since the last time it was processed:
+		if persistent_data.CheckFileInfoEq(
+			fileInfo,
+			fileInfoToCheck.(persistent_data.FileInformationToCheck),
+		) {
+			// It is the same so continue
+			return
+		}
+		// It wasn't the same so the replay should be processed again:
+		log.WithField("file", replayFullFilepath).
+			Warn("Replay was modified since the last time it was processed")
+		processedReplaysSyncMap.Delete(replayFilename)
+	}
+
+	mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":      err,
+			"replayFile": replayFullFilepath,
+		}).Error("Failed to get map URL from replay")
+		return
+	}
+
+	// REVIEW: Adding to mutexed maps.
+	// This can affect the performance of the program,
+	// it might be better to return the values from each of the goroutines
+	// and merge them later in the main thread.
+	urls.Store(mapURL, mapHashAndExtension)
+	processedReplaysSyncMap.Store(
+		replayFilename,
+		persistent_data.FileInformationToCheck{
+			LastModified: fileInfo.ModTime().Unix(),
+			Size:         fileInfo.Size(),
+		},
+	)
 
 }
 
