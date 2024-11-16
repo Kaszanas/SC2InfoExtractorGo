@@ -28,12 +28,12 @@ type ReplayMapProcessingChannelContents struct {
 
 func GetAllReplaysMapURLs(
 	fileChunks [][]string,
-	processedReplaysFilepath string,
+	downloadedMapsForReplaysFilepath string,
 	mapsDirectory string,
 	cliFlags utils.CLIFlags,
 ) (
 	map[url.URL]string,
-	persistent_data.ProcessedReplaysToFileInfo,
+	persistent_data.DownloadedMapsReplaysToFileInfo,
 	error,
 ) {
 
@@ -48,16 +48,18 @@ func GetAllReplaysMapURLs(
 	// Create a sync.Map to store the URLs
 	urls := &sync.Map{}
 
-	processedReplays, err := persistent_data.OpenOrCreateProcessedReplaysToFileInfo(
-		processedReplaysFilepath,
-		mapsDirectory,
-		fileChunks,
-	)
+	downloadedMapsForReplays, err := persistent_data.
+		OpenOrCreateDownloadedMapsForReplaysToFileInfo(
+			downloadedMapsForReplaysFilepath,
+			mapsDirectory,
+			fileChunks,
+		)
 	if err != nil {
-		return nil, persistent_data.ProcessedReplaysToFileInfo{}, err
+		return nil, persistent_data.DownloadedMapsReplaysToFileInfo{}, err
 	}
 
-	processedReplaysSyncMap := processedReplays.ConvertToSyncMap()
+	downloadedMapsForReplaysSyncMap := downloadedMapsForReplays.
+		ConvertToSyncMap()
 
 	// Progress bar logic:
 	nChunks := len(fileChunks)
@@ -77,7 +79,7 @@ func GetAllReplaysMapURLs(
 			channel,
 			progressBar,
 			urls,
-			processedReplaysSyncMap,
+			downloadedMapsForReplaysSyncMap,
 			&wg,
 		)
 	}
@@ -93,20 +95,22 @@ func GetAllReplaysMapURLs(
 	wg.Wait()
 	progressBar.Close()
 
-	processedReplaysReturn := persistent_data.
-		FromSyncMapToProcessedReplaysToFileInfo(processedReplaysSyncMap)
+	downloadedMapsForReplaysReturn := persistent_data.
+		FromSyncMapToDownloadedMapsForReplaysToFileInfo(
+			downloadedMapsForReplaysSyncMap,
+		)
 
 	urlMapToFilename := convertFromSyncMapToURLMap(urls)
 
 	// Return all of the URLs
-	return urlMapToFilename, processedReplaysReturn, nil
+	return urlMapToFilename, downloadedMapsForReplaysReturn, nil
 }
 
 func createMapExtractingGoroutines(
 	channel chan ReplayMapProcessingChannelContents,
 	progressBar *progressbar.ProgressBar,
 	urls *sync.Map,
-	processedReplaysSyncMap *sync.Map,
+	downloadedMapsForReplaysSyncMap *sync.Map,
 	wg *sync.WaitGroup,
 ) {
 
@@ -123,7 +127,7 @@ func createMapExtractingGoroutines(
 				progressBar,
 				replayFullFilepath,
 				urls,
-				processedReplaysSyncMap,
+				downloadedMapsForReplaysSyncMap,
 			)
 
 		}
@@ -135,7 +139,7 @@ func processFileExtractMap(
 	progressBar *progressbar.ProgressBar,
 	replayFullFilepath string,
 	urls *sync.Map,
-	processedReplaysSyncMap *sync.Map,
+	downloadedMapsForReplaysSyncMap *sync.Map,
 ) {
 
 	// Lambda to process the replay file to have
@@ -159,8 +163,11 @@ func processFileExtractMap(
 			}).Error("Failed to get file info.")
 			return
 		}
+
+		// If the file was already processed, and was not modified since,
+		// then it will be skipped from getting the map URL:
 		fileInfoToCheck, alreadyProcessed :=
-			processedReplaysSyncMap.Load(replayFilename)
+			downloadedMapsForReplaysSyncMap.Load(replayFilename)
 		if alreadyProcessed {
 			// Check if the file was modified since the last time it was processed:
 			if persistent_data.CheckFileInfoEq(
@@ -168,12 +175,14 @@ func processFileExtractMap(
 				fileInfoToCheck.(persistent_data.FileInformationToCheck),
 			) {
 				// It is the same so continue
+				log.WithField("file", replayFullFilepath).
+					Warning("This replay was already processed, map should be available, continuing!")
 				return
 			}
 			// It wasn't the same so the replay should be processed again:
 			log.WithField("file", replayFullFilepath).
-				Warn("Replay was modified since the last time it was processed")
-			processedReplaysSyncMap.Delete(replayFilename)
+				Warn("Replay was modified since the last time it was processed! Processing again.")
+			downloadedMapsForReplaysSyncMap.Delete(replayFilename)
 		}
 
 		mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
@@ -186,7 +195,7 @@ func processFileExtractMap(
 		}
 
 		urls.Store(mapURL, mapHashAndExtension)
-		processedReplaysSyncMap.Store(
+		downloadedMapsForReplaysSyncMap.Store(
 			replayFilename,
 			persistent_data.FileInformationToCheck{
 				LastModified: fileInfo.ModTime().Unix(),
@@ -197,6 +206,7 @@ func processFileExtractMap(
 
 }
 
+// getURL retrieves the map URL from the replay file.
 func getURL(replayFullFilepath string) (url.URL, string, error) {
 	// Assume getURLsFromReplay is a function that
 	// returns a slice of URLs from a replay file
@@ -211,7 +221,7 @@ func getURL(replayFullFilepath string) (url.URL, string, error) {
 		GetMapURLAndHashFromReplayData(replayData)
 	if !mapRetrieved {
 		log.WithField("file", replayFullFilepath).
-			Error("Failed to get map URL and hash from replay data")
+			Warning("Failed to get map URL and hash from replay data")
 		return url.URL{}, "", fmt.Errorf("failed to get map URL and hash from replay data")
 	}
 
@@ -242,10 +252,10 @@ func GetMapURLAndHashFromReplayData(
 	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
 	region := mapCacheHandle.Region
 
-	badRegions := []string{"Unknown", "Public Test"}
-	for _, badRegion := range badRegions {
+	unsupportedRegions := []string{"Unknown", "Public Test"}
+	for _, badRegion := range unsupportedRegions {
 		if region.Name == badRegion {
-			log.WithField("region", region.Name).Error("Detected bad region!")
+			log.WithField("region", region.Name).Error("Detected unsupported region!")
 			return url.URL{}, "", false
 		}
 	}
