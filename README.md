@@ -94,7 +94,7 @@ SC2InfoExtractorGo.exe -input ./replays/input -output ./replays/output
 3. Verify the output in ```./replays/output```
 4. If The output packages do not contain any processed replays, proceed to verify ```./logs/```.
 
-### Dataset Preparation
+## Dataset Preparation
 
 If You have a pack of replays with nested directories and You would like to automatically flatten the directory structure, We have published a tool that can be used for that, please see SC2DatasetPreparator: https://doi.org/10.5281/zenodo.5296664
 
