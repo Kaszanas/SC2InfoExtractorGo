@@ -23,6 +23,11 @@ Alternatively, you can [compile the tool from source](#build-from-source) and ru
 
 ## CLI Options
 
+To see the full list of available options, run the tool with the `-help` flag:
+```bash
+SC2InfoExtractorGo.exe -help
+```
+
 The following flags are available:
 
 ```
