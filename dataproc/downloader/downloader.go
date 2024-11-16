@@ -116,9 +116,8 @@ func DownloadMapIfNotExists(
 
 	log.WithFields(
 		log.Fields{
-			"downloaderSharedState": downloaderSharedState,
-			"mapHashAndExtension":   mapHashAndExtension,
-			"mapURL":                mapURL.String(),
+			"mapHashAndExtension": mapHashAndExtension,
+			"mapURL":              mapURL.String(),
 		},
 	).Info("Entered getEnglishMapNameDownloadIfNotExists()")
 
