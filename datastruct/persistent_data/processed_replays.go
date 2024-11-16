@@ -10,13 +10,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ProcessedReplaysToFileInfo Used to store replays that were processed in previous runs.
+// DownloadedMapsReplaysToFileInfo Used to store replays that were processed in previous runs.
 // Holds file information in the values of the map to compare against current files.
 // This is so that the maps for them are not re-downloaded.
 // This is used in a pre-processing step,
 // before the final processing of the replays and data extraction is performed.
-type ProcessedReplaysToFileInfo struct {
-	ProcessedFiles map[string]interface{} `json:"processedReplays"`
+type DownloadedMapsReplaysToFileInfo struct {
+	DownloadedMapsForFiles map[string]interface{} `json:"downloadedMapsForFiles"`
 }
 
 type FileInformationToCheck struct {
@@ -24,13 +24,13 @@ type FileInformationToCheck struct {
 	Size         int64 `json:"size"`
 }
 
-// OpenOrCreateProcessedReplaysToFileInfo Initializes and populates
-// a ProcessedReplaysToFileInfo structure.
-func OpenOrCreateProcessedReplaysToFileInfo(
+// OpenOrCreateDownloadedMapsForReplaysToFileInfo Initializes and populates
+// a DownloadedMapsReplaysToFileInfo structure.
+func OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 	filepath string,
-	mapDirectory string,
+	mapsDirectory string,
 	fileChunks [][]string,
-) (ProcessedReplaysToFileInfo, error) {
+) (DownloadedMapsReplaysToFileInfo, error) {
 
 	// check if the file exists:
 	mapToPopulateFromPersistentJSON := make(map[string]interface{})
@@ -38,17 +38,17 @@ func OpenOrCreateProcessedReplaysToFileInfo(
 	if err != nil {
 		log.WithField("error", err).
 			Error("Failed to read or create the processed_replays.json file.")
-		return ProcessedReplaysToFileInfo{}, err
+		return DownloadedMapsReplaysToFileInfo{}, err
 	}
 	err = file_utils.UnmarshalJsonFile(filepath, &mapToPopulateFromPersistentJSON)
 	if err != nil {
 		log.WithField("error", err).
 			Error("Failed to unmarshal the processed_replays.json file.")
-		return ProcessedReplaysToFileInfo{}, err
+		return DownloadedMapsReplaysToFileInfo{}, err
 	}
 
-	prtm := ProcessedReplaysToFileInfo{
-		ProcessedFiles: mapToPopulateFromPersistentJSON,
+	prtm := DownloadedMapsReplaysToFileInfo{
+		DownloadedMapsForFiles: mapToPopulateFromPersistentJSON,
 	}
 
 	for _, chunk := range fileChunks {
@@ -59,7 +59,7 @@ func OpenOrCreateProcessedReplaysToFileInfo(
 					"error":      err,
 					"replayFile": replayFile,
 				}).Error("Failed to get file info.")
-				return ProcessedReplaysToFileInfo{}, err
+				return DownloadedMapsReplaysToFileInfo{}, err
 			}
 			fileInfoToCheck, ok := prtm.CheckIfReplayWasProcessed(replayFile)
 			// Replay was processed so no need to check it again:
@@ -71,7 +71,7 @@ func OpenOrCreateProcessedReplaysToFileInfo(
 				}
 			}
 			// It wasn't the same so the replay should be processed again:
-			delete(prtm.ProcessedFiles, replayFile)
+			delete(prtm.DownloadedMapsForFiles, replayFile)
 		}
 	}
 
@@ -89,10 +89,10 @@ func CheckFileInfoEq(
 		fileInfo.Size() == fileInfoToCheck.Size
 }
 
-// ConvertToSyncMap Converts a ProcessedReplaysToFileInfo to a sync.Map.
-func (prtm *ProcessedReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
+// ConvertToSyncMap Converts a DownloadedMapsReplaysToFileInfo to a sync.Map.
+func (prtm *DownloadedMapsReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
 	syncMap := &sync.Map{}
-	for key, value := range prtm.ProcessedFiles {
+	for key, value := range prtm.DownloadedMapsForFiles {
 		valueMap := value.(map[string]interface{})
 		// JSON is unmarshaled to float64 so we need to cast it to int64:
 		infoToCheck := FileInformationToCheck{
@@ -104,31 +104,31 @@ func (prtm *ProcessedReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
 	return syncMap
 }
 
-// FromSyncMapToProcessedReplaysToFileInfo Converts a
-// sync.Map to a ProcessedReplaysToFileInfo.
-func FromSyncMapToProcessedReplaysToFileInfo(
+// FromSyncMapToDownloadedMapsForReplaysToFileInfo Converts a
+// sync.Map to a DownloadedMapsReplaysToFileInfo.
+func FromSyncMapToDownloadedMapsForReplaysToFileInfo(
 	syncMap *sync.Map,
-) ProcessedReplaysToFileInfo {
-	processedReplays := make(map[string]interface{})
+) DownloadedMapsReplaysToFileInfo {
+	downloadedMapsForReplays := make(map[string]interface{})
 	syncMap.Range(func(key, value interface{}) bool {
 
 		keyStr := key.(string)
 		valueFileInformationToCheck, _ := value.(FileInformationToCheck)
 
-		processedReplays[keyStr] = valueFileInformationToCheck
+		downloadedMapsForReplays[keyStr] = valueFileInformationToCheck
 		return true
 	})
 
-	return ProcessedReplaysToFileInfo{
-		ProcessedFiles: processedReplays,
+	return DownloadedMapsReplaysToFileInfo{
+		DownloadedMapsForFiles: downloadedMapsForReplays,
 	}
 }
 
 // CheckIfReplayWasProcessed checks if the replay was processed before.
-func (prtm *ProcessedReplaysToFileInfo) CheckIfReplayWasProcessed(
+func (prtm *DownloadedMapsReplaysToFileInfo) CheckIfReplayWasProcessed(
 	replayPath string,
 ) (FileInformationToCheck, bool) {
-	fileInfo, ok := prtm.ProcessedFiles[replayPath]
+	fileInfo, ok := prtm.DownloadedMapsForFiles[replayPath]
 	if !ok {
 		return FileInformationToCheck{}, ok
 	}
@@ -145,37 +145,37 @@ func (prtm *ProcessedReplaysToFileInfo) CheckIfReplayWasProcessed(
 
 // AddReplayToProcessed adds a replay with its file information to the processed replays.
 // used to check if the replay was processed before.
-func (prtm *ProcessedReplaysToFileInfo) AddReplayToProcessed(
+func (prtm *DownloadedMapsReplaysToFileInfo) AddReplayToProcessed(
 	replayPath string,
 	fileInfo fs.FileInfo,
 ) {
-	prtm.ProcessedFiles[replayPath] = FileInformationToCheck{
+	prtm.DownloadedMapsForFiles[replayPath] = FileInformationToCheck{
 		LastModified: fileInfo.ModTime().Unix(),
 		Size:         fileInfo.Size(),
 	}
 }
 
-func (prtm *ProcessedReplaysToFileInfo) SaveProcessedReplaysFile(
+func (prtm *DownloadedMapsReplaysToFileInfo) SaveDownloadedMapsForReplaysFile(
 	filepath string,
 ) error {
 
-	jsonBytes, err := json.Marshal(prtm.ProcessedFiles)
+	jsonBytes, err := json.Marshal(prtm.DownloadedMapsForFiles)
 	if err != nil {
 		log.WithField("error", err).
-			Error("Failed to marshal the processedReplays map.")
+			Error("Failed to marshal the downloadedMapsForReplays map.")
 		return err
 	}
 
-	processedReplaysFile, err := file_utils.CreateTruncateFile(filepath)
+	downloadedMapsForReplaysFile, err := file_utils.CreateTruncateFile(filepath)
 	if err != nil {
 		log.Error("Failed to create the package summary file!")
 		return err
 	}
 
-	_, err = processedReplaysFile.Write(jsonBytes)
+	_, err = downloadedMapsForReplaysFile.Write(jsonBytes)
 	if err != nil {
 		log.WithField("error", err).
-			Error("Failed to save the processedReplaysFile")
+			Error("Failed to save the downloadedMapsForReplaysFile")
 		return err
 	}
 

@@ -35,7 +35,7 @@ func PipelineWrapper(
 	packageToZipBool bool,
 	compressionMethod uint16,
 	mapsDirectoryPath string,
-	processedReplaysFilepath string,
+	downloadedMapsForReplaysFilepath string,
 	foreignToEnglishMappingFilepath string,
 	cliFlags utils.CLIFlags,
 ) {
@@ -73,10 +73,10 @@ func PipelineWrapper(
 
 	// STAGE ONE PRE-PROCESS:
 	// Get all map URLs into a set:
-	URLToFileNameMap, processedReplays, err := sc2_map_processing.
+	URLToFileNameMap, downloadedMapsForReplays, err := sc2_map_processing.
 		GetAllReplaysMapURLs(
 			fileChunks,
-			processedReplaysFilepath,
+			downloadedMapsForReplaysFilepath,
 			mapsDirectoryPath,
 			cliFlags,
 		)
@@ -90,8 +90,8 @@ func PipelineWrapper(
 	existingMapFilesSet, err = DownloadAllSC2Maps(
 		&downloaderSharedState,
 		mapsDirectoryPath,
-		processedReplays,
-		processedReplaysFilepath,
+		downloadedMapsForReplays,
+		downloadedMapsForReplaysFilepath,
 		URLToFileNameMap,
 		fileChunks,
 		cliFlags,

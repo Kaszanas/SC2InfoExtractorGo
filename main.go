@@ -5,6 +5,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
+	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -89,10 +90,6 @@ func mainReturnWithCode() int {
 		lenListOfInputFiles,
 	)
 
-	mapsDirectoryPath := "maps"
-	processedReplaysFilepath := "processed_replays.json"
-	foreignToEnglishMappingFilepath := "map_foreign_to_english_mapping.json"
-
 	// Compression method to be used for the output packages:
 	var compressionMethod uint16 = 8
 	// Initializing the processing:
@@ -100,9 +97,9 @@ func mainReturnWithCode() int {
 		listOfChunksFiles,
 		packageToZipBool,
 		compressionMethod,
-		mapsDirectoryPath,
-		processedReplaysFilepath,
-		foreignToEnglishMappingFilepath,
+		settings.MapsDirectoryPath,
+		settings.DownloadedMapsForReplaysFilepath,
+		settings.ForeignToEnglishMappingFilepath,
 		CLIflags,
 	)
 

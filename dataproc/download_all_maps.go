@@ -15,16 +15,16 @@ import (
 func DownloadAllSC2Maps(
 	downloaderSharedState *downloader.DownloaderSharedState,
 	mapsDirectory string,
-	processedReplays persistent_data.ProcessedReplaysToFileInfo,
-	processedReplaysFilepath string,
+	downloadedMapsForReplays persistent_data.DownloadedMapsReplaysToFileInfo,
+	downloadedMapsForReplaysFilepath string,
 	allMapURLs map[url.URL]string,
 	fileChunks [][]string,
 	cliFlags utils.CLIFlags,
 ) (map[string]struct{}, error) {
 
 	log.WithFields(log.Fields{
-		"mapsDirectory":      mapsDirectory,
-		"n_processedReplays": len(processedReplays.ProcessedFiles)}).
+		"mapsDirectory":              mapsDirectory,
+		"n_downloadedMapsForReplays": len(downloadedMapsForReplays.DownloadedMapsForFiles)}).
 		Info("Entered downloadAllSC2Maps()")
 
 	defer downloaderSharedState.WorkerPool.StopAndWait()
@@ -58,9 +58,11 @@ func DownloadAllSC2Maps(
 	progressBarDownloadMaps.Close()
 
 	// Save the processed replays to the file:
-	err := processedReplays.SaveProcessedReplaysFile(processedReplaysFilepath)
+	err := downloadedMapsForReplays.SaveDownloadedMapsForReplaysFile(downloadedMapsForReplaysFilepath)
 	if err != nil {
-		log.WithField("processedReplaysFile", processedReplaysFilepath).
+		log.WithField("downloadedMapsForReplaysFile",
+			downloadedMapsForReplaysFilepath,
+		).
 			Error("Failed to save the processed replays file.")
 		return nil, err
 	}
