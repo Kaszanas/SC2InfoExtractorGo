@@ -255,7 +255,10 @@ func GetMapURLAndHashFromReplayData(
 	unsupportedRegions := []string{"Unknown", "Public Test"}
 	for _, badRegion := range unsupportedRegions {
 		if region.Name == badRegion {
-			log.WithField("region", region.Name).Error("Detected unsupported region!")
+			log.WithField("region", region.Name).
+				Warning(
+					"Detected unsupported region! Won't download the map! Replay may fail further processing!",
+				)
 			return url.URL{}, "", false
 		}
 	}

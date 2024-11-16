@@ -33,5 +33,6 @@ test_replays_output/
 *.s2ma
 maps/
 processed_replays.json
+downloaded_maps_for_replays.json
 map_foreign_to_english_mapping.json
 .env

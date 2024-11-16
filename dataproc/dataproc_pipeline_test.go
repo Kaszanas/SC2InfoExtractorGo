@@ -161,9 +161,9 @@ func testPipelineWrapperWithDir(
 		chunksOfFiles,
 		packageToZip,
 		compressionMethod,
-		"maps",
-		"processed_replays.json",
-		"map_foreign_to_english_mapping.json",
+		settings.MapsDirectoryPath,
+		settings.DownloadedMapsForReplaysFilepath,
+		settings.ForeignToEnglishMappingFilepath,
 		flags,
 	)
 
