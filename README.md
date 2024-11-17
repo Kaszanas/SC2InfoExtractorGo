@@ -10,8 +10,9 @@ A tool meant to allow for quick data extraction from StarCraft 2 replay files ".
 > This steps assumes that you have Docker installed on your machine and working.
 > Additionally, you will either need to pull the docker image from DockerHub or build it locally as described in [Build Docker Images](CONTRIBUTING.md#build-docker-images).
 
-The easiest way to run this tool is to use the provided Docker image release. Please note that the `maps` directory can be mounted to see what map files are downloaded, and what map files were pre-seeded with the Docker Image. Other command line options are described in [CLI Options](#cli-options). Command below showcases the exampe usage of the tool.
+The easiest way to run this tool is to use the provided Docker image release. Please note that the `maps` directory can be mounted to see what map files are downloaded, and what map files were pre-seeded with the Docker Image. Other command line options are described in [CLI Options](#cli-options).
 
+Commands below showcases the exampe usage of the tool.
 **Steps:**
 1. Pull the Docker image from DockerHub or [Build Docker Images](CONTRIBUTING.md#build-docker-images):
 ```sh
@@ -35,8 +36,7 @@ docker run -it --rm \
 ## Example Usage (Local)
 
 > [!NOTE]
-> This steps assumes that you downloaded the release binary or you have  Golang installed with the required version for this project.
-> To perform the steps below, you will be required to [compile the tool from source](CONTRIBUTING.md/#build-from-source).
+> These steps assume that you downloaded the release binary or you will have to [compile the tool from source](CONTRIBUTING.md/#build-from-source).
 
 
 1. Place ```.SC2Replay``` files in ```./replays/input```
