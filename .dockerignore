@@ -2,8 +2,11 @@
 
 
 DEMOS
+maps_old/
 logs/
 input/
+
+replays/
 
 *.zip
 *.log

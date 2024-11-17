@@ -26,7 +26,8 @@ RUN mkdir logs
 
 COPY --from=build_sc2_info_extractor /app/SC2InfoExtractorGo /app/
 # Copying all maps from from SC2ReSet to the maps directory for processing:
-COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/cn_maps/ /app/maps/
-COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/sc2reset_maps/ /app/maps/
+# FIXME: Map files are not copied to the container:
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/cn_maps /app/maps/
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/sc2reset_maps /app/maps/
 
 ENTRYPOINT ["/app/SC2InfoExtractorGo"]
