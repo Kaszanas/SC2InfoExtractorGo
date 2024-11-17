@@ -38,7 +38,33 @@ If you are proposing a feature:
 
 ## Dockerized Development
 
+In case you want to contribute to the project, you should set up your development environment. If you wish to use Docker, you will have to clone the repository and set up the respective Docker images.
+
+### Build Docker Images
+
 Setting up the development environment can be a tiresome process. Due to this we have prepared a dockerfile that can be used as a devcontainer. You can find it under `docker/Dockerfile.dev`. This image should have all of the base dependencies that are required for development.
+
+To build the image, run the following command:
+
+```sh
+make docker_build_dev
+```
+
+or if you want to build it with docker compose:
+
+```sh
+make compose_build_dev
+```
+
+> [!NOTE]
+> To fully test the tool you should build both the development and the production images.
+> The development image is used for testing and debugging the tool, while the production image is used for running the tool in a production environment.
+
+To build the production image, run the following command:
+
+```sh
+make docker_build
+```
 
 ## Build from source
 
