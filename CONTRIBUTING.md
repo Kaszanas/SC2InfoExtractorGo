@@ -42,6 +42,9 @@ In case you want to contribute to the project, you should set up your developmen
 
 ### Build Docker Images
 
+> [!NOTE]
+> The development images come with the test files included, so you can run the tests without any additional setup from within the container. If you wish to pull these files separately please refer to the following docker image: `kaszanas/sc2replaytestdata:latest`
+
 Setting up the development environment can be a tiresome process. Due to this we have prepared a dockerfile that can be used as a devcontainer. You can find it under `docker/Dockerfile.dev`. This image should have all of the base dependencies that are required for development.
 
 To build the image, run the following command:
