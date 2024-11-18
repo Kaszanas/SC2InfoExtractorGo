@@ -23,6 +23,8 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 RUN mkdir logs
+RUN mkdir replays/input
+RUN mkdir replays/output
 
 COPY --from=build_sc2_info_extractor /app/SC2InfoExtractorGo /app/
 # Copying all maps from from SC2ReSet to the maps directory for processing:
