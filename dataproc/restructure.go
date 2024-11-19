@@ -374,6 +374,7 @@ func cleanToonDescMap(
 	// Merging data-structures to data.EnhancedToonDescMap
 	enhancedToonDescMap := make(map[string]replay_data.EnhancedToonDescMap)
 	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
+		// Solved https://github.com/Kaszanas/SC2InfoExtractorGo/issues/51
 		// Initializing enhanced map from the dirtyToonPlayerDescMap:
 		initializedToonDescMap := replay_data.EnhancedToonDescMap{
 			PlayerID:            playerDescription.PlayerID,
@@ -385,10 +386,6 @@ func cleanToonDescMap(
 			StartLocY:           playerDescription.StartLocY,
 		}
 		enhancedToonDescMap[toonKey] = initializedToonDescMap
-
-		// TODO: These functions should take initializedToonDescMap as an argument,
-		// fill out its fields if applicable, and return the filled out structu to the caller.
-		// then the caller should assign the returned struct to enhancedToonDescMap[toonKey]
 
 		// Merging information held in metadata.Players into data.EnhancedToonDescMap
 		enhancedToonDescMap[toonKey] = mergeToonDescMapWithMetadata(
@@ -410,10 +407,16 @@ func cleanToonDescMap(
 			return enhancedToonDescMap, false
 		}
 
-		enhancedToonDescMap[toonKey] = mergeToonDescMapWithInitPlayerList(
+		// Merging information contained in the cleanedUserInitDataList:
+		enhancedToonDescMap[toonKey], err = mergeToonDescMapWithInitPlayerList(
 			cleanedUserInitDataList,
 			enhancedToonDescMap[toonKey],
 		)
+		if err != nil {
+			log.WithField("error", err.Error()).
+				Error("Failed to merge toon desc map with init player list")
+			return enhancedToonDescMap, false
+		}
 
 	}
 
@@ -440,16 +443,17 @@ func mergeToonDescMapWithMetadata(
 		metadataPlayerID := metadataPlayer.PlayerID()
 		playerDescriptionPlayerID := playerDescription.PlayerID
 
-		if metadataPlayerID == playerDescriptionPlayerID {
-			// Filling out struct fields:
-			// FIXME: https://github.com/Kaszanas/SC2InfoExtractorGo/issues/51
-			// What should be done in case if some of these fields are empty?
-			metadataEnhancedToonDescMap.AssignedRace = metadataPlayer.AssignedRace()
-			metadataEnhancedToonDescMap.SelectedRace = metadataPlayer.SelectedRace()
-			metadataEnhancedToonDescMap.APM = metadataPlayer.APM()
-			metadataEnhancedToonDescMap.MMR = metadataPlayer.MMR()
-			metadataEnhancedToonDescMap.Result = metadataPlayer.Result()
+		if metadataPlayerID != playerDescriptionPlayerID {
+			continue
 		}
+
+		// Filling out struct fields:
+		// What should be done in case if some of these fields are empty?
+		metadataEnhancedToonDescMap.AssignedRace = metadataPlayer.AssignedRace()
+		metadataEnhancedToonDescMap.SelectedRace = metadataPlayer.SelectedRace()
+		metadataEnhancedToonDescMap.APM = metadataPlayer.APM()
+		metadataEnhancedToonDescMap.MMR = metadataPlayer.MMR()
+		metadataEnhancedToonDescMap.Result = metadataPlayer.Result()
 	}
 	return metadataEnhancedToonDescMap
 }
@@ -482,7 +486,7 @@ func mergeToonDescMapWithDetails(
 		detailsEnhancedToonDescMap.Name = player.Name
 
 		// Checking if previously ran loop populated the Race information
-		// REVIEW: This could be a full race name here:
+		// REVIEW: Should this be a full race name?
 		if detailsEnhancedToonDescMap.AssignedRace == "" {
 			raceLetter := player.Race().Letter
 			if raceLetter == 'T' {
@@ -495,13 +499,6 @@ func mergeToonDescMapWithDetails(
 				detailsEnhancedToonDescMap.AssignedRace = "Zerg"
 			}
 		}
-		// This is returning
-		// var Results = []*Result{
-		//     {Enum{"Unknown"}, '-'},
-		//     {Enum{"Victory"}, 'V'},
-		//     {Enum{"Defeat"}, 'D'},
-		//     {Enum{"Tie"}, 'T'},
-		// }
 
 		resultMapPlayerResult := map[string]string{
 			"Unknown": "Undecided",
@@ -544,14 +541,13 @@ func mergeToonDescMapWithDetails(
 func mergeToonDescMapWithInitPlayerList(
 	cleanedUserInitDataList []replay_data.CleanedUserInitData,
 	enhancedToonDescMap replay_data.EnhancedToonDescMap,
-) replay_data.EnhancedToonDescMap {
+) (replay_data.EnhancedToonDescMap, error) {
 
 	if len(cleanedUserInitDataList) == 0 {
 		log.Warn("No players found in cleanedUserInitDataList!")
-		return enhancedToonDescMap
+		return enhancedToonDescMap, nil
 	}
 
-	// TODO: Iterate over the toon desc map without nesting:
 	// Merging cleanedUserInitDataList information into data.EnhancedToonDescMap:
 	initEnhancedToonDescMap := enhancedToonDescMap
 	for _, initPlayer := range cleanedUserInitDataList {
@@ -564,9 +560,14 @@ func mergeToonDescMapWithInitPlayerList(
 			continue
 		}
 
-		// The names align, fill out the struct fields:
-		// TODO: It is not clear that the initPlayer.Name is not empty too.
-		if initEnhancedToonDescMap.Name == "" {
+		// Both names are empty, this cannot be correct:
+		if initEnhancedToonDescMap.Name == "" && initPlayer.Name == "" {
+			log.Error("Both player names are empty in mergeToonDescMapWithInitPlayerList!")
+			return initEnhancedToonDescMap, fmt.Errorf("both player names are empty")
+		}
+
+		// If the name is empty in the EnhancedToonDescMap, fill it out from the initPlayer:
+		if initEnhancedToonDescMap.Name == "" && initPlayer.Name != "" {
 			initEnhancedToonDescMap.Name = initPlayer.Name
 		}
 		initEnhancedToonDescMap.HighestLeague = initPlayer.HighestLeague
@@ -577,7 +578,7 @@ func mergeToonDescMapWithInitPlayerList(
 		break
 	}
 
-	return initEnhancedToonDescMap
+	return initEnhancedToonDescMap, nil
 
 }
 
