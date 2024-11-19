@@ -362,92 +362,187 @@ func cleanMetadata(
 // changes the structure into a more readable form.
 func cleanToonDescMap(
 	replayData *rep.Rep,
-	cleanedUserInitDataList []replay_data.CleanedUserInitData) map[string]replay_data.EnhancedToonDescMap {
+	cleanedUserInitDataList []replay_data.CleanedUserInitData,
+) map[string]replay_data.EnhancedToonDescMap {
 
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 
 	// Merging data-structures to data.EnhancedToonDescMap
 	enhancedToonDescMap := make(map[string]replay_data.EnhancedToonDescMap)
 	for toonKey, playerDescription := range dirtyToonPlayerDescMap {
-		var initializedToonDescMap replay_data.EnhancedToonDescMap
+		// Initializing enhanced map from the dirtyToonPlayerDescMap:
+		initializedToonDescMap := replay_data.EnhancedToonDescMap{
+			PlayerID:            playerDescription.PlayerID,
+			UserID:              playerDescription.UserID,
+			SQ:                  playerDescription.SQ,
+			SupplyCappedPercent: playerDescription.SupplyCappedPercent,
+			StartDir:            playerDescription.StartDir,
+			StartLocX:           playerDescription.StartLocX,
+			StartLocY:           playerDescription.StartLocY,
+		}
 		enhancedToonDescMap[toonKey] = initializedToonDescMap
 
+		// TODO: These functions should take initializedToonDescMap as an argument,
+		// fill out its fields if applicable, and return the filled out structu to the caller.
+		// then the caller should assign the returned struct to enhancedToonDescMap[toonKey]
+
 		// Merging information held in metadata.Players into data.EnhancedToonDescMap
-		for _, player := range replayData.Metadata.Players() {
-			if player.PlayerID() == playerDescription.PlayerID {
-				metadataToonDescMap := enhancedToonDescMap[toonKey]
-				// Filling out struct fields:
-				metadataToonDescMap.PlayerID = playerDescription.PlayerID
-				metadataToonDescMap.UserID = playerDescription.UserID
-				metadataToonDescMap.SQ = playerDescription.SQ
-				metadataToonDescMap.SupplyCappedPercent = playerDescription.SupplyCappedPercent
-				metadataToonDescMap.StartDir = playerDescription.StartDir
-				metadataToonDescMap.StartLocX = playerDescription.StartLocX
-				metadataToonDescMap.StartLocY = playerDescription.StartLocY
-				metadataToonDescMap.AssignedRace = player.AssignedRace()
-				metadataToonDescMap.SelectedRace = player.SelectedRace()
-				metadataToonDescMap.APM = player.APM()
-				metadataToonDescMap.MMR = player.MMR()
-				metadataToonDescMap.Result = player.Result()
-				enhancedToonDescMap[toonKey] = metadataToonDescMap
-			}
-		}
+		enhancedToonDescMap[toonKey] = mergeToonDescMapWithMetadata(
+			replayData,
+			playerDescription,
+			enhancedToonDescMap[toonKey],
+		)
 
 		// Merging information contained in the details part of the replay:
-		for _, player := range replayData.Details.Players() {
-			if player.Toon.String() == toonKey {
-				detailsEnhancedToonDescMap := enhancedToonDescMap[toonKey]
+		enhancedToonDescMap[toonKey] = mergeToonDescMapWithDetails(
+			replayData,
+			toonKey,
+			enhancedToonDescMap[toonKey],
+		)
 
-				detailsEnhancedToonDescMap.Name = player.Name
+		enhancedToonDescMap[toonKey] = mergeToonDescMapWithInitPlayerList(
+			cleanedUserInitDataList,
+			enhancedToonDescMap[toonKey],
+		)
 
-				// Checking if previously ran loop populated the Race information
-				if detailsEnhancedToonDescMap.AssignedRace == "" {
-					raceLetter := player.Race().Letter
-					if raceLetter == 'T' {
-						detailsEnhancedToonDescMap.AssignedRace = "Terr"
-					}
-					if raceLetter == 'P' {
-						detailsEnhancedToonDescMap.AssignedRace = "Prot"
-					}
-					if raceLetter == 'Z' {
-						detailsEnhancedToonDescMap.AssignedRace = "Zerg"
-					}
-				}
-				if detailsEnhancedToonDescMap.Result == "" {
-					detailsEnhancedToonDescMap.Result = player.Result().String()
-				}
-
-				// Filling out struct fields:
-				detailsEnhancedToonDescMap.Region = player.Toon.Region().Name
-				detailsEnhancedToonDescMap.Realm = player.Toon.Realm().Name
-				detailsEnhancedToonDescMap.Color.A = player.Color[0]
-				detailsEnhancedToonDescMap.Color.B = player.Color[1]
-				detailsEnhancedToonDescMap.Color.G = player.Color[2]
-				detailsEnhancedToonDescMap.Color.R = player.Color[3]
-				detailsEnhancedToonDescMap.Handicap = player.Handicap()
-				enhancedToonDescMap[toonKey] = detailsEnhancedToonDescMap
-			}
-
-			// Merging cleanedUserInitDataList information into data.EnhancedToonDescMap:
-			for _, initPlayer := range cleanedUserInitDataList {
-				if strings.HasSuffix(player.Name, initPlayer.Name) {
-					initEnhancedToonDescMap := enhancedToonDescMap[toonKey]
-
-					if initEnhancedToonDescMap.Name == "" {
-						initEnhancedToonDescMap.Name = initPlayer.Name
-					}
-
-					initEnhancedToonDescMap.HighestLeague = initPlayer.HighestLeague
-					initEnhancedToonDescMap.IsInClan = initPlayer.IsInClan
-					initEnhancedToonDescMap.ClanTag = initPlayer.ClanTag
-
-					enhancedToonDescMap[toonKey] = initEnhancedToonDescMap
-				}
-			}
-		}
 	}
 
 	return enhancedToonDescMap
+}
+
+// mergeToonDescMapWithMetadata merges the rep.PlayerDesc with the game Metadata
+// into the EnhancedToonDescMap
+func mergeToonDescMapWithMetadata(
+	replayData *rep.Rep,
+	playerDescription *rep.PlayerDesc,
+	enhancedToonDescMap replay_data.EnhancedToonDescMap,
+) replay_data.EnhancedToonDescMap {
+
+	metadataPlayers := replayData.Metadata.Players()
+	if len(metadataPlayers) == 0 {
+		log.Warn("No players found in metadata!")
+		return enhancedToonDescMap
+	}
+	metadataEnhancedToonDescMap := enhancedToonDescMap
+
+	for _, metadataPlayer := range metadataPlayers {
+
+		metadataPlayerID := metadataPlayer.PlayerID()
+		playerDescriptionPlayerID := playerDescription.PlayerID
+
+		if metadataPlayerID == playerDescriptionPlayerID {
+			// Filling out struct fields:
+			// FIXME: https://github.com/Kaszanas/SC2InfoExtractorGo/issues/51
+			// What should be done in case if some of these fields are empty?
+			metadataEnhancedToonDescMap.AssignedRace = metadataPlayer.AssignedRace()
+			metadataEnhancedToonDescMap.SelectedRace = metadataPlayer.SelectedRace()
+			metadataEnhancedToonDescMap.APM = metadataPlayer.APM()
+			metadataEnhancedToonDescMap.MMR = metadataPlayer.MMR()
+			metadataEnhancedToonDescMap.Result = metadataPlayer.Result()
+		}
+	}
+	return metadataEnhancedToonDescMap
+}
+
+// mergeToonDescMapWithDetails merges the rep.PlayerDesc with the game Details,
+// into the EnhancedToonDescMap, and returns the EnhancedToonDescMap.
+func mergeToonDescMapWithDetails(
+	replayData *rep.Rep,
+	toonKey string,
+	enhancedToonDescMap replay_data.EnhancedToonDescMap,
+) replay_data.EnhancedToonDescMap {
+
+	detailsPlayers := replayData.Details.Players()
+
+	if len(detailsPlayers) == 0 {
+		log.Warn("No players found in details!")
+		return enhancedToonDescMap
+	}
+
+	detailsEnhancedToonDescMap := enhancedToonDescMap
+	for _, player := range detailsPlayers {
+		toonString := player.Toon.String()
+
+		// Toon string doesn't match, keep looking for the right player:
+		if toonString != toonKey {
+			continue
+		}
+
+		// Found the right player, fill out the fields:
+		detailsEnhancedToonDescMap.Name = player.Name
+
+		// Checking if previously ran loop populated the Race information
+		// REVIEW: This could be a full race name here:
+		if detailsEnhancedToonDescMap.AssignedRace == "" {
+			raceLetter := player.Race().Letter
+			if raceLetter == 'T' {
+				detailsEnhancedToonDescMap.AssignedRace = "Terr"
+			}
+			if raceLetter == 'P' {
+				detailsEnhancedToonDescMap.AssignedRace = "Prot"
+			}
+			if raceLetter == 'Z' {
+				detailsEnhancedToonDescMap.AssignedRace = "Zerg"
+			}
+		}
+		if detailsEnhancedToonDescMap.Result == "" {
+			detailsEnhancedToonDescMap.Result = player.Result().String()
+		}
+
+		// Filling out struct fields:
+		detailsEnhancedToonDescMap.Region = player.Toon.Region().Name
+		detailsEnhancedToonDescMap.Realm = player.Toon.Realm().Name
+		detailsEnhancedToonDescMap.Color.A = player.Color[0]
+		detailsEnhancedToonDescMap.Color.B = player.Color[1]
+		detailsEnhancedToonDescMap.Color.G = player.Color[2]
+		detailsEnhancedToonDescMap.Color.R = player.Color[3]
+		detailsEnhancedToonDescMap.Handicap = player.Handicap()
+		// There should be only one player that fits the unique toon key,
+		// if the player was found and the values were filled out we can exit the loop:
+		break
+	}
+
+	return detailsEnhancedToonDescMap
+}
+
+func mergeToonDescMapWithInitPlayerList(
+	cleanedUserInitDataList []replay_data.CleanedUserInitData,
+	enhancedToonDescMap replay_data.EnhancedToonDescMap,
+) replay_data.EnhancedToonDescMap {
+
+	if len(cleanedUserInitDataList) == 0 {
+		log.Warn("No players found in cleanedUserInitDataList!")
+		return enhancedToonDescMap
+	}
+
+	// TODO: Iterate over the toon desc map without nesting:
+	// Merging cleanedUserInitDataList information into data.EnhancedToonDescMap:
+	initEnhancedToonDescMap := enhancedToonDescMap
+	for _, initPlayer := range cleanedUserInitDataList {
+
+		toonMapName := initEnhancedToonDescMap.Name
+		initPlayerName := initPlayer.Name
+
+		// The names don't align, keep looking:
+		if !strings.HasSuffix(toonMapName, initPlayerName) {
+			continue
+		}
+
+		// The names align, fill out the struct fields:
+		// TODO: It is not clear that the initPlayer.Name is not empty too.
+		if initEnhancedToonDescMap.Name == "" {
+			initEnhancedToonDescMap.Name = initPlayer.Name
+		}
+		initEnhancedToonDescMap.HighestLeague = initPlayer.HighestLeague
+		initEnhancedToonDescMap.IsInClan = initPlayer.IsInClan
+		initEnhancedToonDescMap.ClanTag = initPlayer.ClanTag
+
+		// No need to look any further:
+		break
+	}
+
+	return initEnhancedToonDescMap
+
 }
 
 // cleanMessageEvents copies the message events,
