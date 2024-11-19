@@ -49,7 +49,11 @@ func redifineReplayStructure(
 		return replay_data.CleanedReplay{}, false
 	}
 
-	enhancedToonDescMap := cleanToonDescMap(replayData, cleanedUserInitDataList)
+	enhancedToonDescMap, ok := cleanToonDescMap(replayData, cleanedUserInitDataList)
+	if !ok {
+		log.Error("Failed to clean toon desc map!")
+		return replay_data.CleanedReplay{}, false
+	}
 
 	messageEventsStructs := cleanMessageEvents(replayData)
 	gameEventsStructs := cleanGameEvents(replayData)
@@ -363,7 +367,7 @@ func cleanMetadata(
 func cleanToonDescMap(
 	replayData *rep.Rep,
 	cleanedUserInitDataList []replay_data.CleanedUserInitData,
-) map[string]replay_data.EnhancedToonDescMap {
+) (map[string]replay_data.EnhancedToonDescMap, bool) {
 
 	dirtyToonPlayerDescMap := replayData.TrackerEvts.ToonPlayerDescMap
 
@@ -394,11 +398,17 @@ func cleanToonDescMap(
 		)
 
 		// Merging information contained in the details part of the replay:
-		enhancedToonDescMap[toonKey] = mergeToonDescMapWithDetails(
+		var err error
+		enhancedToonDescMap[toonKey], err = mergeToonDescMapWithDetails(
 			replayData,
 			toonKey,
 			enhancedToonDescMap[toonKey],
 		)
+		if err != nil {
+			log.WithField("error", err.Error()).
+				Error("Failed to merge toon desc map with details")
+			return enhancedToonDescMap, false
+		}
 
 		enhancedToonDescMap[toonKey] = mergeToonDescMapWithInitPlayerList(
 			cleanedUserInitDataList,
@@ -407,7 +417,7 @@ func cleanToonDescMap(
 
 	}
 
-	return enhancedToonDescMap
+	return enhancedToonDescMap, true
 }
 
 // mergeToonDescMapWithMetadata merges the rep.PlayerDesc with the game Metadata
@@ -450,13 +460,13 @@ func mergeToonDescMapWithDetails(
 	replayData *rep.Rep,
 	toonKey string,
 	enhancedToonDescMap replay_data.EnhancedToonDescMap,
-) replay_data.EnhancedToonDescMap {
+) (replay_data.EnhancedToonDescMap, error) {
 
 	detailsPlayers := replayData.Details.Players()
 
 	if len(detailsPlayers) == 0 {
 		log.Warn("No players found in details!")
-		return enhancedToonDescMap
+		return enhancedToonDescMap, nil
 	}
 
 	detailsEnhancedToonDescMap := enhancedToonDescMap
@@ -485,8 +495,34 @@ func mergeToonDescMapWithDetails(
 				detailsEnhancedToonDescMap.AssignedRace = "Zerg"
 			}
 		}
+		// This is returning
+		// var Results = []*Result{
+		//     {Enum{"Unknown"}, '-'},
+		//     {Enum{"Victory"}, 'V'},
+		//     {Enum{"Defeat"}, 'D'},
+		//     {Enum{"Tie"}, 'T'},
+		// }
+
+		resultMapPlayerResult := map[string]string{
+			"Unknown": "Undecided",
+			"Victory": "Win",
+			"Defeat":  "Loss",
+			"Tie":     "Tie",
+		}
+
+		playerResult := player.Result().String()
+		playerResult = resultMapPlayerResult[playerResult]
+
+		if detailsEnhancedToonDescMap.Result != "" {
+			if detailsEnhancedToonDescMap.Result != playerResult {
+				log.Warn("Player results are different!")
+				return detailsEnhancedToonDescMap, fmt.Errorf("player results are different")
+			}
+		}
+
+		// Result was empty, fill it out:
 		if detailsEnhancedToonDescMap.Result == "" {
-			detailsEnhancedToonDescMap.Result = player.Result().String()
+			detailsEnhancedToonDescMap.Result = playerResult
 		}
 
 		// Filling out struct fields:
@@ -502,7 +538,7 @@ func mergeToonDescMapWithDetails(
 		break
 	}
 
-	return detailsEnhancedToonDescMap
+	return detailsEnhancedToonDescMap, nil
 }
 
 func mergeToonDescMapWithInitPlayerList(
