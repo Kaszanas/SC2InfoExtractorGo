@@ -1,14 +1,26 @@
 module github.com/Kaszanas/SC2InfoExtractorGo
 
-go 1.15
+go 1.22.7
+
+toolchain go1.23.3
 
 require (
-	github.com/icza/mpq v0.0.0-20210726201956-250230d5a464 // indirect
-	github.com/icza/s2prot v1.5.1-0.20220316175339-a0ac41576dbb
-	github.com/sirupsen/logrus v1.8.1
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
-	google.golang.org/genproto v0.0.0-20220302033224-9aa15565e42a // indirect
-	google.golang.org/grpc v1.44.0
-	google.golang.org/protobuf v1.27.1
+	github.com/alitto/pond v1.9.2
+	github.com/icza/mpq v0.0.0-20230330132843-d3cdc0b651b7
+	github.com/icza/s2prot v1.5.2
+	github.com/joho/godotenv v1.5.1
+	github.com/schollz/progressbar/v3 v3.17.1
+	github.com/sirupsen/logrus v1.9.3
+	google.golang.org/grpc v1.68.0
+	google.golang.org/protobuf v1.35.1
+)
+
+require (
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
+	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/term v0.26.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 )

@@ -54,8 +54,9 @@ type VerifyGameInfo struct {
 	isCompetitiveOrRanked bool
 }
 
-// Validity
-// validateReplay performs programmatically hardcoded checks in order to verify if the file is within "common sense" values.
+// Validity:
+// validateReplay performs programmatically hardcoded checks
+// in order to verify if the file is within "common sense" values.
 func validate1v1Replay(replayData *rep.Rep) bool {
 
 	log.Info("Entered validateData()")
@@ -70,7 +71,8 @@ func validate1v1Replay(replayData *rep.Rep) bool {
 		}
 	}
 
-	// In the history of StarCraft II there was no player that reached 8000 MMR so it should be below 8000 for all of the replays:
+	// In the history of StarCraft II there was no player that reached
+	// 8000 MMR so it should be below 8000 for all of the replays:
 	for _, playerStats := range playerList {
 
 		// Currently no player is 8000
@@ -85,12 +87,19 @@ func validate1v1Replay(replayData *rep.Rep) bool {
 		}
 	}
 
+	// REVIEW: Should this be hidden behind a CLI flag?
+	isBlizzardMap := checkBlizzardMap(replayData)
+	if !isBlizzardMap {
+		log.Error("Data validation failed! checkBlizzardMap() returned false! Returning")
+		return false
+	}
+
 	log.Info("Finished validateData(), returning")
 	return true
 }
 
-// TODO: Verify if this function is required:
-// checkBlizzardMap verifies if the currently processed replay was played using a Blizzard official map.
+// checkBlizzardMap verifies if the currently processed
+// replay was played using a Blizzard official map.
 func checkBlizzardMap(replayData *rep.Rep) bool {
 
 	log.Info("Entered checkBlizzardMap()")

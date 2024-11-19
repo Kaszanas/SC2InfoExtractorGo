@@ -4,51 +4,168 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
 
-	data "github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	"github.com/icza/s2prot/rep"
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 )
 
-type ChannelContents struct {
-	Index int
-	Chunk []string
+// ReplayProcessingChannelContents is a struct that is used to pass data
+// between the orchestrator and the workers in the pipeline.
+type ReplayProcessingChannelContents struct {
+	Index        int
+	ChunkOfFiles []string
 }
 
-// PipelineWrapper is an orchestrator that distributes work among available workers (threads)
-func PipelineWrapper(absolutePathOutputDirectory string,
-	chunks [][]string,
+// PipelineWrapper is an orchestrator that distributes work
+// among available workers (threads)
+func PipelineWrapper(
+	fileChunks [][]string,
 	packageToZipBool bool,
-	performIntegrityCheckBool bool,
-	performValidityCheckBool bool,
-	performFilteringBool bool,
-	gameModeCheckFlag int,
-	performPlayerAnonymizationBool bool,
-	performChatAnonymizationBool bool,
-	performCleanupBool bool,
-	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
-	numberOfThreads int,
-	logsFilepath string) {
+	downloadedMapsForReplaysFilepath string,
+	foreignToEnglishMappingFilepath string,
+	cliFlags utils.CLIFlags,
+) {
 
 	log.Info("Entered PipelineWrapper()")
+	// Create maps directory if it doesn't exist:
+	err := file_utils.GetOrCreateDirectory(cliFlags.MapsDirectory)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to create maps directory.")
+		return
+	}
 
-	// If it is specified by the user to perform the processing without multiprocessing GOMACPROCS needs to be set to 1 in order to allow 1 thread:
-	runtime.GOMAXPROCS(numberOfThreads)
+	// REVIEW: Start Review:
+	existingMapFilesSet, err := file_utils.ExistingFilesSet(
+		cliFlags.MapsDirectory, ".s2ma",
+	)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to get existing map files set.")
+		return
+	}
 
-	var channel = make(chan ChannelContents, numberOfThreads+1)
+	// Shared state for the downloader:
+	downloadedMapFilesSet := make(map[string]struct{})
+	downloaderSharedState, err := downloader.NewDownloaderSharedState(
+		cliFlags.MapsDirectory,
+		existingMapFilesSet,
+		downloadedMapFilesSet,
+		cliFlags.NumberOfThreads*2)
+	defer downloaderSharedState.WorkerPool.StopAndWait()
+	if err != nil {
+		log.WithField("error", err).Error("Failed to create downloader shared state.")
+		return
+	}
+
+	// STAGE ONE PRE-PROCESS:
+	// Get all map URLs into a set:
+	URLToFileNameMap, downloadedMapsForReplays, err := sc2_map_processing.
+		GetAllReplaysMapURLs(
+			fileChunks,
+			downloadedMapsForReplaysFilepath,
+			cliFlags,
+		)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get all map URLs.")
+		return
+	}
+
+	// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
+	// Download all SC2 maps from the replays if they were not processed before:
+	existingMapFilesSet, err = DownloadAllSC2Maps(
+		&downloaderSharedState,
+		downloadedMapsForReplays,
+		downloadedMapsForReplaysFilepath,
+		URLToFileNameMap,
+		fileChunks,
+		cliFlags,
+	)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to download all SC2 maps.")
+		return
+	}
+
+	// STAGE-Three PRE-PROCESS:
+	// Read all of the map names from the drive and create a mapping
+	// from foreign to english names:
+	progressBarReadLocalizedData := utils.NewProgressBar(
+		len(existingMapFilesSet),
+		"[3/4] Reading map names from drive: ",
+	)
+	mainForeignToEnglishMapping := make(map[string]string)
+	for existingMapFilepath := range existingMapFilesSet {
+
+		foreignToEnglishMapping, err := sc2_map_processing.
+			ReadLocalizedDataFromMapGetForeignToEnglishMapping(
+				existingMapFilepath,
+				progressBarReadLocalizedData,
+			)
+		if err != nil {
+			log.WithField("error", err).
+				Error("Error reading map name from drive. Map could not be processed")
+			return
+		}
+
+		// Fill out the mapping, these maps won't be opened again:
+		for foreignName, englishName := range foreignToEnglishMapping {
+			mainForeignToEnglishMapping[foreignName] = englishName
+		}
+	}
+	// Save the mapping to the drive:
+	err = sc2_map_processing.SaveForeignToEnglishMappingToDrive(
+		foreignToEnglishMappingFilepath,
+		mainForeignToEnglishMapping,
+	)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to save foreign to english mapping to drive.")
+		return
+	}
+
+	// REVIEW: Finish Review
+
+	// Stop all processing if the user chose to only download the maps:
+	if cliFlags.OnlyMapsDownload {
+		log.Info("Only maps download was chosen. Exiting.")
+		return
+	}
+
+	// Progress bar logic:
+	nChunks := len(fileChunks)
+	nFiles := 0
+	for _, chunk := range fileChunks {
+		nFiles += len(chunk)
+	}
+	progressBarLen := nChunks * nFiles
+	progressBar := utils.NewProgressBar(
+		progressBarLen,
+		"[4/4] Processing replays to JSON: ",
+	)
+	defer progressBar.Close()
+
+	// If it is specified by the user to perform the processing without
+	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
+	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
+	var channel = make(chan ReplayProcessingChannelContents, cliFlags.NumberOfThreads+1)
 	var wg sync.WaitGroup
-
 	// Adding a task for each of the supplied chunks to speed up the processing:
-	wg.Add(numberOfThreads)
+	wg.Add(cliFlags.NumberOfThreads)
 
-	for i := 0; i < numberOfThreads; i++ {
+	// Spin up workers waiting for chunks to process:
+	for i := 0; i < cliFlags.NumberOfThreads; i++ {
 		go func() {
 			for {
 				channelContents, ok := <-channel
@@ -57,276 +174,342 @@ func PipelineWrapper(absolutePathOutputDirectory string,
 					return
 				}
 				MultiprocessingChunkPipeline(
-					absolutePathOutputDirectory,
-					channelContents.Chunk,
+					channelContents.ChunkOfFiles,
 					packageToZipBool,
-					performIntegrityCheckBool,
-					performValidityCheckBool,
-					performFilteringBool,
-					gameModeCheckFlag,
-					performPlayerAnonymizationBool,
-					performChatAnonymizationBool,
-					performCleanupBool,
-					localizedMapsMap,
 					compressionMethod,
-					logsFilepath,
-					channelContents.Index)
+					channelContents.Index,
+					mainForeignToEnglishMapping,
+					progressBar,
+					cliFlags,
+				)
 			}
 		}()
 	}
 
-	for index, chunk := range chunks {
-		channel <- ChannelContents{Index: index, Chunk: chunk}
+	// Passing the chunks to the workers:
+	for index, chunk := range fileChunks {
+		channel <- ReplayProcessingChannelContents{
+			Index:        index,
+			ChunkOfFiles: chunk,
+		}
 	}
 
 	close(channel)
 	wg.Wait()
+	progressBar.Close()
 
 	log.Info("Finished PipelineWrapper()")
 }
 
-// MultiprocessingChunkPipeline is a single instance of processing that is meant to be spawned by the orchestrator in order to speed up the process of data extraction.
+// MultiprocessingChunkPipeline is a single instance of processing that
+// is meant to be spawned by the orchestrator
+// in order to speed up the process of data extraction.
 func MultiprocessingChunkPipeline(
-	absolutePathOutputDirectory string,
 	listOfFiles []string,
 	packageToZipBool bool,
-	performIntegrityCheckBool bool,
-	performValidityCheckBool bool,
-	performFilteringBool bool,
-	gameModeCheckFlag int,
-	performAnonymizationBool bool,
-	performChatAnonymizationBool bool,
-	performCleanupBool bool,
-	localizedMapsMap map[string]interface{},
 	compressionMethod uint16,
-	logsFilepath string,
-	chunkIndex int) {
+	chunkIndex int,
+	englishToForeignMapping map[string]string,
+	progressBar *progressbar.ProgressBar,
+	cliFlags utils.CLIFlags,
+) {
 
 	// Letting the orchestrator know that this processing task was finished:
 	log.Info("Entered MultiprocessingChunkPipeline()")
 
 	// Create ProcessingInfoFile:
-	processingInfoFile, processingInfoStruct := utils.CreateProcessingInfoFile(logsFilepath, chunkIndex)
+	processingInfoFile, processingInfoStruct, err := persistent_data.CreateProcessingInfoFile(
+		cliFlags.LogFlags.LogPath,
+		chunkIndex)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to create processingInfoFile.")
+		return
+	}
 	defer processingInfoFile.Close()
 
 	// Initializing grpc connection if the user chose to perform anonymization.
-	grpcAnonymizer := checkAnonymizationInitializeGRPC(performAnonymizationBool)
-	// In order to free up resources We are defering the connection closing when all of the files have been processed:
+	grpcAnonymizer := checkAnonymizationInitializeGRPC(cliFlags.PerformChatAnonymization)
+	// In order to free up resources We are defering the connection closing when
+	// all of the files have been processed:
 	if grpcAnonymizer != nil {
 		defer grpcAnonymizer.Connection.Close()
 	}
 
+	// TODO: These could be a separate data structure:
 	// Defining counters:
 	pipelineErrorCounter := 0
 	compressionErrorCounter := 0
 	processedCounter := 0
 	saveErrorCounter := 0
 
-	// Helper method returning bytes buffer and zip writer which will be used to save the processing results into:
+	// Helper method returning bytes buffer and zip writer which will be
+	// used to save the processing results into:
 	var buffer *bytes.Buffer
 	var writer *zip.Writer
-	var packageSummary data.PackageSummary
+	var packageSummary persistent_data.PackageSummary
 	if packageToZipBool {
 		buffer, writer = utils.InitBufferWriter()
 		log.Info("Initialized buffer and writer.")
 
 		// Create package summary structure:
-		packageSummary = data.DefaultPackageSummary()
+		packageSummary = persistent_data.NewPackageSummary()
 	}
 
 	// Processing file:
 	for _, replayFile := range listOfFiles {
-		// Checking if the file was previously processed:
-		if contains(processingInfoStruct.ProcessedFiles, replayFile) {
-			continue
-		}
-
-		// Running all of the processing logic and verifying if it worked:
-		didWork, replayString, replaySummary, failureReason := FileProcessingPipeline(
-			replayFile,
-			performIntegrityCheckBool,
-			performValidityCheckBool,
-			performFilteringBool,
-			gameModeCheckFlag,
-			grpcAnonymizer,
-			performChatAnonymizationBool,
-			performCleanupBool,
-			localizedMapsMap)
-
-		if !didWork {
-			pipelineErrorCounter++
-			log.WithFields(log.Fields{
-				"pipelineErrorCounter": pipelineErrorCounter,
-				"replayFile":           replayFile,
-			}).Error("Failed to perform FileProcessingPipeline()!")
-			processingInfoStruct.FailedToProcess = append(processingInfoStruct.FailedToProcess, map[string]string{replayFile: failureReason})
-			continue
-		}
-
-		// Saving output to zip archive:
-		if packageToZipBool {
-			// Append it to a list and when a package is created create a package summary and clear the list for next iterations
-			data.AddReplaySummToPackageSumm(&replaySummary, &packageSummary)
-			log.Info("Added replaySummary to packageSummary")
-
-			savedSuccess := utils.SaveFileToArchive(replayString, replayFile, compressionMethod, writer)
-			if !savedSuccess {
-				compressionErrorCounter++
-				log.WithFields(log.Fields{
-					"compressionErrorCounter": compressionErrorCounter,
-					"replayFile":              replayFile,
-				}).Error("Failed to save file to archive! Skipping.")
-				continue
+		func() {
+			// Defer the progress bar increment:
+			defer func() {
+				if err := progressBar.Add(1); err != nil {
+					log.WithField("error", err).
+						Error("Error updating progress bar in DownloadMapIfNotExists")
+				}
+			}()
+			// Checking if the file was previously processed:
+			if contains(processingInfoStruct.ProcessedFiles, replayFile) {
+				return
 			}
-			// TODO: This might be done easier. Currently this is duplicate code and seems to introduce bad practice!
+
+			// Running all of the processing logic and verifying if it worked:
+			didWork, cleanReplayStructure, replaySummary, failureReason := FileProcessingPipeline(
+				replayFile,
+				grpcAnonymizer,
+				englishToForeignMapping,
+				cliFlags,
+			)
+
+			// Create final replay string:
+			stringifyOk, replayString := stringifyReplay(&cleanReplayStructure)
+			if !stringifyOk {
+				log.WithField("file", replayFile).
+					Error("Failed to stringify the replay.")
+				return
+			}
+
+			if !didWork {
+				pipelineErrorCounter++
+				log.WithFields(log.Fields{
+					"pipelineErrorCounter": pipelineErrorCounter,
+					"replayFile":           replayFile,
+				}).Error("Failed to perform FileProcessingPipeline()!")
+				processingInfoStruct.AddToFailed(
+					replayFile,
+					failureReason,
+				)
+				return
+			}
+
+			// Saving output to zip archive:
+			if packageToZipBool {
+				// Append it to a list and when a package is created create a package summary and clear the list for next iterations
+				persistent_data.AddReplaySummToPackageSumm(
+					&replaySummary,
+					&packageSummary,
+				)
+				log.Info("Added replaySummary to packageSummary")
+
+				savedSuccess := utils.SaveFileToArchive(
+					replayString,
+					replayFile,
+					compressionMethod,
+					writer)
+				if !savedSuccess {
+					compressionErrorCounter++
+					log.WithFields(log.Fields{
+						"compressionErrorCounter": compressionErrorCounter,
+						"replayFile":              replayFile,
+					}).Error("Failed to save file to archive! Skipping.")
+					return
+				}
+
+				processedCounter++
+				processingInfoStruct.AddToProcessed(replayFile)
+				log.Info("Added file to zip archive.")
+				return
+			}
+
+			okSaveToDrive := file_utils.SaveReplayJSONFileToDrive(
+				replayString,
+				replayFile,
+				cliFlags.OutputDirectory)
+			if !okSaveToDrive {
+				saveErrorCounter++
+				log.WithFields(log.Fields{
+					"replayFile":               replayFile,
+					"cliFlags.OutputDirectory": cliFlags.OutputDirectory,
+					"saveErrorCounter":         saveErrorCounter,
+				}).Error("Failed to save .json to drive!")
+				return
+			}
+
 			processedCounter++
-			processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
-			log.Info("Added file to zip archive.")
-			continue
-		}
+			replayFileNameAndExtension := filepath.Base(replayFile)
+			processingInfoStruct.AddToProcessed(replayFileNameAndExtension)
 
-		okSaveToDrive := utils.SaveFileToDrive(replayString, replayFile, absolutePathOutputDirectory)
-		if !okSaveToDrive {
-			saveErrorCounter++
-			log.WithFields(log.Fields{
-				"replayFile":                  replayFile,
-				"absolutePathOutputDirectory": absolutePathOutputDirectory,
-				"saveErrorCounter":            saveErrorCounter,
-			}).Error("Failed to save .json to drive!")
-			continue
-		}
-
-		processedCounter++
-		processingInfoStruct.ProcessedFiles = append(processingInfoStruct.ProcessedFiles, replayFile)
+		}()
 	}
 
 	// Saving processingInfo to know which files failed to process:
-	utils.SaveProcessingInfo(processingInfoFile, processingInfoStruct)
+	persistent_data.SaveProcessingInfoToFile(
+		processingInfoFile,
+		processingInfoStruct,
+	)
 	log.Info("Saved processing.log")
 
 	if packageToZipBool {
-		// Writing PackageSummaryFile to drive:
-		utils.CreatePackageSummaryFile(absolutePathOutputDirectory, packageSummary, chunkIndex)
 
 		// Writing the zip archive to drive:
 		writer.Close()
-		packageAbsPath := filepath.Join(absolutePathOutputDirectory, "package_"+strconv.Itoa(chunkIndex)+".zip")
-		err := ioutil.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
+		packagePath := filepath.Join(
+			cliFlags.OutputDirectory,
+			"package_"+strconv.Itoa(chunkIndex)+".zip",
+		)
+
+		// Writing PackageSummaryFile to drive:
+		err := persistent_data.CreatePackageSummaryFile(
+			cliFlags.OutputDirectory,
+			packageSummary,
+			chunkIndex)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":       err,
+				"packagePath": packagePath,
+			}).Error("Failed to save package summary to drive!")
+		}
+
+		packageAbsPath, err := filepath.Abs(packagePath)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"packagePath":   packagePath,
+				"packageNumber": chunkIndex}).
+				Error("Failed to get absolute path of package!")
+		}
+		err = os.WriteFile(packageAbsPath, buffer.Bytes(), 0777)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"packageAbsolutePath": packageAbsPath,
-				"packageNumber":       chunkIndex}).Error("Failed to save package to drive!")
+				"packageNumber":       chunkIndex}).
+				Error("Failed to save package to drive!")
 		}
 	}
 
 	log.Info("Finished MultiprocessingChunkPipeline()")
-
 }
 
-// FileProcessingPipeline is performing the whole data processing pipeline for a replay file. Reads the replay, cleans the replay structure, creates replay summary, anonymizes, and creates a JSON replay output.
-func FileProcessingPipeline(replayFile string,
-	performIntegrityCheckBool bool,
-	performValidityCheckBool bool,
-	performFiltering bool,
-	gameModeCheckFlag int,
+// FileProcessingPipeline is performing the whole data processing pipeline
+// for a replay file. Reads the replay, cleans the replay structure,
+// creates replay summary, anonymizes, and creates a JSON replay output.
+func FileProcessingPipeline(
+	replayFile string,
 	grpcAnonymizer *GRPCAnonymizer,
-	performChatAnonymizationBool bool,
-	performCleanupBool bool,
-	localizedMapsMap map[string]interface{}) (bool, string, data.ReplaySummary, string) {
+	englishToForeignMapping map[string]string,
+	cliFlags utils.CLIFlags,
+) (bool, replay_data.CleanedReplay, persistent_data.ReplaySummary, string) {
 
 	log.Info("Entered FileProcessingPipeline()")
 
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
 	if err != nil {
-		log.WithFields(log.Fields{"file": replayFile, "error": err, "readError": true}).Error("Failed to read file.")
-		return false, "", data.ReplaySummary{}, "rep.NewFromFile() failed"
+		log.WithFields(log.Fields{
+			"file":      replayFile,
+			"error":     err,
+			"readError": true}).
+			Error("Failed to read file.")
+		return false,
+			replay_data.CleanedReplay{},
+			persistent_data.ReplaySummary{},
+			"rep.NewFromFile() failed"
 	}
 	log.WithField("file", replayFile).Info("Read data from a replay.")
 	defer replayData.Close()
 
 	// Performing integrity checks:
-	if performIntegrityCheckBool {
+	if cliFlags.PerformIntegrityCheck {
 		integrityOk, failureReason := checkIntegrity(replayData)
 		if !integrityOk {
-			log.WithField("file", replayFile).Error("Integrity check failed in file.")
-			return false, "", data.ReplaySummary{}, fmt.Sprintf("checkIntegrity() failed: %s", failureReason)
+			log.WithField("file", replayFile).
+				Error("Integrity check failed in file.")
+			return false,
+				replay_data.CleanedReplay{},
+				persistent_data.ReplaySummary{},
+				fmt.Sprintf("checkIntegrity() failed: %s", failureReason)
 		}
 	}
 
 	// Performing validity checks:
-	if performValidityCheckBool {
-		if gameModeCheckFlag&Ranked1v1 != 0 && gameIs1v1Ranked(replayData) {
+	if cliFlags.PerformValidityCheck {
+		if cliFlags.FilterGameMode&Ranked1v1 != 0 && gameIs1v1Ranked(replayData) {
 			// Perform Validity check
 			if !validate1v1Replay(replayData) {
-				return false, "", data.ReplaySummary{}, "validateReplay() failed"
+				return false,
+					replay_data.CleanedReplay{},
+					persistent_data.ReplaySummary{},
+					"validateReplay() failed"
 			}
 		}
 	}
 
 	// Filtering:
-	if performFiltering {
-		if !filterGameModes(replayData, gameModeCheckFlag) {
-			return false, "", data.ReplaySummary{}, "filterGameModes() failed"
+	if cliFlags.PerformFiltering {
+		if !filterGameModes(replayData, cliFlags.FilterGameMode) {
+			return false,
+				replay_data.CleanedReplay{},
+				persistent_data.ReplaySummary{},
+				"filterGameModes() failed"
 		}
 	}
 
+	// REVIEW: Start Review, New implementation of map translation below:
 	// Clean replay structure:
-	cleanOk, cleanReplayStructure := extractReplayData(replayData, localizedMapsMap, performCleanupBool)
+	cleanOk, cleanReplayStructure := extractReplayData(
+		replayData,
+		englishToForeignMapping,
+		cliFlags.PerformCleanup)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
-		return false, "", data.ReplaySummary{}, "cleanReplay() failed"
+		return false,
+			replay_data.CleanedReplay{},
+			persistent_data.ReplaySummary{},
+			"cleanReplay() failed"
 	}
+	// REVIEW: Finish Review
 
 	// Create replay summary:
 	summarizeOk, summarizedReplay := summarizeReplay(&cleanReplayStructure)
 	if !summarizeOk {
 		log.WithField("file", replayFile).Error("Failed to create replay summary.")
-		return false, "", data.ReplaySummary{}, "summarizeReplay() failed"
+		return false,
+			replay_data.CleanedReplay{},
+			persistent_data.ReplaySummary{},
+			"summarizeReplay() failed"
 	}
 
 	// Anonymize replay:
 	if grpcAnonymizer != nil {
-		if !anonymizeReplay(&cleanReplayStructure, grpcAnonymizer, performChatAnonymizationBool) {
-			log.WithField("file", replayFile).Error("Failed to anonymize replay.")
-			return false, "", data.ReplaySummary{}, "anonymizeReplay() failed"
+		if !anonymizeReplay(
+			&cleanReplayStructure,
+			grpcAnonymizer,
+			cliFlags.PerformChatAnonymization) {
+			log.WithField("file", replayFile).
+				Error("Failed to anonymize replay.")
+			return false,
+				replay_data.CleanedReplay{},
+				persistent_data.ReplaySummary{},
+				"anonymizeReplay() failed"
 		}
-	}
-
-	// Create final replay string:
-	stringifyOk, finalReplayString := stringifyReplay(&cleanReplayStructure)
-	if !stringifyOk {
-		log.WithField("file", replayFile).Error("Failed to stringify the replay.")
-		return false, "", data.ReplaySummary{}, "stringifyReplay() failed"
 	}
 
 	log.Info("Finished FileProcessingPipeline()")
 
-	return true, finalReplayString, summarizedReplay, ""
+	return true, cleanReplayStructure, summarizedReplay, ""
 }
 
-// gameis1v1Ranked
+// gameis1v1Ranked checks if the replay is a 1v1 ranked game.
 func gameIs1v1Ranked(replayData *rep.Rep) bool {
 
 	isAmm := replayData.InitData.GameDescription.GameOptions.Amm()
 	isCompetitive := replayData.InitData.GameDescription.GameOptions.CompetitiveOrRanked()
 	isTwoPlayers := len(replayData.Metadata.Players()) == 2
 	return isAmm && isCompetitive && isTwoPlayers
-}
-
-// checkAnonymizationInitializeGRPC verifies if the anonymization should be performed and returns a pointer to GRPCAnonymizer.
-func checkAnonymizationInitializeGRPC(performAnonymizationBool bool) *GRPCAnonymizer {
-	if !performAnonymizationBool {
-		return nil
-	}
-
-	log.Info("Detected that user wants anonymization, attempting to set up GRPCAnonymizer{}")
-	grpcAnonymizer := GRPCAnonymizer{}
-	if !grpcAnonymizer.grpcDialConnect() {
-		log.Error("Could not connect to the gRPC server!")
-	}
-	grpcAnonymizer.grpcInitializeClient()
-	grpcAnonymizer.Cache = make(map[string]string)
-
-	return &grpcAnonymizer
 }

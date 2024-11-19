@@ -1,0 +1,24 @@
+services:
+  sc2infoextractorgo-dev:
+    build:
+      context: "../"
+      dockerfile: "./docker/Dockerfile.dev"
+    volumes:
+      - ..:/app
+    command:
+      [
+        "-c",
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/; exec /bin/bash",
+      ]
+
+  sc2infoextractorgo-test:
+    build:
+      context: "../"
+      dockerfile: "./docker/Dockerfile.dev"
+    volumes:
+      - ..:/app
+    command:
+      [
+        "-c",
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/ && go test ./... -v -race",
+      ]

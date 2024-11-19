@@ -1,0 +1,35 @@
+# Randomly selected replays from SC2ReSet, for testing purposes:
+FROM kaszanas/sc2replaytestdata:latest AS sc2replaytestdata
+
+# All of the maps and mods downloaded when processing SC2ReSet replays:
+FROM kaszanas/sc2reset_maps_mods:latest AS sc2reset_maps_mods
+
+FROM golang:1.23.3 AS build_sc2_info_extractor
+
+# Install rsync for file copying:
+RUN apt-get update && apt-get install -y rsync
+
+# Copying test data:
+COPY --from=sc2replaytestdata /sc2replaytestdata /test_files/test_replays/
+
+WORKDIR /app
+
+# Copying all maps from from SC2ReSet to the maps directory for processing:
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/cn_maps /app/maps/
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/sc2reset_maps /app/maps/
+
+# Copy Golang dependency definitions:
+COPY go.mod go.sum /app/
+
+# Get the project dependencies:
+RUN --mount=type=cache,target=/go go mod download
+
+COPY . .
+
+# Required for the tests:
+ENV WORKSPACE_DIR=/app
+
+# Build the project:
+RUN --mount=type=cache,target=/go go build
+
+ENTRYPOINT [ "bash" ]

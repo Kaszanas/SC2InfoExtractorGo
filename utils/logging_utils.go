@@ -6,11 +6,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// setLogging contains logic that is used to initialize logging to a specified file with a specified level.
+// setLogging contains logic that is used to initialize
+// logging to a specified file with a specified level.
 func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 
 	logDirectoryString := logPath
 	log.SetFormatter(&log.JSONFormatter{})
+
+	// Check if the directory exists:
+	if _, err := os.Stat(logDirectoryString); os.IsNotExist(err) {
+		err := os.Mkdir(logDirectoryString, 0755)
+		if err != nil {
+			log.Fatal(err)
+			return &os.File{}, false
+		}
+	}
 
 	// If the file doesn't exist, create it or append to the file
 	logFileFilepath := logDirectoryString + "main_log.log"
@@ -27,5 +37,4 @@ func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 	log.Info("Set logging level.")
 
 	return logFile, true
-
 }

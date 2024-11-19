@@ -1,5 +1,7 @@
 package settings
 
+// ExcludeUnitsFromSummary is a slice of unit names that are
+// to be excluded from the replay and package summaries.
 var ExcludeUnitsFromSummary = []string{
 	"AccelerationZoneSmall",
 	"AccelerationZoneLarge",
