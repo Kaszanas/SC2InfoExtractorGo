@@ -21,6 +21,7 @@ type CLIFlags struct {
 	InputDirectory             string
 	OutputDirectory            string
 	OnlyMapsDownload           bool
+	MapsDirectory              string
 	NumberOfThreads            int
 	NumberOfPackages           int
 	PerformIntegrityCheck      bool
@@ -40,17 +41,24 @@ func ParseFlags() (CLIFlags, bool) {
 	inputDirectory := flag.String(
 		"input",
 		"./replays/input",
-		"Input directory where .SC2Replay files are held.")
+		"Input directory where .SC2Replay files are held.",
+	)
 	outputDirectory := flag.String(
 		"output",
 		"./replays/output",
-		"Output directory where compressed zip packages will be saved.")
+		"Output directory where compressed zip packages will be saved.",
+	)
 
 	onlyMapDownload := flag.Bool(
 		"only_map_download",
 		false,
 		`Flag specifying if the tool is supposed to only download
 		the maps and not process the replays.`,
+	)
+	mapsDirectory := flag.String(
+		"maps_directory",
+		"./maps/",
+		"Directory where the maps will be downloaded as a result of the replay processing.",
 	)
 
 	numberOfPackagesFlag := flag.Int(
@@ -96,7 +104,8 @@ func ParseFlags() (CLIFlags, bool) {
 	performChatAnonymizationFlag := flag.Bool(
 		"perform_chat_anonymization",
 		false,
-		"Flag, specifying if the chat anonymization should be performed.")
+		"Flag, specifying if the chat anonymization should be performed.",
+	)
 
 	// TODO: Write the docs for other game modes:
 	performFilteringFlag := flag.Bool(
@@ -116,7 +125,8 @@ func ParseFlags() (CLIFlags, bool) {
 	numberOfThreadsUsedFlag := flag.Int(
 		"max_procs",
 		runtime.NumCPU(),
-		"Specifies the number of logic cores of a processor that will be used for processing (default runtime.NumCPU()).")
+		"Specifies the number of logic cores of a processor that will be used for processing (default runtime.NumCPU()).",
+	)
 
 	// Misc flags:
 	logLevelFlag := flag.Int(
@@ -131,7 +141,8 @@ func ParseFlags() (CLIFlags, bool) {
 	logDirectoryFlag := flag.String(
 		"log_dir",
 		"./logs/",
-		"Specifies directory which will hold the logging information.")
+		"Specifies directory which will hold the logging information.",
+	)
 	performCPUProfilingFlag := flag.String(
 		"with_cpu_profiler",
 		"",
@@ -169,6 +180,7 @@ func ParseFlags() (CLIFlags, bool) {
 		InputDirectory:             absoluteInputDirectory,
 		OutputDirectory:            absolutePathOutputDirectory,
 		OnlyMapsDownload:           *onlyMapDownload,
+		MapsDirectory:              *mapsDirectory,
 		NumberOfPackages:           *numberOfPackagesFlag,
 		PerformIntegrityCheck:      *performIntegrityCheckFlag,
 		PerformValidityCheck:       *performValidityCheckFlag,

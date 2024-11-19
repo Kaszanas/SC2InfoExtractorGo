@@ -26,10 +26,10 @@ type ReplayMapProcessingChannelContents struct {
 	ChunkOfFiles []string
 }
 
+// GetAllReplaysMapURLs retrieves the map URLs from the replay files.
 func GetAllReplaysMapURLs(
 	fileChunks [][]string,
 	downloadedMapsForReplaysFilepath string,
-	mapsDirectory string,
 	cliFlags utils.CLIFlags,
 ) (
 	map[url.URL]string,
@@ -51,7 +51,7 @@ func GetAllReplaysMapURLs(
 	downloadedMapsForReplays, err := persistent_data.
 		OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 			downloadedMapsForReplaysFilepath,
-			mapsDirectory,
+			cliFlags.MapsDirectory,
 			fileChunks,
 		)
 	if err != nil {
@@ -106,6 +106,8 @@ func GetAllReplaysMapURLs(
 	return urlMapToFilename, downloadedMapsForReplaysReturn, nil
 }
 
+// createMapExtractingGoroutines creates the goroutines that process the replay files
+// and extract the map URLs.
 func createMapExtractingGoroutines(
 	channel chan ReplayMapProcessingChannelContents,
 	progressBar *progressbar.ProgressBar,
@@ -135,6 +137,7 @@ func createMapExtractingGoroutines(
 
 }
 
+// processFileExtractMap processes the replay file to extract the map URL and hash.
 func processFileExtractMap(
 	progressBar *progressbar.ProgressBar,
 	replayFullFilepath string,
@@ -144,65 +147,64 @@ func processFileExtractMap(
 
 	// Lambda to process the replay file to have
 	// deferred progress bar increment:
-	func() {
-		// Defer the progress bar increment:
-		defer func() {
-			if err := progressBar.Add(1); err != nil {
-				log.WithField("error", err).
-					Error("Error updating progress bar in GetAllReplaysMapURLs")
-			}
-		}()
-		replayFilename := filepath.Base(replayFullFilepath)
 
-		// Check if the replay was already processed:
-		fileInfo, err := os.Stat(replayFullFilepath)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":      err,
-				"replayFile": replayFullFilepath,
-			}).Error("Failed to get file info.")
-			return
+	// Defer the progress bar increment:
+	defer func() {
+		if err := progressBar.Add(1); err != nil {
+			log.WithField("error", err).
+				Error("Error updating progress bar in GetAllReplaysMapURLs")
 		}
-
-		// If the file was already processed, and was not modified since,
-		// then it will be skipped from getting the map URL:
-		fileInfoToCheck, alreadyProcessed :=
-			downloadedMapsForReplaysSyncMap.Load(replayFilename)
-		if alreadyProcessed {
-			// Check if the file was modified since the last time it was processed:
-			if persistent_data.CheckFileInfoEq(
-				fileInfo,
-				fileInfoToCheck.(persistent_data.FileInformationToCheck),
-			) {
-				// It is the same so continue
-				log.WithField("file", replayFullFilepath).
-					Warning("This replay was already processed, map should be available, continuing!")
-				return
-			}
-			// It wasn't the same so the replay should be processed again:
-			log.WithField("file", replayFullFilepath).
-				Warn("Replay was modified since the last time it was processed! Processing again.")
-			downloadedMapsForReplaysSyncMap.Delete(replayFilename)
-		}
-
-		mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error":      err,
-				"replayFile": replayFullFilepath,
-			}).Error("Failed to get map URL from replay")
-			return
-		}
-
-		urls.Store(mapURL, mapHashAndExtension)
-		downloadedMapsForReplaysSyncMap.Store(
-			replayFilename,
-			persistent_data.FileInformationToCheck{
-				LastModified: fileInfo.ModTime().Unix(),
-				Size:         fileInfo.Size(),
-			},
-		)
 	}()
+	replayFilename := filepath.Base(replayFullFilepath)
+
+	// Check if the replay was already processed:
+	fileInfo, err := os.Stat(replayFullFilepath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":      err,
+			"replayFile": replayFullFilepath,
+		}).Error("Failed to get file info.")
+		return
+	}
+
+	// If the file was already processed, and was not modified since,
+	// then it will be skipped from getting the map URL:
+	fileInfoToCheck, alreadyProcessed :=
+		downloadedMapsForReplaysSyncMap.Load(replayFilename)
+	if alreadyProcessed {
+		// Check if the file was modified since the last time it was processed:
+		if persistent_data.CheckFileInfoEq(
+			fileInfo,
+			fileInfoToCheck.(persistent_data.FileInformationToCheck),
+		) {
+			// It is the same so continue
+			log.WithField("file", replayFullFilepath).
+				Warning("This replay was already processed, map should be available, continuing!")
+			return
+		}
+		// It wasn't the same so the replay should be processed again:
+		log.WithField("file", replayFullFilepath).
+			Warn("Replay was modified since the last time it was processed! Processing again.")
+		downloadedMapsForReplaysSyncMap.Delete(replayFilename)
+	}
+
+	mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":      err,
+			"replayFile": replayFullFilepath,
+		}).Error("Failed to get map URL from replay")
+		return
+	}
+
+	urls.Store(mapURL, mapHashAndExtension)
+	downloadedMapsForReplaysSyncMap.Store(
+		replayFilename,
+		persistent_data.FileInformationToCheck{
+			LastModified: fileInfo.ModTime().Unix(),
+			Size:         fileInfo.Size(),
+		},
+	)
 
 }
 
@@ -373,12 +375,14 @@ func findLocaleFiles(MPQArchiveBytes []byte) ([]string, string, error) {
 	englishLocaleFile := ""
 	for _, fileNameString := range splitListfile {
 		// All locale files:
-		if strings.Contains(fileNameString, "SC2Data\\LocalizedData\\GameStrings") {
+		if strings.
+			Contains(fileNameString, "SC2Data\\LocalizedData\\GameStrings") {
 			localizationFiles = append(localizationFiles, fileNameString)
 			foundLocaleFile = true
 		}
 		// Only English locale file:
-		if strings.HasPrefix(fileNameString, "enUS.SC2Data\\LocalizedData\\GameStrings") {
+		if strings.
+			HasPrefix(fileNameString, "enUS.SC2Data\\LocalizedData\\GameStrings") {
 			englishLocaleFile = fileNameString
 			foundLocaleFile = true
 		}
@@ -397,7 +401,11 @@ func findLocaleFiles(MPQArchiveBytes []byte) ([]string, string, error) {
 	return localizationFiles, englishLocaleFile, nil
 }
 
-func readLocaleFileGetMapName(mpqArchive *mpq.MPQ, localeFileName string) (string, error) {
+// readLocaleFileGetMapName reads the map name from the locale file within the MPQ archive.
+func readLocaleFileGetMapName(
+	mpqArchive *mpq.MPQ,
+	localeFileName string,
+) (string, error) {
 
 	localeFileDataBytes, err := mpqArchive.FileByName(localeFileName)
 	if err != nil {
@@ -419,6 +427,7 @@ func readLocaleFileGetMapName(mpqArchive *mpq.MPQ, localeFileName string) (strin
 // cleanMapName splits the map name by "\\\", and returns the first element
 // (foreign map name) from the map name, otherwise the same map name will be returned.
 func cleanMapName(mapName string) string {
+	log.Debug("Entered cleanMapName()")
 
 	// Check if "\\\" exists in the map name, if it does
 	// Check if the map name contains the substring "\\\"
@@ -431,14 +440,14 @@ func cleanMapName(mapName string) string {
 	// right trim the string to remove any trailing spaces
 	mapName = strings.TrimRight(mapName, " ")
 
+	log.Debug("Finished cleanMapName()")
 	return mapName
 }
 
 // getMapNameFromLocaleFile reads the english map name
 // from the bytes of opened locale file.
 func getMapNameFromLocaleFile(MPQLocaleFileBytes []byte) (string, error) {
-
-	log.Info("Entered getMapNameFromLocaleFile()")
+	log.Debug("Entered getMapNameFromLocaleFile()")
 
 	// Cast File content into string:
 	localeFileDataString := string(MPQLocaleFileBytes)
@@ -459,10 +468,11 @@ func getMapNameFromLocaleFile(MPQLocaleFileBytes []byte) (string, error) {
 		return "", fmt.Errorf("map name was not found")
 	}
 
-	log.Info("Finished getMapNameFromLocaleFile(), found map name.")
+	log.Debug("Finished getMapNameFromLocaleFile(), found map name.")
 	return mapName, nil
 }
 
+// replaceNewlinesSplitData replaces the line endings "\r\n" with "\n".
 func replaceNewlinesSplitData(input string) []string {
 	replacedNewlines := strings.ReplaceAll(input, "\r\n", "\n")
 	splitFile := strings.Split(replacedNewlines, "\n")
@@ -470,6 +480,7 @@ func replaceNewlinesSplitData(input string) []string {
 	return splitFile
 }
 
+// SaveForeignToEnglishMappingToDrive saves the foreign to english mapping to the drive.
 func SaveForeignToEnglishMappingToDrive(
 	filepath string,
 	foreignToEnglishMapping map[string]string,

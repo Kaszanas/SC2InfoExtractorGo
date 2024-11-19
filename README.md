@@ -89,6 +89,9 @@ The following flags are available:
     Error - 3, Warn - 4,
     Info - 5, Debug - 6,
     Trace - 7 (default 4)
+  -maps_directory string
+        Directory where the maps will be downloaded as a result of the
+        replay processing. (default "./maps/")
   -max_procs int
     Specifies the number of logic cores of a processor that will be used for processing (default runtime.NumCPU()). (default 24)
   -number_of_packages int

@@ -75,7 +75,10 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 						LogPath:       thisTestOutputDir,
 					}
 
-					logFile, logOk := utils.SetLogging(thisTestOutputDir, int(logFlags.LogLevelValue))
+					logFile, logOk := utils.SetLogging(
+						thisTestOutputDir,
+						int(logFlags.LogLevelValue),
+					)
 					defer logFile.Close()
 					if !logOk {
 						t.Fatal("Test Failed! Could not perform SetLogging.")
@@ -141,6 +144,8 @@ func testPipelineWrapperWithDir(
 	flags := utils.CLIFlags{
 		InputDirectory:             replayInputPath,
 		OutputDirectory:            thisTestOutputDir,
+		OnlyMapsDownload:           false,
+		MapsDirectory:              "../maps/",
 		NumberOfThreads:            1,
 		NumberOfPackages:           1,
 		PerformIntegrityCheck:      true,
@@ -157,13 +162,16 @@ func testPipelineWrapperWithDir(
 	packageToZip := true
 	compressionMethod := uint16(8)
 
+	// Auxiliary files will be placed in the same directory as the log file:
+	downloadedMapsForReplaysFilepath := logFlags.LogPath + "downloaded_maps_for_replays.json"
+	foreignToEnglishMappingFilepath := logFlags.LogPath + "map_foreign_to_english_mapping.json"
+
 	PipelineWrapper(
 		chunksOfFiles,
 		packageToZip,
 		compressionMethod,
-		settings.MapsDirectoryPath,
-		settings.DownloadedMapsForReplaysFilepath,
-		settings.ForeignToEnglishMappingFilepath,
+		downloadedMapsForReplaysFilepath,
+		foreignToEnglishMappingFilepath,
 		flags,
 	)
 

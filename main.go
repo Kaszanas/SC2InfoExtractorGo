@@ -5,7 +5,6 @@ import (
 	"runtime/pprof"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
-	"github.com/Kaszanas/SC2InfoExtractorGo/settings"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -30,15 +29,22 @@ func mainReturnWithCode() int {
 	// Logging initialization to be able to provide further troubleshooting for users:
 	logFile, okLogging := utils.SetLogging(
 		CLIflags.LogFlags.LogPath,
-		int(CLIflags.LogFlags.LogLevelValue))
+		int(CLIflags.LogFlags.LogLevelValue),
+	)
 	if !okLogging {
 		log.Fatal("Failed to setLogging()")
 		return 1
 	}
 
+	// Auxiliary files will be placed in the same directory as the log file:
+	downloadedMapsForReplaysFilepath := CLIflags.LogFlags.LogPath + "downloaded_maps_for_replays.json"
+	foreignToEnglishMappingFilepath := CLIflags.LogFlags.LogPath + "map_foreign_to_english_mapping.json"
+
 	log.WithFields(log.Fields{
 		"CLIflags.InputDirectory":             CLIflags.InputDirectory,
 		"CLIflags.OutputDirectory":            CLIflags.OutputDirectory,
+		"CLIflags.OnlyMapsDownload":           CLIflags.OnlyMapsDownload,
+		"CLIflags.MapsDirectory":              CLIflags.MapsDirectory,
 		"CLIflags.NumberOfPackages":           CLIflags.NumberOfPackages,
 		"CLIflags.PerformIntegrityCheck":      CLIflags.PerformIntegrityCheck,
 		"CLIflags.PerformValidityCheck":       CLIflags.PerformValidityCheck,
@@ -97,9 +103,8 @@ func mainReturnWithCode() int {
 		listOfChunksFiles,
 		packageToZipBool,
 		compressionMethod,
-		settings.MapsDirectoryPath,
-		settings.DownloadedMapsForReplaysFilepath,
-		settings.ForeignToEnglishMappingFilepath,
+		downloadedMapsForReplaysFilepath,
+		foreignToEnglishMappingFilepath,
 		CLIflags,
 	)
 
