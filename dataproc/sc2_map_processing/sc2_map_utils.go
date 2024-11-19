@@ -29,7 +29,6 @@ type ReplayMapProcessingChannelContents struct {
 func GetAllReplaysMapURLs(
 	fileChunks [][]string,
 	downloadedMapsForReplaysFilepath string,
-	mapsDirectory string,
 	cliFlags utils.CLIFlags,
 ) (
 	map[url.URL]string,
@@ -51,7 +50,7 @@ func GetAllReplaysMapURLs(
 	downloadedMapsForReplays, err := persistent_data.
 		OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 			downloadedMapsForReplaysFilepath,
-			mapsDirectory,
+			cliFlags.MapsDirectory,
 			fileChunks,
 		)
 	if err != nil {

@@ -14,7 +14,6 @@ import (
 // if the replays were not processed before.
 func DownloadAllSC2Maps(
 	downloaderSharedState *downloader.DownloaderSharedState,
-	mapsDirectory string,
 	downloadedMapsForReplays persistent_data.DownloadedMapsReplaysToFileInfo,
 	downloadedMapsForReplaysFilepath string,
 	allMapURLs map[url.URL]string,
@@ -23,7 +22,7 @@ func DownloadAllSC2Maps(
 ) (map[string]struct{}, error) {
 
 	log.WithFields(log.Fields{
-		"mapsDirectory":              mapsDirectory,
+		"mapsDirectory":              cliFlags.MapsDirectory,
 		"n_downloadedMapsForReplays": len(downloadedMapsForReplays.DownloadedMapsForFiles)}).
 		Info("Entered downloadAllSC2Maps()")
 
@@ -58,7 +57,9 @@ func DownloadAllSC2Maps(
 	progressBarDownloadMaps.Close()
 
 	// Save the processed replays to the file:
-	err := downloadedMapsForReplays.SaveDownloadedMapsForReplaysFile(downloadedMapsForReplaysFilepath)
+	err := downloadedMapsForReplays.SaveDownloadedMapsForReplaysFile(
+		downloadedMapsForReplaysFilepath,
+	)
 	if err != nil {
 		log.WithField("downloadedMapsForReplaysFile",
 			downloadedMapsForReplaysFilepath,
@@ -69,11 +70,11 @@ func DownloadAllSC2Maps(
 
 	// Get the list of maps after the download finishes:
 	existingMapFilesSet, err := file_utils.ExistingFilesSet(
-		mapsDirectory,
+		cliFlags.MapsDirectory,
 		".s2ma",
 	)
 	if err != nil {
-		log.WithField("mapsDirectory", mapsDirectory).
+		log.WithField("mapsDirectory", cliFlags.MapsDirectory).
 			Error("Failed to get the set of existing map files.")
 		return nil, err
 	}

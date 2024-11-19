@@ -34,7 +34,6 @@ func PipelineWrapper(
 	fileChunks [][]string,
 	packageToZipBool bool,
 	compressionMethod uint16,
-	mapsDirectoryPath string,
 	downloadedMapsForReplaysFilepath string,
 	foreignToEnglishMappingFilepath string,
 	cliFlags utils.CLIFlags,
@@ -42,7 +41,7 @@ func PipelineWrapper(
 
 	log.Info("Entered PipelineWrapper()")
 	// Create maps directory if it doesn't exist:
-	err := file_utils.GetOrCreateDirectory(mapsDirectoryPath)
+	err := file_utils.GetOrCreateDirectory(cliFlags.MapsDirectory)
 	if err != nil {
 		log.WithField("error", err).Error("Failed to create maps directory.")
 		return
@@ -50,7 +49,7 @@ func PipelineWrapper(
 
 	// REVIEW: Start Review:
 	existingMapFilesSet, err := file_utils.ExistingFilesSet(
-		mapsDirectoryPath, ".s2ma",
+		cliFlags.MapsDirectory, ".s2ma",
 	)
 	if err != nil {
 		log.WithField("error", err).
@@ -61,7 +60,7 @@ func PipelineWrapper(
 	// Shared state for the downloader:
 	downloadedMapFilesSet := make(map[string]struct{})
 	downloaderSharedState, err := downloader.NewDownloaderSharedState(
-		mapsDirectoryPath,
+		cliFlags.MapsDirectory,
 		existingMapFilesSet,
 		downloadedMapFilesSet,
 		cliFlags.NumberOfThreads*2)
@@ -77,7 +76,6 @@ func PipelineWrapper(
 		GetAllReplaysMapURLs(
 			fileChunks,
 			downloadedMapsForReplaysFilepath,
-			mapsDirectoryPath,
 			cliFlags,
 		)
 	if err != nil {
@@ -89,7 +87,6 @@ func PipelineWrapper(
 	// Download all SC2 maps from the replays if they were not processed before:
 	existingMapFilesSet, err = DownloadAllSC2Maps(
 		&downloaderSharedState,
-		mapsDirectoryPath,
 		downloadedMapsForReplays,
 		downloadedMapsForReplaysFilepath,
 		URLToFileNameMap,
