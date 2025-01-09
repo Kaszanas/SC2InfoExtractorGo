@@ -5,6 +5,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
+	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -88,6 +89,13 @@ func mainReturnWithCode() int {
 			"Higher number of packages than input files, closing the program.")
 		return 1
 	}
+
+	// Check which of the files were previously processed and exclude them
+	// from chunking.
+	persistent_data.OpenOrCreateDownloadedMapsForReplaysToFileInfo()
+	// for _, replayFile := range listOfInputFiles {
+
+	// }
 
 	listOfChunksFiles, packageToZipBool := chunk_utils.GetChunkListAndPackageBool(
 		listOfInputFiles,

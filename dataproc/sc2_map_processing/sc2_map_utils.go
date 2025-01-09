@@ -73,6 +73,11 @@ func GetAllReplaysMapURLs(
 		"[1/4] Retrieving all map URLs: ",
 	)
 	defer progressBar.Close()
+
+	// TODO: Maybe the channels will fix the performance issue
+	// but there will be no check if a file was modified:
+	// mapURLToHashChannel := make(chan map[url.URL]string)
+
 	// Spin up workers waiting for chunks to process:
 	for i := 0; i < cliFlags.NumberOfThreads; i++ {
 		go createMapExtractingGoroutines(
@@ -88,11 +93,15 @@ func GetAllReplaysMapURLs(
 	for index, chunk := range fileChunks {
 		channel <- ReplayMapProcessingChannelContents{
 			Index:        index,
-			ChunkOfFiles: chunk}
+			ChunkOfFiles: chunk,
+		}
 	}
 
-	close(channel)
-	wg.Wait()
+	go func() {
+		close(channel)
+		wg.Wait()
+	}()
+
 	progressBar.Close()
 
 	downloadedMapsForReplaysReturn := persistent_data.
@@ -116,6 +125,10 @@ func createMapExtractingGoroutines(
 	wg *sync.WaitGroup,
 ) {
 
+	// TODO: Instead of using the sync.Map and adding to it
+	// It should be better to just have a separate channel to collect
+	// all of the results, and synchronize them at the end.
+
 	for {
 		channelContents, ok := <-channel
 		if !ok {
@@ -124,14 +137,12 @@ func createMapExtractingGoroutines(
 		}
 		// Process the chunk of files and add the URLs to the map
 		for _, replayFullFilepath := range channelContents.ChunkOfFiles {
-
 			processFileExtractMap(
 				progressBar,
 				replayFullFilepath,
 				urls,
 				downloadedMapsForReplaysSyncMap,
 			)
-
 		}
 	}
 

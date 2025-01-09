@@ -29,53 +29,53 @@ type FileInformationToCheck struct {
 func OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 	filepath string,
 	mapsDirectory string,
-	fileChunks [][]string,
-) (DownloadedMapsReplaysToFileInfo, error) {
+	files []string,
+) (DownloadedMapsReplaysToFileInfo, []string, error) {
 
+	replaysToProcess := []string{}
 	// check if the file exists:
 	mapToPopulateFromPersistentJSON := make(map[string]interface{})
 	_, _, err := file_utils.ReadOrCreateFile(filepath)
 	if err != nil {
 		log.WithField("error", err).
 			Error("Failed to read or create the processed_replays.json file.")
-		return DownloadedMapsReplaysToFileInfo{}, err
+		return DownloadedMapsReplaysToFileInfo{}, replaysToProcess, err
 	}
 	err = file_utils.UnmarshalJsonFile(filepath, &mapToPopulateFromPersistentJSON)
 	if err != nil {
 		log.WithField("error", err).
 			Error("Failed to unmarshal the processed_replays.json file.")
-		return DownloadedMapsReplaysToFileInfo{}, err
+		return DownloadedMapsReplaysToFileInfo{}, replaysToProcess, err
 	}
 
 	prtm := DownloadedMapsReplaysToFileInfo{
 		DownloadedMapsForFiles: mapToPopulateFromPersistentJSON,
 	}
 
-	for _, chunk := range fileChunks {
-		for _, replayFile := range chunk {
-			fileInfo, err := os.Stat(replayFile)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"error":      err,
-					"replayFile": replayFile,
-				}).Error("Failed to get file info.")
-				return DownloadedMapsReplaysToFileInfo{}, err
-			}
-			fileInfoToCheck, ok := prtm.CheckIfReplayWasProcessed(replayFile)
-			// Replay was processed so no need to check it again:
-			if ok {
-				// Check if the file was modified since the last time it was processed:
-				if CheckFileInfoEq(fileInfo, fileInfoToCheck) {
-					// It is the same so continue
-					continue
-				}
-			}
-			// It wasn't the same so the replay should be processed again:
-			delete(prtm.DownloadedMapsForFiles, replayFile)
+	for _, replayFile := range files {
+		fileInfo, err := os.Stat(replayFile)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error":      err,
+				"replayFile": replayFile,
+			}).Error("Failed to get file info.")
+			return DownloadedMapsReplaysToFileInfo{}, replaysToProcess, err
 		}
+		fileInfoToCheck, ok := prtm.CheckIfReplayWasProcessed(replayFile)
+		// Replay was processed so no need to check it again:
+		if ok {
+			// Check if the file was modified since the last time it was processed:
+			if CheckFileInfoEq(fileInfo, fileInfoToCheck) {
+				// It is the same so continue
+				continue
+			}
+		}
+		// It wasn't the same so the replay should be processed again:
+		replaysToProcess = append(replaysToProcess, replayFile)
+		delete(prtm.DownloadedMapsForFiles, replayFile)
 	}
 
-	return prtm, nil
+	return prtm, replaysToProcess, nil
 }
 
 // CheckFileInfoEq compares the fs.FileInfo contents with FileInfoToCheck.
