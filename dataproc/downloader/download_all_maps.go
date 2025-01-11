@@ -1,9 +1,8 @@
-package dataproc
+package downloader
 
 import (
 	"net/url"
 
-	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -13,7 +12,7 @@ import (
 // downloadAllSC2Maps download all of the maps from the replays
 // if the replays were not processed before.
 func DownloadAllSC2Maps(
-	downloaderSharedState *downloader.DownloaderSharedState,
+	downloaderSharedState *DownloaderSharedState,
 	downloadedMapsForReplays persistent_data.DownloadedMapsReplaysToFileInfo,
 	downloadedMapsForReplaysFilepath string,
 	allMapURLs map[url.URL]string,
@@ -38,7 +37,7 @@ func DownloadAllSC2Maps(
 
 		// If it wasn't, open the replay, get map information,
 		// download the map, and save it to the drive.
-		err := downloader.DownloadMapIfNotExists(
+		err := DownloadMapIfNotExists(
 			downloaderSharedState,
 			mapHashAndExtension,
 			url,

@@ -5,7 +5,8 @@ import (
 	"runtime/pprof"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
-	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
+
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -90,12 +91,17 @@ func mainReturnWithCode() int {
 		return 1
 	}
 
-	// Check which of the files were previously processed and exclude them
-	// from chunking.
-	persistent_data.OpenOrCreateDownloadedMapsForReplaysToFileInfo()
-	// for _, replayFile := range listOfInputFiles {
-
-	// }
+	// Downloading the maps for the files:
+	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
+		CLIflags,
+		listOfInputFiles,
+		downloadedMapsForReplaysFilepath,
+		foreignToEnglishMappingFilepath,
+	)
+	if CLIflags.OnlyMapsDownload {
+		log.Info("Only maps download was chosen. Exiting.")
+		return 0
+	}
 
 	listOfChunksFiles, packageToZipBool := chunk_utils.GetChunkListAndPackageBool(
 		listOfInputFiles,
@@ -111,8 +117,7 @@ func mainReturnWithCode() int {
 		listOfChunksFiles,
 		packageToZipBool,
 		compressionMethod,
-		downloadedMapsForReplaysFilepath,
-		foreignToEnglishMappingFilepath,
+		foreignToEnglishMapping,
 		CLIflags,
 	)
 

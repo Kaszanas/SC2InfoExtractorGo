@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
@@ -166,12 +167,18 @@ func testPipelineWrapperWithDir(
 	downloadedMapsForReplaysFilepath := logFlags.LogPath + "downloaded_maps_for_replays.json"
 	foreignToEnglishMappingFilepath := logFlags.LogPath + "map_foreign_to_english_mapping.json"
 
+	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
+		flags,
+		sliceOfFiles,
+		downloadedMapsForReplaysFilepath,
+		foreignToEnglishMappingFilepath,
+	)
+
 	PipelineWrapper(
 		chunksOfFiles,
 		packageToZip,
 		compressionMethod,
-		downloadedMapsForReplaysFilepath,
-		foreignToEnglishMappingFilepath,
+		foreignToEnglishMapping,
 		flags,
 	)
 

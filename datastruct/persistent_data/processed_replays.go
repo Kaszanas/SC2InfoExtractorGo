@@ -48,7 +48,7 @@ func OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 		return DownloadedMapsReplaysToFileInfo{}, replaysToProcess, err
 	}
 
-	prtm := DownloadedMapsReplaysToFileInfo{
+	alreadyProcessed := DownloadedMapsReplaysToFileInfo{
 		DownloadedMapsForFiles: mapToPopulateFromPersistentJSON,
 	}
 
@@ -61,7 +61,7 @@ func OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 			}).Error("Failed to get file info.")
 			return DownloadedMapsReplaysToFileInfo{}, replaysToProcess, err
 		}
-		fileInfoToCheck, ok := prtm.CheckIfReplayWasProcessed(replayFile)
+		fileInfoToCheck, ok := alreadyProcessed.CheckIfReplayWasProcessed(replayFile)
 		// Replay was processed so no need to check it again:
 		if ok {
 			// Check if the file was modified since the last time it was processed:
@@ -72,10 +72,10 @@ func OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 		}
 		// It wasn't the same so the replay should be processed again:
 		replaysToProcess = append(replaysToProcess, replayFile)
-		delete(prtm.DownloadedMapsForFiles, replayFile)
+		delete(alreadyProcessed.DownloadedMapsForFiles, replayFile)
 	}
 
-	return prtm, replaysToProcess, nil
+	return alreadyProcessed, replaysToProcess, nil
 }
 
 // CheckFileInfoEq compares the fs.FileInfo contents with FileInfoToCheck.
