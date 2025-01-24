@@ -46,7 +46,9 @@ func GetAllReplaysMapURLs(
 	error,
 ) {
 
-	downloadedMapsForReplays, downloadMapsForTheseFiles, err := persistent_data.
+	// Get the information about for which replays the maps were already downloaded,
+	// and for which replays the maps need to be downloaded still:
+	alreadyDownloaded, downloadMapsForTheseFiles, err := persistent_data.
 		OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 			downloadedMapsForReplaysFilepath,
 			cliFlags.MapsDirectory,
@@ -56,7 +58,7 @@ func GetAllReplaysMapURLs(
 		return nil, persistent_data.DownloadedMapsReplaysToFileInfo{}, err
 	}
 
-	// Progress bar logic:
+	// Setting up the progress bar to handle the processing:
 	nFiles := len(downloadMapsForTheseFiles)
 	progressBarLen := nFiles
 	progressBar := utils.NewProgressBar(
@@ -84,6 +86,7 @@ func GetAllReplaysMapURLs(
 		)
 	}
 
+	// Creating chunks of files for data parallel multiprocessing:
 	downloadMapsChunks, _ := chunk_utils.GetChunkListAndPackageBool(
 		downloadMapsForTheseFiles,
 		0,
@@ -99,6 +102,11 @@ func GetAllReplaysMapURLs(
 		}
 	}
 
+	// Handling the closing of the channels and waiting for the workers to finish.
+	// We are using channels to alleviate the issue with mutexes.
+	// After all of the data comes through the output channels,
+	// the information about which maps should be downloaded will be put into a single
+	// map which will handle the duplicates:
 	go func() {
 		// No more chunks will be sent to the workers,
 		// they are all consumed above:
@@ -109,18 +117,19 @@ func GetAllReplaysMapURLs(
 	}()
 	progressBar.Close()
 
-	// Consume the output from the workers:
-	urlMapToFilename := make(map[url.URL]string)
+	// Consume the output from the workers. This is needed to get rid of the
+	// duplicate map URLs, multiple replays can have the same map:
+	toDownloadURLToFileMap := make(map[url.URL]string)
 	for output := range outputChannel {
 		for url := range output.mapOfURLs {
 			replayHashExtension := output.mapOfURLs[url].MapHashAndExtension
 
-			urlMapToFilename[url] = replayHashExtension
+			toDownloadURLToFileMap[url] = replayHashExtension
 		}
 	}
 
 	// Return all of the URLs
-	return urlMapToFilename, downloadedMapsForReplays, nil
+	return toDownloadURLToFileMap, alreadyDownloaded, nil
 }
 
 // createMapExtractingGoroutines creates the goroutines that process the replay files
@@ -132,6 +141,7 @@ func createMapExtractingGoroutines(
 	wg *sync.WaitGroup,
 ) {
 
+	// Running the goroutine until the input channel is closed:
 	for {
 		channelContents, ok := <-inputChannel
 		if !ok {
@@ -141,9 +151,11 @@ func createMapExtractingGoroutines(
 		// Process the chunk of files and add the URLs to the map
 		mapOfURLs := make(map[url.URL]ReplayProcessingMapInfo)
 		for _, replayFullFilepath := range channelContents.ChunkOfFiles {
-			// TODO: This should return URLs and FileInformation
-			// There is no need to pass the syn.Map here, just read all of the URLs
-			// for all of the files:
+			// Filling out the map of urls that will be returned through the output channel
+			// the caller will handle the consumption of the output channel and
+			// therefore the deduplication of map URLs.
+			// Error handling is done inside the function, if the processing fails,
+			// the function returns false, error is logged, and the processing continues:
 			if !processFileExtractMapURL(
 				progressBar,
 				replayFullFilepath,
@@ -220,16 +232,16 @@ func getURL(replayFullFilepath string) (url.URL, string, error) {
 }
 
 // convertFromSyncMapToURLMap converts a sync.Map to a map[url.URL]string.
-func convertFromSyncMapToURLMap(
-	urls *sync.Map,
-) map[url.URL]string {
-	urlMap := make(map[url.URL]string)
-	urls.Range(func(key, value interface{}) bool {
-		urlMap[key.(url.URL)] = value.(string)
-		return true
-	})
-	return urlMap
-}
+// func convertFromSyncMapToURLMap(
+// 	urls *sync.Map,
+// ) map[url.URL]string {
+// 	urlMap := make(map[url.URL]string)
+// 	urls.Range(func(key, value interface{}) bool {
+// 		urlMap[key.(url.URL)] = value.(string)
+// 		return true
+// 	})
+// 	return urlMap
+// }
 
 // GetMapURLAndHashFromReplayData extracts the map URL,
 // hash, and file extension from the replay data.
