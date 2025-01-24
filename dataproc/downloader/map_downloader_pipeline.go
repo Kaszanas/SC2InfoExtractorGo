@@ -32,19 +32,6 @@ func MapDownloaderPipeline(
 		return nil
 	}
 
-	// Shared state for the downloader:
-	downloadedMapFilesSet := make(map[string]struct{})
-	downloaderSharedState, err := NewDownloaderSharedState(
-		cliFlags.MapsDirectory,
-		existingMapFilesSet,
-		downloadedMapFilesSet,
-		cliFlags.NumberOfThreads*2)
-	defer downloaderSharedState.WorkerPool.StopAndWait()
-	if err != nil {
-		log.WithField("error", err).Error("Failed to create downloader shared state.")
-		return nil
-	}
-
 	// STAGE ONE PRE-PROCESS:
 	// Get all map URLs into a set:
 	URLToFileNameMap, downloadedMapsForReplays, err := sc2_map_processing.
@@ -87,6 +74,20 @@ func MapDownloaderPipeline(
 
 	// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
 	// Download all SC2 maps from the replays if they were not processed before:
+
+	// Shared state for the downloader:
+	downloadedMapFilesSet := make(map[string]struct{})
+	downloaderSharedState, err := NewDownloaderSharedState(
+		cliFlags.MapsDirectory,
+		existingMapFilesSet,
+		downloadedMapFilesSet,
+		cliFlags.NumberOfThreads*2)
+	defer downloaderSharedState.WorkerPool.StopAndWait()
+	if err != nil {
+		log.WithField("error", err).Error("Failed to create downloader shared state.")
+		return nil
+	}
+
 	existingMapFilesSet, err = DownloadAllSC2Maps(
 		&downloaderSharedState,
 		downloadedMapsForReplays,
