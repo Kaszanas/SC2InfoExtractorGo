@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	"github.com/icza/mpq"
 	"github.com/icza/s2prot/rep"
@@ -21,14 +21,23 @@ import (
 
 // ReplayProcessingChannelContents is a struct that is used to pass data
 // between the orchestrator and the workers in the pipeline.
-type ReplayMapProcessingChannelContents struct {
+type ReplayMapExtractProcessingChannel struct {
 	Index        int
 	ChunkOfFiles []string
 }
 
+type ReplayProcessingMapInfo struct {
+	ReplayFilename      string
+	MapHashAndExtension string
+}
+
+type ExtractMapChannelContents struct {
+	mapOfURLs map[url.URL]ReplayProcessingMapInfo
+}
+
 // GetAllReplaysMapURLs retrieves the map URLs from the replay files.
 func GetAllReplaysMapURLs(
-	fileChunks [][]string,
+	files []string,
 	downloadedMapsForReplaysFilepath string,
 	cliFlags utils.CLIFlags,
 ) (
@@ -37,113 +46,138 @@ func GetAllReplaysMapURLs(
 	error,
 ) {
 
-	// If it is specified by the user to perform the processing without
-	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
-	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
-	var channel = make(chan ReplayMapProcessingChannelContents, cliFlags.NumberOfThreads+1)
-	var wg sync.WaitGroup
-	// Adding a task for each of the supplied chunks to speed up the processing:
-	wg.Add(cliFlags.NumberOfThreads)
-
-	// Create a sync.Map to store the URLs
-	urls := &sync.Map{}
-
-	downloadedMapsForReplays, err := persistent_data.
+	// Get the information about for which replays the maps were already downloaded,
+	// and for which replays the maps need to be downloaded still:
+	alreadyDownloaded, downloadMapsForTheseFiles, err := persistent_data.
 		OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 			downloadedMapsForReplaysFilepath,
 			cliFlags.MapsDirectory,
-			fileChunks,
+			files,
 		)
 	if err != nil {
 		return nil, persistent_data.DownloadedMapsReplaysToFileInfo{}, err
 	}
 
-	downloadedMapsForReplaysSyncMap := downloadedMapsForReplays.
-		ConvertToSyncMap()
-
-	// Progress bar logic:
-	nChunks := len(fileChunks)
-	nFiles := 0
-	for _, chunk := range fileChunks {
-		nFiles += len(chunk)
-	}
-	progressBarLen := nChunks * nFiles
+	// Setting up the progress bar to handle the processing:
+	nFiles := len(downloadMapsForTheseFiles)
+	progressBarLen := nFiles
 	progressBar := utils.NewProgressBar(
 		progressBarLen,
 		"[1/4] Retrieving all map URLs: ",
 	)
 	defer progressBar.Close()
+
+	// If it is specified by the user to perform the processing without
+	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
+	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
+	inputChannel := make(chan ReplayMapExtractProcessingChannel, cliFlags.NumberOfThreads+1)
+	outputChannel := make(chan ExtractMapChannelContents)
+	var wg sync.WaitGroup
+	// Adding a task for each of the supplied chunks to speed up the processing:
+	wg.Add(cliFlags.NumberOfThreads)
+
 	// Spin up workers waiting for chunks to process:
 	for i := 0; i < cliFlags.NumberOfThreads; i++ {
 		go createMapExtractingGoroutines(
-			channel,
+			inputChannel,
+			outputChannel,
 			progressBar,
-			urls,
-			downloadedMapsForReplaysSyncMap,
 			&wg,
 		)
 	}
 
+	// Creating chunks of files for data parallel multiprocessing:
+	downloadMapsChunks, _ := chunk_utils.GetChunkListAndPackageBool(
+		downloadMapsForTheseFiles,
+		0,
+		cliFlags.NumberOfThreads,
+		len(downloadMapsForTheseFiles),
+	)
+
 	// Passing the chunks to the workers:
-	for index, chunk := range fileChunks {
-		channel <- ReplayMapProcessingChannelContents{
+	for index, chunk := range downloadMapsChunks {
+		inputChannel <- ReplayMapExtractProcessingChannel{
 			Index:        index,
-			ChunkOfFiles: chunk}
+			ChunkOfFiles: chunk,
+		}
 	}
 
-	close(channel)
-	wg.Wait()
+	// Handling the closing of the channels and waiting for the workers to finish.
+	// We are using channels to alleviate the issue with mutexes.
+	// After all of the data comes through the output channels,
+	// the information about which maps should be downloaded will be put into a single
+	// map which will handle the duplicates:
+	go func() {
+		// No more chunks will be sent to the workers,
+		// they are all consumed above:
+		close(inputChannel)
+		wg.Wait()
+		// No more output will come after the wait group is done:
+		close(outputChannel)
+	}()
 	progressBar.Close()
 
-	downloadedMapsForReplaysReturn := persistent_data.
-		FromSyncMapToDownloadedMapsForReplaysToFileInfo(
-			downloadedMapsForReplaysSyncMap,
-		)
+	// Consume the output from the workers. This is needed to get rid of the
+	// duplicate map URLs, multiple replays can have the same map:
+	toDownloadURLToFileMap := make(map[url.URL]string)
+	for output := range outputChannel {
+		for url := range output.mapOfURLs {
+			replayHashExtension := output.mapOfURLs[url].MapHashAndExtension
 
-	urlMapToFilename := convertFromSyncMapToURLMap(urls)
+			toDownloadURLToFileMap[url] = replayHashExtension
+		}
+	}
 
 	// Return all of the URLs
-	return urlMapToFilename, downloadedMapsForReplaysReturn, nil
+	return toDownloadURLToFileMap, alreadyDownloaded, nil
 }
 
 // createMapExtractingGoroutines creates the goroutines that process the replay files
 // and extract the map URLs.
 func createMapExtractingGoroutines(
-	channel chan ReplayMapProcessingChannelContents,
+	inputChannel chan ReplayMapExtractProcessingChannel,
+	outputChannel chan ExtractMapChannelContents,
 	progressBar *progressbar.ProgressBar,
-	urls *sync.Map,
-	downloadedMapsForReplaysSyncMap *sync.Map,
 	wg *sync.WaitGroup,
 ) {
 
+	// Running the goroutine until the input channel is closed:
 	for {
-		channelContents, ok := <-channel
+		channelContents, ok := <-inputChannel
 		if !ok {
 			wg.Done()
 			return
 		}
 		// Process the chunk of files and add the URLs to the map
+		mapOfURLs := make(map[url.URL]ReplayProcessingMapInfo)
 		for _, replayFullFilepath := range channelContents.ChunkOfFiles {
-
-			processFileExtractMap(
+			// Filling out the map of urls that will be returned through the output channel
+			// the caller will handle the consumption of the output channel and
+			// therefore the deduplication of map URLs.
+			// Error handling is done inside the function, if the processing fails,
+			// the function returns false, error is logged, and the processing continues:
+			if !processFileExtractMapURL(
 				progressBar,
 				replayFullFilepath,
-				urls,
-				downloadedMapsForReplaysSyncMap,
-			)
-
+				&mapOfURLs,
+			) {
+				continue
+			}
+		}
+		// send to output channel:
+		outputChannel <- ExtractMapChannelContents{
+			mapOfURLs: mapOfURLs,
 		}
 	}
 
 }
 
-// processFileExtractMap processes the replay file to extract the map URL and hash.
-func processFileExtractMap(
+// processFileExtractMapURL processes the replay file to extract the map URL and hash.
+func processFileExtractMapURL(
 	progressBar *progressbar.ProgressBar,
 	replayFullFilepath string,
-	urls *sync.Map,
-	downloadedMapsForReplaysSyncMap *sync.Map,
-) {
+	urls *map[url.URL]ReplayProcessingMapInfo,
+) bool {
 
 	// Lambda to process the replay file to have
 	// deferred progress bar increment:
@@ -157,55 +191,22 @@ func processFileExtractMap(
 	}()
 	replayFilename := filepath.Base(replayFullFilepath)
 
-	// Check if the replay was already processed:
-	fileInfo, err := os.Stat(replayFullFilepath)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error":      err,
-			"replayFile": replayFullFilepath,
-		}).Error("Failed to get file info.")
-		return
-	}
-
-	// If the file was already processed, and was not modified since,
-	// then it will be skipped from getting the map URL:
-	fileInfoToCheck, alreadyProcessed :=
-		downloadedMapsForReplaysSyncMap.Load(replayFilename)
-	if alreadyProcessed {
-		// Check if the file was modified since the last time it was processed:
-		if persistent_data.CheckFileInfoEq(
-			fileInfo,
-			fileInfoToCheck.(persistent_data.FileInformationToCheck),
-		) {
-			// It is the same so continue
-			log.WithField("file", replayFullFilepath).
-				Warning("This replay was already processed, map should be available, continuing!")
-			return
-		}
-		// It wasn't the same so the replay should be processed again:
-		log.WithField("file", replayFullFilepath).
-			Warn("Replay was modified since the last time it was processed! Processing again.")
-		downloadedMapsForReplaysSyncMap.Delete(replayFilename)
-	}
-
 	mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":      err,
 			"replayFile": replayFullFilepath,
 		}).Error("Failed to get map URL from replay")
-		return
+		return false
 	}
 
-	urls.Store(mapURL, mapHashAndExtension)
-	downloadedMapsForReplaysSyncMap.Store(
-		replayFilename,
-		persistent_data.FileInformationToCheck{
-			LastModified: fileInfo.ModTime().Unix(),
-			Size:         fileInfo.Size(),
-		},
-	)
+	// Store the map URL and hash:
+	(*urls)[mapURL] = ReplayProcessingMapInfo{
+		ReplayFilename:      replayFilename,
+		MapHashAndExtension: mapHashAndExtension,
+	}
 
+	return true
 }
 
 // getURL retrieves the map URL from the replay file.
@@ -231,16 +232,16 @@ func getURL(replayFullFilepath string) (url.URL, string, error) {
 }
 
 // convertFromSyncMapToURLMap converts a sync.Map to a map[url.URL]string.
-func convertFromSyncMapToURLMap(
-	urls *sync.Map,
-) map[url.URL]string {
-	urlMap := make(map[url.URL]string)
-	urls.Range(func(key, value interface{}) bool {
-		urlMap[key.(url.URL)] = value.(string)
-		return true
-	})
-	return urlMap
-}
+// func convertFromSyncMapToURLMap(
+// 	urls *sync.Map,
+// ) map[url.URL]string {
+// 	urlMap := make(map[url.URL]string)
+// 	urls.Range(func(key, value interface{}) bool {
+// 		urlMap[key.(url.URL)] = value.(string)
+// 		return true
+// 	})
+// 	return urlMap
+// }
 
 // GetMapURLAndHashFromReplayData extracts the map URL,
 // hash, and file extension from the replay data.

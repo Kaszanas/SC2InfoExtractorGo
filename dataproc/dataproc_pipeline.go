@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
-	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
@@ -34,114 +32,11 @@ func PipelineWrapper(
 	fileChunks [][]string,
 	packageToZipBool bool,
 	compressionMethod uint16,
-	downloadedMapsForReplaysFilepath string,
-	foreignToEnglishMappingFilepath string,
+	foreignToEnglishMapping map[string]string,
 	cliFlags utils.CLIFlags,
 ) {
 
 	log.Info("Entered PipelineWrapper()")
-	// Create maps directory if it doesn't exist:
-	err := file_utils.GetOrCreateDirectory(cliFlags.MapsDirectory)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to create maps directory.")
-		return
-	}
-
-	// REVIEW: Start Review:
-	existingMapFilesSet, err := file_utils.ExistingFilesSet(
-		cliFlags.MapsDirectory, ".s2ma",
-	)
-	if err != nil {
-		log.WithField("error", err).
-			Error("Failed to get existing map files set.")
-		return
-	}
-
-	// Shared state for the downloader:
-	downloadedMapFilesSet := make(map[string]struct{})
-	downloaderSharedState, err := downloader.NewDownloaderSharedState(
-		cliFlags.MapsDirectory,
-		existingMapFilesSet,
-		downloadedMapFilesSet,
-		cliFlags.NumberOfThreads*2)
-	defer downloaderSharedState.WorkerPool.StopAndWait()
-	if err != nil {
-		log.WithField("error", err).Error("Failed to create downloader shared state.")
-		return
-	}
-
-	// STAGE ONE PRE-PROCESS:
-	// Get all map URLs into a set:
-	URLToFileNameMap, downloadedMapsForReplays, err := sc2_map_processing.
-		GetAllReplaysMapURLs(
-			fileChunks,
-			downloadedMapsForReplaysFilepath,
-			cliFlags,
-		)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to get all map URLs.")
-		return
-	}
-
-	// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
-	// Download all SC2 maps from the replays if they were not processed before:
-	existingMapFilesSet, err = DownloadAllSC2Maps(
-		&downloaderSharedState,
-		downloadedMapsForReplays,
-		downloadedMapsForReplaysFilepath,
-		URLToFileNameMap,
-		fileChunks,
-		cliFlags,
-	)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to download all SC2 maps.")
-		return
-	}
-
-	// STAGE-Three PRE-PROCESS:
-	// Read all of the map names from the drive and create a mapping
-	// from foreign to english names:
-	progressBarReadLocalizedData := utils.NewProgressBar(
-		len(existingMapFilesSet),
-		"[3/4] Reading map names from drive: ",
-	)
-	mainForeignToEnglishMapping := make(map[string]string)
-	for existingMapFilepath := range existingMapFilesSet {
-
-		foreignToEnglishMapping, err := sc2_map_processing.
-			ReadLocalizedDataFromMapGetForeignToEnglishMapping(
-				existingMapFilepath,
-				progressBarReadLocalizedData,
-			)
-		if err != nil {
-			log.WithField("error", err).
-				Error("Error reading map name from drive. Map could not be processed")
-			return
-		}
-
-		// Fill out the mapping, these maps won't be opened again:
-		for foreignName, englishName := range foreignToEnglishMapping {
-			mainForeignToEnglishMapping[foreignName] = englishName
-		}
-	}
-	// Save the mapping to the drive:
-	err = sc2_map_processing.SaveForeignToEnglishMappingToDrive(
-		foreignToEnglishMappingFilepath,
-		mainForeignToEnglishMapping,
-	)
-	if err != nil {
-		log.WithField("error", err).
-			Error("Failed to save foreign to english mapping to drive.")
-		return
-	}
-
-	// REVIEW: Finish Review
-
-	// Stop all processing if the user chose to only download the maps:
-	if cliFlags.OnlyMapsDownload {
-		log.Info("Only maps download was chosen. Exiting.")
-		return
-	}
 
 	// Progress bar logic:
 	nChunks := len(fileChunks)
@@ -178,7 +73,7 @@ func PipelineWrapper(
 					packageToZipBool,
 					compressionMethod,
 					channelContents.Index,
-					mainForeignToEnglishMapping,
+					foreignToEnglishMapping,
 					progressBar,
 					cliFlags,
 				)
@@ -503,13 +398,4 @@ func FileProcessingPipeline(
 	log.Info("Finished FileProcessingPipeline()")
 
 	return true, cleanReplayStructure, summarizedReplay, ""
-}
-
-// gameis1v1Ranked checks if the replay is a 1v1 ranked game.
-func gameIs1v1Ranked(replayData *rep.Rep) bool {
-
-	isAmm := replayData.InitData.GameDescription.GameOptions.Amm()
-	isCompetitive := replayData.InitData.GameDescription.GameOptions.CompetitiveOrRanked()
-	isTwoPlayers := len(replayData.Metadata.Players()) == 2
-	return isAmm && isCompetitive && isTwoPlayers
 }
