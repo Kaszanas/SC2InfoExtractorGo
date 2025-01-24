@@ -399,12 +399,3 @@ func FileProcessingPipeline(
 
 	return true, cleanReplayStructure, summarizedReplay, ""
 }
-
-// gameis1v1Ranked checks if the replay is a 1v1 ranked game.
-func gameIs1v1Ranked(replayData *rep.Rep) bool {
-
-	isAmm := replayData.InitData.GameDescription.GameOptions.Amm()
-	isCompetitive := replayData.InitData.GameDescription.GameOptions.CompetitiveOrRanked()
-	isTwoPlayers := len(replayData.Metadata.Players()) == 2
-	return isAmm && isCompetitive && isTwoPlayers
-}
