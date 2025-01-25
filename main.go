@@ -39,7 +39,6 @@ func mainReturnWithCode() int {
 	}
 
 	// Auxiliary files will be placed in the same directory as the log file:
-	downloadedMapsForReplaysFilepath := CLIflags.LogFlags.LogPath + "downloaded_maps_for_replays.json"
 	foreignToEnglishMappingFilepath := CLIflags.LogFlags.LogPath + "map_foreign_to_english_mapping.json"
 
 	log.WithFields(log.Fields{
@@ -93,10 +92,9 @@ func mainReturnWithCode() int {
 
 	// Downloading the maps for the files:
 	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
-		CLIflags,
 		listOfInputFiles,
-		downloadedMapsForReplaysFilepath,
 		foreignToEnglishMappingFilepath,
+		CLIflags,
 	)
 	if CLIflags.OnlyMapsDownload {
 		log.Info("Only maps download was chosen. Exiting.")

@@ -1,18 +1,18 @@
 package downloader
 
 import (
+	"net/url"
+
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
-	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	log "github.com/sirupsen/logrus"
 )
 
 func MapDownloaderPipeline(
-	cliFlags utils.CLIFlags,
 	files []string,
-	downloadedMapsForReplaysFilepath string,
 	foreignToEnglishMappingFilepath string,
+	cliFlags utils.CLIFlags,
 ) map[string]string {
 
 	// Create maps directory if it doesn't exist:
@@ -23,48 +23,14 @@ func MapDownloaderPipeline(
 	}
 
 	// REVIEW: Start Review:
-	existingMapFilesSet, err := file_utils.ExistingFilesSet(
-		cliFlags.MapsDirectory, ".s2ma",
-	)
-	if err != nil {
-		log.WithField("error", err).
-			Error("Failed to get existing map files set.")
-		return nil
-	}
-
 	// STAGE ONE PRE-PROCESS:
 	// Get all map URLs into a set:
-	URLToFileNameMap, downloadedMapsForReplays, err := sc2_map_processing.
-		GetAllReplaysMapURLs(
-			files,
-			downloadedMapsForReplaysFilepath,
-			cliFlags,
-		)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to get all map URLs.")
-		return nil
-	}
-
-	// Check which of the files were previously processed and exclude them:
-	filesWithoutMaps, ok := sc2_map_processing.CheckProcessed(
+	URLsToDownload, err := getURLsForMissingMaps(
 		files,
-		downloadedMapsForReplays,
+		cliFlags,
 	)
-	if !ok {
-		log.Error("Failed to check which files were previously processed.")
-		return nil
-	}
-
-	// TODO: Chunk the files without maps, these are the only ones that should be
-	// processed with the downloader:
-	filesWithoutMapsChunks, ok := chunk_utils.GetChunkListAndPackageBool(
-		filesWithoutMaps,
-		cliFlags.NumberOfPackages,
-		cliFlags.NumberOfThreads,
-		len(filesWithoutMaps),
-	)
-	if !ok {
-		log.Error("Failed to get chunks for processing files for the map downloader.")
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get URLs for missing maps.")
 		return nil
 	}
 
@@ -74,39 +40,98 @@ func MapDownloaderPipeline(
 
 	// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
 	// Download all SC2 maps from the replays if they were not processed before:
-
-	// Shared state for the downloader:
-	downloadedMapFilesSet := make(map[string]struct{})
-	downloaderSharedState, err := NewDownloaderSharedState(
-		cliFlags.MapsDirectory,
-		existingMapFilesSet,
-		downloadedMapFilesSet,
-		cliFlags.NumberOfThreads*2)
-	defer downloaderSharedState.WorkerPool.StopAndWait()
-	if err != nil {
-		log.WithField("error", err).Error("Failed to create downloader shared state.")
-		return nil
-	}
-
-	existingMapFilesSet, err = DownloadAllSC2Maps(
-		&downloaderSharedState,
-		downloadedMapsForReplays,
-		downloadedMapsForReplaysFilepath,
-		URLToFileNameMap,
-		filesWithoutMapsChunks,
-		cliFlags,
-	)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to download all SC2 maps.")
-		return nil
-	}
+	downloadMissingMaps(URLsToDownload, cliFlags)
 
 	// STAGE-Three PRE-PROCESS:
 	// Read all of the map names from the drive and create a mapping
 	// from foreign to english names:
+
+	mainForeignToEnglishMapping := readMapNamesFromMapFiles(
+		foreignToEnglishMappingFilepath,
+		cliFlags,
+	)
+
+	// REVIEW: Finish Review
+	return mainForeignToEnglishMapping
+}
+
+func getURLsForMissingMaps(
+	files []string,
+	cliFlags utils.CLIFlags,
+) (map[url.URL]string, error) {
+
+	existingMapFilesSet, err := file_utils.ExistingFilesSet(
+		cliFlags.MapsDirectory, ".s2ma",
+	)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to get existing map files set.")
+		return nil, err
+	}
+
+	URLsToDownload, err := sc2_map_processing.
+		GetAllReplaysMapURLs(
+			files,
+			existingMapFilesSet,
+			cliFlags,
+		)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get all map URLs.")
+		return nil, err
+	}
+
+	return URLsToDownload, nil
+}
+
+// Define a struct to represent the tuple
+type URLToFileTuple struct {
+	URL      url.URL
+	Filename string
+}
+
+func downloadMissingMaps(
+	URLsToDownload map[url.URL]string,
+	cliFlags utils.CLIFlags,
+) {
+
+	// Shared state for the downloader:
+	// existingMapFilesSet is required here to check if the map can be read.
+	// In case of corrupted maps they will be redownloaded:
+	downloaderSharedState, err := NewDownloaderSharedState(cliFlags)
+	defer downloaderSharedState.WorkerPool.StopAndWait()
+	if err != nil {
+		log.WithField("error", err).Error("Failed to create downloader shared state.")
+		return
+	}
+
+	err = DownloadAllSC2Maps(
+		&downloaderSharedState,
+		URLsToDownload,
+		cliFlags,
+	)
+	if err != nil {
+		log.WithField("error", err).Error("Failed to download all SC2 maps.")
+		return
+	}
+}
+
+func readMapNamesFromMapFiles(
+	foreignToEnglishMappingFilepath string,
+	cliFlags utils.CLIFlags,
+) map[string]string {
+
+	existingMapFilesSet, err := file_utils.ExistingFilesSet(
+		cliFlags.MapsDirectory, ".s2ma",
+	)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to get existing map files set.")
+		return nil
+	}
+
 	progressBarReadLocalizedData := utils.NewProgressBar(
 		len(existingMapFilesSet),
-		"[3/4] Reading map names from drive: ",
+		"[3/4] Reading english map names from map files: ",
 	)
 	mainForeignToEnglishMapping := make(map[string]string)
 	for existingMapFilepath := range existingMapFilesSet {
@@ -138,7 +163,4 @@ func MapDownloaderPipeline(
 		return nil
 	}
 	return mainForeignToEnglishMapping
-
-	// REVIEW: Finish Review
-
 }

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -38,28 +37,15 @@ type ExtractMapChannelContents struct {
 // GetAllReplaysMapURLs retrieves the map URLs from the replay files.
 func GetAllReplaysMapURLs(
 	files []string,
-	downloadedMapsForReplaysFilepath string,
+	mapsOnDriveSet map[string]struct{},
 	cliFlags utils.CLIFlags,
 ) (
 	map[url.URL]string,
-	persistent_data.DownloadedMapsReplaysToFileInfo,
 	error,
 ) {
 
-	// Get the information about for which replays the maps were already downloaded,
-	// and for which replays the maps need to be downloaded still:
-	alreadyDownloaded, downloadMapsForTheseFiles, err := persistent_data.
-		OpenOrCreateDownloadedMapsForReplaysToFileInfo(
-			downloadedMapsForReplaysFilepath,
-			cliFlags.MapsDirectory,
-			files,
-		)
-	if err != nil {
-		return nil, persistent_data.DownloadedMapsReplaysToFileInfo{}, err
-	}
-
 	// Setting up the progress bar to handle the processing:
-	nFiles := len(downloadMapsForTheseFiles)
+	nFiles := len(files)
 	progressBarLen := nFiles
 	progressBar := utils.NewProgressBar(
 		progressBarLen,
@@ -72,6 +58,26 @@ func GetAllReplaysMapURLs(
 	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
 	inputChannel := make(chan ReplayMapExtractProcessingChannel, cliFlags.NumberOfThreads+1)
 	outputChannel := make(chan ExtractMapChannelContents)
+
+	// Creating chunks of files for data parallel multiprocessing:
+	downloadMapsChunks, _ := chunk_utils.GetChunkListAndPackageBool(
+		files,
+		0,
+		cliFlags.NumberOfThreads,
+		len(files),
+	)
+
+	// Passing the chunks to input channel before the workers start processing:
+	for index, chunk := range downloadMapsChunks {
+		inputChannel <- ReplayMapExtractProcessingChannel{
+			Index:        index,
+			ChunkOfFiles: chunk,
+		}
+	}
+	// No more data will be sent to the workers:
+	close(inputChannel)
+
+	// Initializing the wait group with the selected number of workers/threads:
 	var wg sync.WaitGroup
 	// Adding a task for each of the supplied chunks to speed up the processing:
 	wg.Add(cliFlags.NumberOfThreads)
@@ -86,22 +92,6 @@ func GetAllReplaysMapURLs(
 		)
 	}
 
-	// Creating chunks of files for data parallel multiprocessing:
-	downloadMapsChunks, _ := chunk_utils.GetChunkListAndPackageBool(
-		downloadMapsForTheseFiles,
-		0,
-		cliFlags.NumberOfThreads,
-		len(downloadMapsForTheseFiles),
-	)
-
-	// Passing the chunks to the workers:
-	for index, chunk := range downloadMapsChunks {
-		inputChannel <- ReplayMapExtractProcessingChannel{
-			Index:        index,
-			ChunkOfFiles: chunk,
-		}
-	}
-
 	// Handling the closing of the channels and waiting for the workers to finish.
 	// We are using channels to alleviate the issue with mutexes.
 	// After all of the data comes through the output channels,
@@ -110,26 +100,38 @@ func GetAllReplaysMapURLs(
 	go func() {
 		// No more chunks will be sent to the workers,
 		// they are all consumed above:
-		close(inputChannel)
 		wg.Wait()
 		// No more output will come after the wait group is done:
 		close(outputChannel)
 	}()
-	progressBar.Close()
 
 	// Consume the output from the workers. This is needed to get rid of the
 	// duplicate map URLs, multiple replays can have the same map:
 	toDownloadURLToFileMap := make(map[url.URL]string)
 	for output := range outputChannel {
 		for url := range output.mapOfURLs {
+
 			replayHashExtension := output.mapOfURLs[url].MapHashAndExtension
+
+			// The map will have to be downloaded only if it is not already existing
+			// on the disk:
+			_, ok := mapsOnDriveSet[replayHashExtension]
+			if ok {
+				// the map is already downloaded, skip it:
+				log.WithField("map", replayHashExtension).
+					Debug("Map is already downloaded, continuing.")
+				continue
+			}
 
 			toDownloadURLToFileMap[url] = replayHashExtension
 		}
 	}
 
+	log.WithField("nMapsToDownload", len(toDownloadURLToFileMap)).
+		Debug("Finished GetAllReplaysMapURLs()")
+
 	// Return all of the URLs
-	return toDownloadURLToFileMap, alreadyDownloaded, nil
+	return toDownloadURLToFileMap, nil
 }
 
 // createMapExtractingGoroutines creates the goroutines that process the replay files

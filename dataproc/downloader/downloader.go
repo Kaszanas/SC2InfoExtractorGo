@@ -11,6 +11,7 @@ import (
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
+	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
 	"github.com/alitto/pond"
 	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
@@ -36,13 +37,20 @@ type DownloaderSharedState struct {
 // Constructor for new downloader shared state
 // NewDownloaderSharedState creates a new DownloaderSharedState.
 func NewDownloaderSharedState(
-	mapsDirectory string,
-	existingFilesMapsSet map[string]struct{},
-	downloadedMapsSet map[string]struct{},
-	maxPoolCapacity int) (DownloaderSharedState, error) {
+	cliFlags utils.CLIFlags,
+) (DownloaderSharedState, error) {
+
+	existingFilesMapsSet, err := file_utils.ExistingFilesSet(
+		cliFlags.MapsDirectory, ".s2ma",
+	)
+	if err != nil {
+		log.WithField("error", err).
+			Error("Failed to get existing map files set.")
+		return DownloaderSharedState{}, err
+	}
 
 	log.WithFields(log.Fields{
-		"mapsDirectory":        mapsDirectory,
+		"mapsDirectory":        cliFlags.MapsDirectory,
 		"existingFilesMapsSet": len(existingFilesMapsSet)}).
 		Info("Entered NewDownloaderSharedState()")
 
@@ -67,19 +75,14 @@ func NewDownloaderSharedState(
 			delete(existingFilesMapsSet, existingMapFilepath)
 			continue
 		}
-
-		mapFilenameAndExtension := filepath.Base(existingMapFilepath)
-		// Separate downloaded maps set is created to assure that
-		// Downloaded maps set is
-		downloadedMapsSet[mapFilenameAndExtension] = struct{}{}
 	}
 
 	return DownloaderSharedState{
-		MapDownloadDirectory: mapsDirectory,
-		DownloadedMapsSet:    &downloadedMapsSet,
+		MapDownloadDirectory: cliFlags.MapsDirectory,
+		DownloadedMapsSet:    &existingFilesMapsSet,
 		CurrentlyDownloading: &map[string][]chan DownloadTaskReturnChannelInfo{},
 		SharedRWMutex:        &sync.RWMutex{},
-		WorkerPool:           pond.New(4, maxPoolCapacity, pond.Strategy(pond.Eager())),
+		WorkerPool:           pond.New(4, cliFlags.NumberOfThreads*2, pond.Strategy(pond.Eager())),
 	}, nil
 }
 
