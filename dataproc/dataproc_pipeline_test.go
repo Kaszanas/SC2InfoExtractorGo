@@ -130,7 +130,7 @@ func testPipelineWrapperWithDir(
 		return false, "Could not get the list of files."
 	}
 
-	chunksOfFiles, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
+	chunksOfFiles, getOk := chunk_utils.GetChunks(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
 	}
@@ -164,14 +164,12 @@ func testPipelineWrapperWithDir(
 	compressionMethod := uint16(8)
 
 	// Auxiliary files will be placed in the same directory as the log file:
-	downloadedMapsForReplaysFilepath := logFlags.LogPath + "downloaded_maps_for_replays.json"
 	foreignToEnglishMappingFilepath := logFlags.LogPath + "map_foreign_to_english_mapping.json"
 
 	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
-		flags,
 		sliceOfFiles,
-		downloadedMapsForReplaysFilepath,
 		foreignToEnglishMappingFilepath,
+		flags,
 	)
 
 	PipelineWrapper(
@@ -263,7 +261,8 @@ func pipelineTestCleanup(
 	testOutputPath string,
 	logFile *os.File,
 	deleteOutputDir bool,
-	deleteLogsFilepath bool) (string, error) {
+	deleteLogsFilepath bool,
+) (string, error) {
 
 	// err := os.Remove(processedFailedPath)
 	// if err != nil {
