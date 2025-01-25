@@ -7,19 +7,19 @@ import (
 )
 
 // GetChunksOfFiles returns chunks of files for processing.
-func GetChunksOfFiles(slice []string, chunkSize int) ([][]string, bool) {
-
-	log.Info("Entered chunkSlice()")
+// GetChunks returns chunks of any type for processing.
+func GetChunks[T any](slice []T, chunkSize int) ([][]T, bool) {
+	log.Info("Entered GetChunks()")
 
 	if chunkSize < 0 {
-		return [][]string{}, false
+		return [][]T{}, false
 	}
 
 	if chunkSize == 0 {
-		return [][]string{slice}, true
+		return [][]T{slice}, true
 	}
 
-	var chunks [][]string
+	var chunks [][]T
 	for i := 0; i < len(slice); i += chunkSize {
 		end := i + chunkSize
 
@@ -31,18 +31,18 @@ func GetChunksOfFiles(slice []string, chunkSize int) ([][]string, bool) {
 		chunks = append(chunks, slice[i:end])
 	}
 
-	log.Info("Finished chunkSlice(), returning")
+	log.Info("Finished GetChunks(), returning")
 	return chunks, true
 }
 
 // GetChunkListAndPackageBool returns list of chunks of files that
 // will be processed and a boolean specifying if the chunking process was a success.
-func GetChunkListAndPackageBool(
-	listOfInputFiles []string,
+func GetChunkListAndPackageBool[T any](
+	listOfInputs []T,
 	numberOfPackages int,
 	numberOfThreads int,
 	lenListOfInputFiles int,
-) ([][]string, bool) {
+) ([][]T, bool) {
 
 	log.Info("Entered getChunkListAndPackageBool()")
 
@@ -57,15 +57,14 @@ func GetChunkListAndPackageBool(
 		// specified number of packages.
 		// Number of chunks is n_files/n_user_provided_packages
 		numberOfFilesInPackage = int(math.Ceil(float64(lenListOfInputFiles) / float64(numberOfPackages)))
-		listOfChunksFiles, _ := GetChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
+		listOfChunksFiles, _ := GetChunks(listOfInputs, numberOfFilesInPackage)
 		return listOfChunksFiles, packageToZipBool
 	}
 
 	// If we write stringified .json files of replays to drive without
 	// packaging the number of chunks will be n_files/n_threads
 	numberOfFilesInPackage = int(math.Ceil(float64(lenListOfInputFiles) / float64(numberOfThreads)))
-	listOfChunksFiles, _ := GetChunksOfFiles(listOfInputFiles, numberOfFilesInPackage)
+	listOfChunksFiles, _ := GetChunks(listOfInputs, numberOfFilesInPackage)
 
 	return listOfChunksFiles, packageToZipBool
-
 }
