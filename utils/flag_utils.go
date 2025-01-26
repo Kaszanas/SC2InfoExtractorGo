@@ -21,6 +21,7 @@ type CLIFlags struct {
 	InputDirectory             string
 	OutputDirectory            string
 	OnlyMapsDownload           bool
+	SkipMapsDownload           bool
 	MapsDirectory              string
 	NumberOfThreads            int
 	NumberOfPackages           int
@@ -55,6 +56,12 @@ func ParseFlags() (CLIFlags, bool) {
 		`Flag specifying if the tool is supposed to only download
 		the maps and not process the replays.`,
 	)
+	skipMapDownload := flag.Bool(
+		"skip_map_download",
+		false,
+		`Flag specifying if the tool is supposed to skip the map download`,
+	)
+
 	mapsDirectory := flag.String(
 		"maps_directory",
 		"./maps/",
@@ -171,6 +178,8 @@ func ParseFlags() (CLIFlags, bool) {
 		return CLIFlags{}, false
 	}
 
+	absolutePathMapsDirectory, err := filepath.Abs(*mapsDirectory)
+
 	logFlags := LogFlags{
 		LogLevelValue: datastruct.LogLevelEnum(*logLevelFlag),
 		LogPath:       *logDirectoryFlag,
@@ -180,7 +189,8 @@ func ParseFlags() (CLIFlags, bool) {
 		InputDirectory:             absoluteInputDirectory,
 		OutputDirectory:            absolutePathOutputDirectory,
 		OnlyMapsDownload:           *onlyMapDownload,
-		MapsDirectory:              *mapsDirectory,
+		SkipMapsDownload:           *skipMapDownload,
+		MapsDirectory:              absolutePathMapsDirectory,
 		NumberOfPackages:           *numberOfPackagesFlag,
 		PerformIntegrityCheck:      *performIntegrityCheckFlag,
 		PerformValidityCheck:       *performValidityCheckFlag,
