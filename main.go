@@ -45,6 +45,7 @@ func mainReturnWithCode() int {
 		"CLIflags.InputDirectory":             CLIflags.InputDirectory,
 		"CLIflags.OutputDirectory":            CLIflags.OutputDirectory,
 		"CLIflags.OnlyMapsDownload":           CLIflags.OnlyMapsDownload,
+		"CLIflags.SkipMapsDownload":           CLIflags.SkipMapsDownload,
 		"CLIflags.MapsDirectory":              CLIflags.MapsDirectory,
 		"CLIflags.NumberOfPackages":           CLIflags.NumberOfPackages,
 		"CLIflags.PerformIntegrityCheck":      CLIflags.PerformIntegrityCheck,
