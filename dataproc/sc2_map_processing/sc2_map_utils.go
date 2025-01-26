@@ -57,7 +57,7 @@ func GetAllReplaysMapURLs(
 	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
 	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
 	inputChannel := make(chan ReplayMapExtractProcessingChannel, cliFlags.NumberOfThreads+1)
-	outputChannel := make(chan ExtractMapChannelContents)
+	outputChannel := make(chan ExtractMapChannelContents, cliFlags.NumberOfThreads+1)
 
 	// Creating chunks of files for data parallel multiprocessing:
 	downloadMapsChunks, _ := chunk_utils.GetChunkListAndPackageBool(
@@ -66,16 +66,6 @@ func GetAllReplaysMapURLs(
 		cliFlags.NumberOfThreads,
 		len(files),
 	)
-
-	// Passing the chunks to input channel before the workers start processing:
-	for index, chunk := range downloadMapsChunks {
-		inputChannel <- ReplayMapExtractProcessingChannel{
-			Index:        index,
-			ChunkOfFiles: chunk,
-		}
-	}
-	// No more data will be sent to the workers:
-	close(inputChannel)
 
 	// Initializing the wait group with the selected number of workers/threads:
 	var wg sync.WaitGroup
@@ -97,6 +87,16 @@ func GetAllReplaysMapURLs(
 	// After all of the data comes through the output channels,
 	// the information about which maps should be downloaded will be put into a single
 	// map which will handle the duplicates:
+	// Passing the chunks to input channel before the workers start processing:
+	for index, chunk := range downloadMapsChunks {
+		inputChannel <- ReplayMapExtractProcessingChannel{
+			Index:        index,
+			ChunkOfFiles: chunk,
+		}
+	}
+
+	// No more data will be sent to the workers:
+	close(inputChannel)
 	go func() {
 		// No more chunks will be sent to the workers,
 		// they are all consumed above:
@@ -161,12 +161,15 @@ func createMapExtractingGoroutines(
 			if !processFileExtractMapURL(
 				progressBar,
 				replayFullFilepath,
-				&mapOfURLs,
+				mapOfURLs,
 			) {
 				continue
 			}
 		}
 		// send to output channel:
+		log.WithField("len_mapOfURLS", len(mapOfURLs)).
+			Info("Sending to output channel")
+
 		outputChannel <- ExtractMapChannelContents{
 			mapOfURLs: mapOfURLs,
 		}
@@ -178,7 +181,7 @@ func createMapExtractingGoroutines(
 func processFileExtractMapURL(
 	progressBar *progressbar.ProgressBar,
 	replayFullFilepath string,
-	urls *map[url.URL]ReplayProcessingMapInfo,
+	urls map[url.URL]ReplayProcessingMapInfo,
 ) bool {
 
 	// Lambda to process the replay file to have
@@ -203,7 +206,7 @@ func processFileExtractMapURL(
 	}
 
 	// Store the map URL and hash:
-	(*urls)[mapURL] = ReplayProcessingMapInfo{
+	urls[mapURL] = ReplayProcessingMapInfo{
 		ReplayFilename:      replayFilename,
 		MapHashAndExtension: mapHashAndExtension,
 	}
@@ -232,18 +235,6 @@ func getURL(replayFullFilepath string) (url.URL, string, error) {
 
 	return mapURL, mapHashAndExtension, nil
 }
-
-// convertFromSyncMapToURLMap converts a sync.Map to a map[url.URL]string.
-// func convertFromSyncMapToURLMap(
-// 	urls *sync.Map,
-// ) map[url.URL]string {
-// 	urlMap := make(map[url.URL]string)
-// 	urls.Range(func(key, value interface{}) bool {
-// 		urlMap[key.(url.URL)] = value.(string)
-// 		return true
-// 	})
-// 	return urlMap
-// }
 
 // GetMapURLAndHashFromReplayData extracts the map URL,
 // hash, and file extension from the replay data.
@@ -294,13 +285,15 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	mapFilepath string,
 	progressBar *progressbar.ProgressBar,
 ) (map[string]string, error) {
+	log.Info("Entered readLocalizedDataFromMap()")
+
 	defer func() {
-		if err := progressBar.Add(1); err != nil {
+		err := progressBar.Add(1)
+		if err != nil {
 			log.WithField("error", err).
-				Error("Error updating progress bar in ReadLocalizedDataFromMapGetForeignToEnglishMapping()")
+				Error("Error updating progress bar in readLocalizedDataFromMap")
 		}
 	}()
-	log.Info("Entered readLocalizedDataFromMap()")
 
 	mpqArchive, err := mpq.NewFromFile(mapFilepath)
 	if err != nil {
