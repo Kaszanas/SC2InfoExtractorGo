@@ -15,37 +15,38 @@ func MapDownloaderPipeline(
 	cliFlags utils.CLIFlags,
 ) map[string]string {
 
-	// Create maps directory if it doesn't exist:
-	err := file_utils.GetOrCreateDirectory(cliFlags.MapsDirectory)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to create maps directory.")
-		return nil
+	if !cliFlags.SkipMapsDownload {
+		// Create maps directory if it doesn't exist:
+		err := file_utils.GetOrCreateDirectory(cliFlags.MapsDirectory)
+		if err != nil {
+			log.WithField("error", err).Error("Failed to create maps directory.")
+			return nil
+		}
+
+		// REVIEW: Start Review:
+		// STAGE ONE PRE-PROCESS:
+		// Get all map URLs into a set:
+		URLsToDownload, err := getURLsForMissingMaps(
+			files,
+			cliFlags,
+		)
+		if err != nil {
+			log.WithField("error", err).Error("Failed to get URLs for missing maps.")
+			return nil
+		}
+
+		// TODO: Verify how to create a new main function that will be a standalone
+		// map and dependency downloader with specific exposed functions for the
+		// sc2infoextractorgo.
+
+		// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
+		// Download all SC2 maps from the replays if they were not processed before:
+		downloadMissingMaps(URLsToDownload, cliFlags)
 	}
-
-	// REVIEW: Start Review:
-	// STAGE ONE PRE-PROCESS:
-	// Get all map URLs into a set:
-	URLsToDownload, err := getURLsForMissingMaps(
-		files,
-		cliFlags,
-	)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to get URLs for missing maps.")
-		return nil
-	}
-
-	// TODO: Verify how to create a new main function that will be a standalone
-	// map and dependency downloader with specific exposed functions for the
-	// sc2infoextractorgo.
-
-	// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
-	// Download all SC2 maps from the replays if they were not processed before:
-	downloadMissingMaps(URLsToDownload, cliFlags)
 
 	// STAGE-Three PRE-PROCESS:
 	// Read all of the map names from the drive and create a mapping
 	// from foreign to english names:
-
 	mainForeignToEnglishMapping := readMapNamesFromMapFiles(
 		foreignToEnglishMappingFilepath,
 		cliFlags,
