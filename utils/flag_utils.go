@@ -179,6 +179,11 @@ func ParseFlags() (CLIFlags, bool) {
 	}
 
 	absolutePathMapsDirectory, err := filepath.Abs(*mapsDirectory)
+	if err != nil {
+		log.WithField("mapsDirectory", *mapsDirectory).
+			Error("Failed to get the absolute path to the maps directory!")
+		return CLIFlags{}, false
+	}
 
 	logFlags := LogFlags{
 		LogLevelValue: datastruct.LogLevelEnum(*logLevelFlag),
