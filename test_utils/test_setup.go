@@ -67,7 +67,7 @@ func SetTestCLIFlags(t *testing.T) (
 	}
 	log.WithField("n_files", len(sliceOfFiles)).Info("Number of detected files.")
 
-	chunks, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
+	chunks, getOk := chunk_utils.GetChunks(sliceOfFiles, 0)
 	if !getOk {
 		t.Fatalf("Test Failed! Could not produce chunks of files!")
 	}
