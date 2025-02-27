@@ -59,7 +59,7 @@ func CreateProcessingInfoFile(
 	fileNumber int,
 ) (*os.File, ProcessingInfo, error) {
 
-	log.Info("Entered CreateProcessingInfoFile()")
+	log.Debug("Entered CreateProcessingInfoFile()")
 
 	// Formatting the processing info file name:
 	processingLogName := fmt.Sprintf(logsFilepath+"processed_failed_%v.log", fileNumber)
@@ -76,8 +76,8 @@ func CreateProcessingInfoFile(
 	// SaveProcessingInfo(&processingInfoFile, processingInfoStruct)
 
 	log.Infof("Created and saved the %v", processingLogName)
-	log.Info("Finished CreateProcessingInfoFile()")
 
+	log.Debug("Finished CreateProcessingInfoFile()")
 	return &processingInfoFile, processingInfoStruct, nil
 }
 
@@ -88,7 +88,7 @@ func SaveProcessingInfoToFile(
 	processingInfoStruct ProcessingInfo,
 ) {
 
-	log.Info("Entered SaveProcessingInfo()")
+	log.Debug("Entered SaveProcessingInfo()")
 
 	processingInfoBytes, err := json.Marshal(processingInfoStruct)
 	if err != nil {
@@ -102,5 +102,5 @@ func SaveProcessingInfoToFile(
 		log.WithField("error", err).Fatal("Failed to save the processingInfoFile")
 	}
 
-	log.Info("Finished SaveProcessingInfo()")
+	log.Debug("Finished SaveProcessingInfo()")
 }

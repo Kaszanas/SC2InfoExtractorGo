@@ -16,7 +16,7 @@ func extractReplayData(
 	englishToForeignMapping map[string]string,
 	performCleanupBool bool) (bool, replay_data.CleanedReplay) {
 
-	log.Info("Entered cleanReplay()")
+	log.Debug("Entered cleanReplay()")
 
 	// Restructure replay:
 	structuredReplayData, redefOk := redifineReplayStructure(
@@ -46,7 +46,7 @@ func extractReplayData(
 		}
 	}
 
-	log.Info("Finished cleanReplay()")
+	log.Debug("Finished cleanReplay()")
 	return true, structuredReplayData
 }
 
@@ -54,7 +54,7 @@ func extractReplayData(
 // a new structure without the events that were hardcoded as redundant.
 func cleanUnusedMessageEvents(replayData *replay_data.CleanedReplay) bool {
 
-	log.Info("Entered cleanUnusedMessageEvents()")
+	log.Debug("Entered cleanUnusedMessageEvents()")
 
 	var cleanMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
@@ -65,14 +65,14 @@ func cleanUnusedMessageEvents(replayData *replay_data.CleanedReplay) bool {
 
 	replayData.MessageEvents = cleanMessageEvents
 
-	log.Info("Finished cleanUnusedMessageEvents()")
+	log.Debug("Finished cleanUnusedMessageEvents()")
 	return true
 }
 
 // cleanUnusedGameEvents checks against settings.UnusedGameEvents and
 // creates a new GameEvents structure without certain events.
 func cleanUnusedGameEvents(replayData *replay_data.CleanedReplay) bool {
-	log.Info("Entered cleanUnusedGameEvents()")
+	log.Debug("Entered cleanUnusedGameEvents()")
 
 	var cleanedGameEvents []s2prot.Struct
 	for _, event := range replayData.GameEvents {
@@ -83,6 +83,6 @@ func cleanUnusedGameEvents(replayData *replay_data.CleanedReplay) bool {
 
 	replayData.GameEvents = cleanedGameEvents
 
-	log.Info("Finished cleanUnusedGameEvents()")
+	log.Debug("Finished cleanUnusedGameEvents()")
 	return true
 }

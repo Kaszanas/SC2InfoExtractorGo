@@ -10,7 +10,7 @@ import (
 // matches against structures with redundant information.
 func checkIntegrity(replayData *rep.Rep) (bool, string) {
 
-	log.Info("Entered checkIntegrity()")
+	log.Debug("Entered checkIntegrity()")
 	maxPlayers := replayData.InitData.GameDescription.MaxPlayers()
 	replayDetails := replayData.Details
 

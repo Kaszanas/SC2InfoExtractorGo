@@ -59,7 +59,7 @@ type VerifyGameInfo struct {
 // in order to verify if the file is within "common sense" values.
 func validate1v1Replay(replayData *rep.Rep) bool {
 
-	log.Info("Entered validateData()")
+	log.Debug("Entered validateData()")
 	playerList := replayData.Metadata.Players()
 
 	if len(playerList) == 2 {
@@ -94,7 +94,7 @@ func validate1v1Replay(replayData *rep.Rep) bool {
 		return false
 	}
 
-	log.Info("Finished validateData(), returning")
+	log.Debug("Finished validateData(), returning")
 	return true
 }
 
@@ -102,7 +102,7 @@ func validate1v1Replay(replayData *rep.Rep) bool {
 // replay was played using a Blizzard official map.
 func checkBlizzardMap(replayData *rep.Rep) bool {
 
-	log.Info("Entered checkBlizzardMap()")
+	log.Debug("Entered checkBlizzardMap()")
 
 	gameDescIsBlizzardMap := replayData.InitData.GameDescription.IsBlizzardMap()
 	detailsIsBlizzardMap := replayData.Details.IsBlizzardMap()
@@ -114,6 +114,6 @@ func checkBlizzardMap(replayData *rep.Rep) bool {
 		return false
 	}
 
-	log.Info("Finished checkBlizzardMap(), returning")
+	log.Debug("Finished checkBlizzardMap(), returning")
 	return true
 }

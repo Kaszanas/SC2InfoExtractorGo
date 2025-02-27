@@ -41,7 +41,7 @@ func anonymizeReplay(
 	grpcAnonymizer *GRPCAnonymizer,
 	performChatAnonymizationBool bool) bool {
 
-	log.Info("Entered anonymizeReplay()")
+	log.Debug("Entered anonymizeReplay()")
 
 	// Anonymization of Chat events that might
 	// contain sensitive information for research purposes:
@@ -59,7 +59,7 @@ func anonymizeReplay(
 		return false
 	}
 
-	log.Info("Finished anonymizeReplay()")
+	log.Debug("Finished anonymizeReplay()")
 	return true
 }
 
@@ -82,7 +82,7 @@ type GRPCAnonymizer struct {
 // grpcConnect initializes a connection to a specified in settings grpc server.
 func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 
-	log.Info("Entered GRPCAnonymizer.grpcDialConnect()")
+	log.Debug("Entered GRPCAnonymizer.grpcDialConnect()")
 
 	// Set up a connection to the server:
 	conn, err := grpc.NewClient(settings.GrpcServerAddress,
@@ -97,7 +97,7 @@ func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 
 	anonymizer.Connection = conn
 
-	log.Info("Finished GRPCAnonymizer.grpcDialConnect()")
+	log.Debug("Finished GRPCAnonymizer.grpcDialConnect()")
 	return true
 
 }
@@ -112,7 +112,7 @@ func (anonymizer *GRPCAnonymizer) grpcInitializeClient() {
 // in the cache and if it is not it calls grpcAnonymizeID.
 func (anonymizer *GRPCAnonymizer) anonymizeToon(toonString string) (string, bool) {
 
-	log.Info("Entered GRPCAnonymizer.anonymizeToon()")
+	log.Debug("Entered GRPCAnonymizer.anonymizeToon()")
 
 	// Check if the toon is already in cache not to spam the connection with requests:
 	val, ok := anonymizer.Cache[toonString]
@@ -130,7 +130,7 @@ func (anonymizer *GRPCAnonymizer) anonymizeToon(toonString string) (string, bool
 		return "", false
 	}
 	anonymizer.Cache[toonString] = anonymizedID
-	log.Info("Finished GRPCAnonymizer.anonymizeToon()")
+	log.Debug("Finished GRPCAnonymizer.anonymizeToon()")
 
 	return anonymizedID, true
 }
@@ -143,7 +143,7 @@ func grpcGetAnonymizeID(
 	grpcConnection *grpc.ClientConn,
 ) (string, bool) {
 
-	log.Info("Entered grpcAnonymize()")
+	log.Debug("Entered grpcAnonymize()")
 
 	// Contact the server and print out its response:
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -159,7 +159,7 @@ func grpcGetAnonymizeID(
 	log.WithField("gRPC_response", result.AnonymizedID).
 		Debug("Received anonymized ID for a player.")
 
-	log.Info("Finished grpcAnonymize()")
+	log.Debug("Finished grpcAnonymize()")
 	return result.AnonymizedID, true
 }
 
@@ -198,7 +198,7 @@ func anonymizePlayers(
 	log.WithField("toonDescMapAnonymized", replayData.ToonPlayerDescMap).
 		Debug("Replaced toonDescMap with anonymized version")
 
-	log.Info("Finished anonymizePlayers()")
+	log.Debug("Finished anonymizePlayers()")
 	return true
 }
 
@@ -206,7 +206,7 @@ func anonymizePlayers(
 // and creates a new clean version without specified events.
 func anonimizeMessageEvents(replayData *replay_data.CleanedReplay) bool {
 
-	log.Info("Entered anonimizeMessageEvents().")
+	log.Debug("Entered anonimizeMessageEvents().")
 	var anonymizedMessageEvents []s2prot.Struct
 	for _, event := range replayData.MessageEvents {
 		eventType := event["evtTypeName"].(string)
@@ -217,6 +217,6 @@ func anonimizeMessageEvents(replayData *replay_data.CleanedReplay) bool {
 
 	replayData.MessageEvents = anonymizedMessageEvents
 
-	log.Info("Finished anonymizeMessageEvents()")
+	log.Debug("Finished anonymizeMessageEvents()")
 	return true
 }

@@ -11,7 +11,7 @@ import (
 // convertCoordinates accesses the data from GameEvents
 // and recalculates the x,y,z coordinates of events
 func convertCoordinates(replayData *replay_data.CleanedReplay) bool {
-	log.Info("Entered convertCoordinates()")
+	log.Debug("Entered convertCoordinates()")
 
 	var newSliceOfEvents []s2prot.Struct
 
@@ -69,7 +69,7 @@ func convertCoordinates(replayData *replay_data.CleanedReplay) bool {
 	}
 
 	replayData.GameEvents = newSliceOfEvents
-	log.Info("Finished convertCoordinates()")
 
+	log.Debug("Finished convertCoordinates()")
 	return true
 }

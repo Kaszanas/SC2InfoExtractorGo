@@ -241,7 +241,7 @@ func getURL(replayFullFilepath string) (url.URL, string, error) {
 func GetMapURLAndHashFromReplayData(
 	replayData *rep.Rep,
 ) (url.URL, string, bool) {
-	log.Info("Entered getMapURLAndHashFromReplayData()")
+	log.Debug("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
 
 	// Get the cacheHandle for the map, I am not sure whi is it the last CacheHandle:
@@ -274,7 +274,7 @@ func GetMapURLAndHashFromReplayData(
 		mapCacheHandle.Type,
 	)
 	mapURL := depotURL.JoinPath(hashAndExtensionMerged)
-	log.Info("Finished getMapURLAndHashFromReplayData()")
+	log.Debug("Finished getMapURLAndHashFromReplayData()")
 	return *mapURL, hashAndExtensionMerged, true
 }
 
@@ -285,7 +285,7 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	mapFilepath string,
 	progressBar *progressbar.ProgressBar,
 ) (map[string]string, error) {
-	log.Info("Entered readLocalizedDataFromMap()")
+	log.Debug("Entered readLocalizedDataFromMap()")
 
 	defer func() {
 		err := progressBar.Add(1)
@@ -352,13 +352,13 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 	}
 	mpqArchive.Close()
 
-	log.Info("Finished readLocalizedDataFromMap()")
+	log.Debug("Finished readLocalizedDataFromMap()")
 	return foreignToEnglishMapName, nil
 }
 
 // findEnglishLocaleFile looks for the file containing the english map name
 func findLocaleFiles(MPQArchiveBytes []byte) ([]string, string, error) {
-	log.Info("Entered findEnglishLocaleFile()")
+	log.Debug("Entered findEnglishLocaleFile()")
 
 	// Cast bytes to string:
 	MPQStringData := string(MPQArchiveBytes)
@@ -393,7 +393,7 @@ func findLocaleFiles(MPQArchiveBytes []byte) ([]string, string, error) {
 		return nil, "", fmt.Errorf("could not find english localization file in MPQ")
 	}
 
-	log.Info("Finished findEnglishLocaleFile()")
+	log.Debug("Finished findEnglishLocaleFile()")
 	return localizationFiles, englishLocaleFile, nil
 }
 

@@ -54,8 +54,8 @@ func NewDownloaderSharedState(
 
 	log.WithFields(log.Fields{
 		"mapsDirectory":        cliFlags.MapsDirectory,
-		"existingFilesMapsSet": len(existingFilesMapsSet)}).
-		Info("Entered NewDownloaderSharedState()")
+		"existingFilesMapsSet": len(existingFilesMapsSet)},
+	).Debug("Entered NewDownloaderSharedState()")
 
 	progressBar := utils.NewProgressBar(
 		len(existingFilesMapsSet),
@@ -126,7 +126,7 @@ func DownloadMapIfNotExists(
 			"mapHashAndExtension": mapHashAndExtension,
 			"mapURL":              mapURL.String(),
 		},
-	).Info("Entered getEnglishMapNameDownloadIfNotExists()")
+	).Debug("Entered getEnglishMapNameDownloadIfNotExists()")
 
 	downloadTaskInfoChannel := dispatchMapDownloadTask(
 		*downloaderSharedState,
@@ -144,7 +144,7 @@ func DownloadMapIfNotExists(
 		return fmt.Errorf("error downloading map: %v", taskStatus.err)
 	}
 
-	log.Info("Finished getEnglishMapNameDownloadIfNotExists()")
+	log.Debug("Finished getEnglishMapNameDownloadIfNotExists()")
 	return nil
 }
 
@@ -211,14 +211,14 @@ func dispatchMapDownloadTask(
 		)
 	}
 
-	log.Info("Finished dispatchMapDownloadTask()")
+	log.Debug("Finished dispatchMapDownloadTask()")
 	return downloadTaskInfoChannel
 }
 
 // downloadSingleMap handles downloading a single map based on an URL passed through
 // the task state.
 func downloadSingleMap(taskState DownloadTaskState) {
-	log.Info("Entered downloadSingleMap()")
+	log.Debug("Entered downloadSingleMap()")
 
 	outputFilepath := filepath.Join(
 		taskState.mapDownloadDirectory,

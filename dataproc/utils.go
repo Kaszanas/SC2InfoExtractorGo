@@ -6,7 +6,7 @@ import (
 
 // contains is a helper function checking if a slice contains a string.
 func contains(s []string, str string) bool {
-	log.Info("Entered contains()")
+	log.Debug("Entered contains()")
 
 	for _, v := range s {
 		if v == str {
@@ -14,7 +14,6 @@ func contains(s []string, str string) bool {
 			return true
 		}
 	}
-
 	log.Info("Slice does not contain supplied string, returning false")
 	return false
 }

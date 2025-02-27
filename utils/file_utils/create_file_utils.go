@@ -45,14 +45,14 @@ func ReadOrCreateFile(filepath string) (os.File, []byte, error) {
 		return os.File{}, nil, err
 	}
 
-	log.Info("Finished ReadOrCreateFile()")
+	log.Debug("Finished ReadOrCreateFile()")
 	return *file, contents, nil
 }
 
 // CreateTruncateFile receives a filepath and creates a file if it doesn't exist.
 func CreateTruncateFile(filePath string) (os.File, error) {
 
-	log.Info("Entered CreateTruncateFile()")
+	log.Debug("Entered CreateTruncateFile()")
 
 	createdOrReadFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0666)
 	if err != nil {
@@ -63,7 +63,7 @@ func CreateTruncateFile(filePath string) (os.File, error) {
 		return os.File{}, err
 	}
 
-	log.Info("Finished CreateTruncateFile()")
+	log.Debug("Finished CreateTruncateFile()")
 	return *createdOrReadFile, nil
 }
 
@@ -71,7 +71,7 @@ func CreateTruncateFile(filePath string) (os.File, error) {
 // maps directory and creates it if it doesn't exist.
 func GetOrCreateDirectory(pathToMapsDirectory string) error {
 
-	log.Info("Entered CreateMapsDirectory()")
+	log.Debug("Entered CreateMapsDirectory()")
 
 	// Create the maps directory:
 	err := os.Mkdir(pathToMapsDirectory, 0777)
@@ -85,14 +85,16 @@ func GetOrCreateDirectory(pathToMapsDirectory string) error {
 		return fmt.Errorf("failed to create the maps directory: %v", err)
 	}
 
-	log.Info("Finished GetOrCreateMapsDirectory()")
+	log.Debug("Finished GetOrCreateMapsDirectory()")
 	return nil
 }
 
 // UnmarshalJSONMapping wraps around unmarshalLocaleFile and returns
 // an empty map[string]interface{} if it fails to unmarshal the original locale mapping file.
-func UnmarshalJSONMapping(pathToMappingFile string) (map[string]interface{}, error) {
-	log.Info("Entered unmarshalLocaleMapping()")
+func UnmarshalJSONMapping(
+	pathToMappingFile string,
+) (map[string]interface{}, error) {
+	log.Debug("Entered unmarshalLocaleMapping()")
 
 	unmarshalledMap := make(map[string]interface{})
 	err := UnmarshalJsonFile(pathToMappingFile, &unmarshalledMap)
@@ -102,7 +104,7 @@ func UnmarshalJSONMapping(pathToMappingFile string) (map[string]interface{}, err
 		return unmarshalledMap, err
 	}
 
-	log.Info("Finished unmarshalLocaleMapping()")
+	log.Debug("Finished unmarshalLocaleMapping()")
 	return unmarshalledMap, nil
 }
 
@@ -111,8 +113,9 @@ func UnmarshalJSONMapping(pathToMappingFile string) (map[string]interface{}, err
 // supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func UnmarshalJsonFile(
 	filepath string,
-	mapToPopulate *map[string]interface{}) error {
-	log.Info("Entered unmarshalJsonFile()")
+	mapToPopulate *map[string]interface{},
+) error {
+	log.Debug("Entered unmarshalJsonFile()")
 
 	var file, err = os.Open(filepath)
 	if err != nil {
@@ -135,7 +138,7 @@ func UnmarshalJsonFile(
 			Info("Could not unmarshal the JSON file.")
 	}
 
-	log.Info("Finished unmarshalJsonFile()")
+	log.Debug("Finished unmarshalJsonFile()")
 	return nil
 }
 

@@ -15,9 +15,10 @@ import (
 // and extracts information for visualization purposes.
 func generateReplaySummary(
 	replayData *replay_data.CleanedReplay,
-	summaryStruct *persistent_data.ReplaySummary) {
+	summaryStruct *persistent_data.ReplaySummary,
+) {
 
-	log.Info("Entered generateReplaySummary()")
+	log.Debug("Entered generateReplaySummary()")
 
 	// GameVersion information:
 	var gameVersionString string
@@ -109,8 +110,7 @@ func generateReplaySummary(
 		log.Error("Failed to increment matchup information!")
 	}
 
-	log.Info("Finished generateReplaySummary()")
-
+	log.Debug("Finished generateReplaySummary()")
 }
 
 // checkMatchup verifies the matchup string, increments the value of a counter
@@ -120,7 +120,7 @@ func checkMatchupIncrementCount(
 	summaryStruct *persistent_data.ReplaySummary,
 	gameTimeString string) bool {
 
-	log.Info("Entered checkMatchup()")
+	log.Debug("Entered checkMatchup()")
 
 	if matchupString == "TerrTerr" {
 		log.Info("Found matchup to be TvT")
@@ -178,7 +178,7 @@ func checkMatchupIncrementCount(
 // incrementIfKeyExists verifies if a key exists in a map and increments
 // the value of a counter that is within a specific key.
 func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
-	log.Info("Entered keyExistsIncrementValue()")
+	log.Debug("Entered keyExistsIncrementValue()")
 
 	if val, ok := mapToCheck[key]; ok {
 		mapToCheck[key] = val + 1
@@ -187,14 +187,17 @@ func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
 		mapToCheck[key] = 1
 		log.Info("Finished keyExistsIncrementValue(), new value added")
 	}
+
+	log.Debug("Finished keyExistsIncrementValue()")
 }
 
 func incrementNestedGameTimeIfKeyExists(
 	key string,
 	gameTime string,
-	mapToCheck map[string]map[string]int64) {
+	mapToCheck map[string]map[string]int64,
+) {
 
-	log.Info("Entered incrementNestedGameTimeIfKeyExists()")
+	log.Debug("Entered incrementNestedGameTimeIfKeyExists()")
 
 	if keyDateMap, ok := mapToCheck[key]; ok {
 		log.Info("Entered incrementNestedGameTimeIfKeyExists()")

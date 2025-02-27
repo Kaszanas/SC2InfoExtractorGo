@@ -9,7 +9,7 @@ import (
 // GetChunksOfFiles returns chunks of files for processing.
 // GetChunks returns chunks of any type for processing.
 func GetChunks[T any](slice []T, chunkSize int) ([][]T, bool) {
-	log.Info("Entered GetChunks()")
+	log.Debug("Entered GetChunks()")
 
 	if chunkSize < 0 {
 		return [][]T{}, false
@@ -31,7 +31,7 @@ func GetChunks[T any](slice []T, chunkSize int) ([][]T, bool) {
 		chunks = append(chunks, slice[i:end])
 	}
 
-	log.Info("Finished GetChunks(), returning")
+	log.Debug("Finished GetChunks(), returning")
 	return chunks, true
 }
 
@@ -44,7 +44,7 @@ func GetChunkListAndPackageBool[T any](
 	lenListOfInputFiles int,
 ) ([][]T, bool) {
 
-	log.Info("Entered getChunkListAndPackageBool()")
+	log.Debug("Entered getChunkListAndPackageBool()")
 
 	packageToZipBool := true
 	if numberOfPackages == 0 {

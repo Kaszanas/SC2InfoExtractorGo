@@ -12,14 +12,14 @@ import (
 // initBufferWriter initializes a bytes buffer that is used to hold all of the information that writer will write to the archive
 func InitBufferWriter() (*bytes.Buffer, *zip.Writer) {
 
-	log.Info("Entered initBufferWriter()")
+	log.Debug("Entered initBufferWriter()")
 
 	// Create a buffer to write our archive to:
 	buf := new(bytes.Buffer)
 	// Create a new zip archive:
 	w := zip.NewWriter(buf)
 
-	log.Info("Finished initBufferWriter()")
+	log.Debug("Finished initBufferWriter()")
 
 	return buf, w
 }
@@ -32,7 +32,7 @@ func SaveFileToArchive(
 	writer *zip.Writer,
 ) bool {
 
-	log.Info("Entered saveFileToArchive()")
+	log.Debug("Entered saveFileToArchive()")
 
 	jsonBytes := []byte(replayString)
 	_, fileHeaderFilename := filepath.Split(replayFile)
@@ -69,7 +69,7 @@ func SaveFileToArchive(
 		return false
 	}
 
-	log.Info("Finished SaveFileToArchive()")
+	log.Debug("Finished SaveFileToArchive()")
 
 	return true
 }

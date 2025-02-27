@@ -114,7 +114,7 @@ func testPipelineWrapperWithDir(
 ) (bool, string) {
 
 	log.WithFields(log.Fields{"testOutputDir": thisTestOutputDir}).
-		Info("Entered testPipelineWrapperWithDir()")
+		Debug("Entered testPipelineWrapperWithDir()")
 
 	// TODO: This should be refactored, new hybrid approach should be applied
 	// https://github.com/Kaszanas/SC2InfoExtractorGo/issues/49
@@ -305,7 +305,7 @@ func unmarshalSummaryFile(
 	pathToSummaryFile string,
 	mappingToPopulate *persistent_data.PackageSummary) (string, error) {
 
-	log.Info("Entered unmarshalSummaryFile()")
+	log.Debug("Entered unmarshalSummaryFile()")
 
 	var file, err = os.Open(pathToSummaryFile)
 	if err != nil {
@@ -323,7 +323,6 @@ func unmarshalSummaryFile(
 		return "Could not unmarshal the JSON file.", err
 	}
 
-	log.Info("Finished unmarshalSummaryFile()")
-
+	log.Debug("Finished unmarshalSummaryFile()")
 	return "", nil
 }

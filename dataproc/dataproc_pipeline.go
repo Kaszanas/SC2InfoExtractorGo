@@ -36,7 +36,7 @@ func PipelineWrapper(
 	cliFlags utils.CLIFlags,
 ) {
 
-	log.Info("Entered PipelineWrapper()")
+	log.Debug("Entered PipelineWrapper()")
 
 	// Progress bar logic:
 	// nChunks := len(fileChunks)
@@ -93,7 +93,7 @@ func PipelineWrapper(
 	wg.Wait()
 	progressBar.Close()
 
-	log.Info("Finished PipelineWrapper()")
+	log.Debug("Finished PipelineWrapper()")
 }
 
 // MultiprocessingChunkPipeline is a single instance of processing that
@@ -110,7 +110,7 @@ func MultiprocessingChunkPipeline(
 ) {
 
 	// Letting the orchestrator know that this processing task was finished:
-	log.Info("Entered MultiprocessingChunkPipeline()")
+	log.Debug("Entered MultiprocessingChunkPipeline()")
 
 	// Create ProcessingInfoFile:
 	processingInfoFile, processingInfoStruct, err := persistent_data.CreateProcessingInfoFile(
@@ -288,7 +288,7 @@ func MultiprocessingChunkPipeline(
 		}
 	}
 
-	log.Info("Finished MultiprocessingChunkPipeline()")
+	log.Debug("Finished MultiprocessingChunkPipeline()")
 }
 
 // FileProcessingPipeline is performing the whole data processing pipeline
@@ -301,7 +301,7 @@ func FileProcessingPipeline(
 	cliFlags utils.CLIFlags,
 ) (bool, replay_data.CleanedReplay, persistent_data.ReplaySummary, string) {
 
-	log.Info("Entered FileProcessingPipeline()")
+	log.Debug("Entered FileProcessingPipeline()")
 
 	// Read replay:
 	replayData, err := rep.NewFromFile(replayFile)
@@ -395,7 +395,6 @@ func FileProcessingPipeline(
 		}
 	}
 
-	log.Info("Finished FileProcessingPipeline()")
-
+	log.Debug("Finished FileProcessingPipeline()")
 	return true, cleanReplayStructure, summarizedReplay, ""
 }

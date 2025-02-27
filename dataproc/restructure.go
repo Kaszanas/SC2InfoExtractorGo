@@ -16,7 +16,7 @@ func redifineReplayStructure(
 	englishToForeignMapping map[string]string,
 ) (replay_data.CleanedReplay, bool) {
 
-	log.Info("Entered redefineReplayStructure()")
+	log.Debug("Entered redefineReplayStructure()")
 
 	cleanHeader := cleanup.CleanHeader(replayData)
 	cleanGameDescription, ok := cleanup.CleanGameDescription(replayData)
@@ -77,8 +77,7 @@ func redifineReplayStructure(
 	}
 	log.Info("Defined cleanedReplay struct")
 
-	log.Info("Finished cleanReplayStructure()")
-
+	log.Debug("Finished cleanReplayStructure()")
 	return cleanedReplay, true
 }
 

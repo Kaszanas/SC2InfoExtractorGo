@@ -16,8 +16,8 @@ func DownloadAllSC2Maps(
 ) error {
 
 	log.WithFields(log.Fields{
-		"mapsDirectory": cliFlags.MapsDirectory}).
-		Info("Entered downloadAllSC2Maps()")
+		"mapsDirectory": cliFlags.MapsDirectory},
+	).Debug("Entered downloadAllSC2Maps()")
 
 	defer downloaderSharedState.WorkerPool.StopAndWait()
 
@@ -50,5 +50,6 @@ func DownloadAllSC2Maps(
 	downloaderSharedState.WorkerPool.StopAndWait()
 	progressBarDownloadMaps.Close()
 
+	log.Debug("Finished downloadAllSC2Maps()")
 	return nil
 }
