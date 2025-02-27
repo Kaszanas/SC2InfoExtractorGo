@@ -39,12 +39,12 @@ func PipelineWrapper(
 	log.Info("Entered PipelineWrapper()")
 
 	// Progress bar logic:
-	nChunks := len(fileChunks)
+	// nChunks := len(fileChunks)
 	nFiles := 0
 	for _, chunk := range fileChunks {
 		nFiles += len(chunk)
 	}
-	progressBarLen := nChunks * nFiles
+	progressBarLen := nFiles
 	progressBar := utils.NewProgressBar(
 		progressBarLen,
 		"[4/4] Processing replays to JSON: ",

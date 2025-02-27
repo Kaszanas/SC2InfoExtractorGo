@@ -113,6 +113,10 @@ func CleanGameEvents(replayData *rep.Rep) []s2prot.Struct {
 			gameEventStruct = cleanCmdEvent(gameEvent, gameEventStruct)
 		}
 
+		if eventTypeName == "CameraUpdate" {
+			gameEventStruct = cleanCameraUpdateEvent(gameEventStruct)
+		}
+
 		gameEventsStructs = append(gameEventsStructs, gameEventStruct)
 	}
 	log.Info("Defined cleanGameEvents struct")
@@ -137,10 +141,10 @@ func cleanCmdEvent(
 	if gameEventData != nil {
 		gameEventData := gameEventStruct["data"].(s2prot.Struct)
 		// Recalculating SnapshotPoint for a TargetUnit:
-		gameEventData = recalculateSnapshotPoint(gameEventData)
+		gameEventData = recalculateCmdSnapshotPoint(gameEventData)
 
 		// Recalculating TargetPoint:
-		gameEventData = recalculateTargetPoint(gameEventData)
+		gameEventData = recalculateCmdTargetPoint(gameEventData)
 		gameEventStruct["data"] = gameEventData
 	}
 
@@ -150,49 +154,59 @@ func cleanCmdEvent(
 	return gameEventStruct
 }
 
-// recalculateTargetPoint recalculates the targetPoint
+// recalculateCmdTargetPoint recalculates the targetPoint
 // coordinates and returns the mutated gameEventData.
-func recalculateTargetPoint(gameEventData s2prot.Struct) s2prot.Struct {
+func recalculateCmdTargetPoint(gameEventData s2prot.Struct) s2prot.Struct {
 
-	targetPoint := gameEventData["targetPoint"]
+	targetPoint := gameEventData["TargetPoint"]
 	if targetPoint != nil {
-		targetPoint := gameEventData["targetPoint"].(s2prot.Struct)
+		targetPoint := gameEventData["TargetPoint"].(s2prot.Struct)
 
-		targetPointX := float64(targetPoint["x"].(int64)) / 8192
-		targetPointY := float64(targetPoint["y"].(int64)) / 8192
-		targetPointZ := float64(targetPoint["z"].(int64)) / 8192
+		nBits := 13
+		divisor := 1 << nBits
+		targetPointX := float64(targetPoint["x"].(int64)) / float64(divisor)
+		targetPointY := float64(targetPoint["y"].(int64)) / float64(divisor)
+		targetPointZ := float64(targetPoint["z"].(int64)) / float64(divisor)
+		// targetPointZ := float64(targetPoint["z"].(int64))
+
+		// REVIEW: sc2reader is not recalculating this coordinate,
+		// at the same time scelight provides a recalculated float value:
+		// - https://github.com/icza/scelight/blob/7360c30765c9bc2f25b069da4377b37e47d4b426/src-app/hu/scelight/sc2/rep/model/gameevents/cmd/TargetPoint.java#L41
+		// - https://github.com/ggtracker/sc2reader/blob/ba8b52ec0875df5cd869af09dccdb4d9f84ae921/sc2reader/events/game.py#L267-L292
 
 		targetPoint["x"] = targetPointX
 		targetPoint["y"] = targetPointY
 		targetPoint["z"] = targetPointZ
-		gameEventData["targetPoint"] = targetPoint
+		gameEventData["TargetPoint"] = targetPoint
 		return gameEventData
 	}
 
 	return gameEventData
 }
 
-// recalculateSnapshotPoint recalculates the snapshotPoint coordinates
+// recalculateCmdSnapshotPoint recalculates the snapshotPoint coordinates
 // for the targetUnit and returns the mutated gameEventData.
-func recalculateSnapshotPoint(gameEventData s2prot.Struct) s2prot.Struct {
+func recalculateCmdSnapshotPoint(gameEventData s2prot.Struct) s2prot.Struct {
 
-	targetUnit := gameEventData["targetUnit"]
+	targetUnit := gameEventData["TargetUnit"]
 	if targetUnit != nil {
-		targetUnit := gameEventData["targetUnit"].(s2prot.Struct)
+		targetUnit := gameEventData["TargetUnit"].(s2prot.Struct)
 		snapshotPoint := targetUnit["snapshotPoint"]
 		if snapshotPoint != nil {
 			snapshotPoint := targetUnit["snapshotPoint"].(s2prot.Struct)
 
-			snapshotPointX := float64(snapshotPoint["x"].(int64)) / 8192
-			snapshotPointY := float64(snapshotPoint["y"].(int64)) / 8192
-			snapshotPointZ := float64(snapshotPoint["z"].(int64)) / 8192
+			nBits := 13
+			divisor := 1 << nBits
+			snapshotPointX := float64(snapshotPoint["x"].(int64)) / float64(divisor)
+			snapshotPointY := float64(snapshotPoint["y"].(int64)) / float64(divisor)
+			snapshotPointZ := float64(snapshotPoint["z"].(int64)) / float64(divisor)
 
 			snapshotPoint["x"] = snapshotPointX
 			snapshotPoint["y"] = snapshotPointY
 			snapshotPoint["z"] = snapshotPointZ
 			targetUnit["snapshotPoint"] = snapshotPoint
 		}
-		gameEventData["targetUnit"] = targetUnit
+		gameEventData["TargetUnit"] = targetUnit
 		return gameEventData
 	}
 	return gameEventData
@@ -259,4 +273,66 @@ func getAbilityCommandName(gameEventAbility s2prot.Struct) s2prot.Struct {
 	// 	log.WithField("abilCmdData", abilCmdData).Debug("Got ability cmdData")
 
 	return gameEventAbility
+}
+
+func cleanCameraUpdateEvent(gameEventStruct s2prot.Struct) s2prot.Struct {
+
+	// TODO: recalculate camera coordinates (if needed)
+	// https: //github.com/icza/scelight/blob/7360c30765c9bc2f25b069da4377b37e47d4b426/src-app/hu/scelight/sc2/rep/model/gameevents/camera/TargetPoint.java#L41
+	// https://github.com/icza/scelight/blob/7360c30765c9bc2f25b069da4377b37e47d4b426/src-app/hu/scelight/sc2/rep/model/gameevents/camera/CameraUpdateEvent.java#L52
+
+	// REVIEW: Camera TargetPoint has different recalculation than Cmd TargetPoint
+	recalculatePitchYaw(gameEventStruct)
+	recalculateCameraTargetPoint(gameEventStruct)
+
+	return gameEventStruct
+}
+
+func recalculatePitchYaw(gameEventData s2prot.Struct) s2prot.Struct {
+
+	// Recalculate pitch to degrees
+	pitch := gameEventData["pitch"]
+	if pitch != nil {
+		pitch := gameEventData["pitch"].(int64)
+		// return pitch == null ? null : ( 45 * ( ( ( ( ( ( pitch << 5 ) - 0x2000 ) << 17 ) - 1 ) >> 17 ) + 1 ) ) / 4096.0f;
+		recalculatedPitch := float64((45 * ((((((pitch << 5) - 0x2000) << 17) - 1) >> 17) + 1))) / 4096.0
+
+		gameEventData["pitch"] = recalculatedPitch
+	}
+
+	// Recalculate yaw to degrees
+	yaw := gameEventData["yaw"]
+	if yaw != nil {
+		yaw := gameEventData["yaw"].(int64)
+		// return yaw == null ? null : ( 45 * ( ( ( ( ( ( yaw << 5 ) - 0x2000 ) << 17 ) - 1 ) >> 17 ) + 1 ) ) / 4096.0f;
+		recalculatedYaw := float64((45 * ((((((yaw << 5) - 0x2000) << 17) - 1) >> 17) + 1))) / 4096.0
+		gameEventData["yaw"] = recalculatedYaw
+	}
+
+	return gameEventData
+}
+
+func recalculateCameraTargetPoint(gameEventData s2prot.Struct) s2prot.Struct {
+
+	targetPoint := gameEventData["target"]
+	if targetPoint != nil {
+		targetPoint := gameEventData["target"].(s2prot.Struct)
+
+		targetPointX := float64(targetPoint["x"].(int64)) / 256.0
+		targetPointY := float64(targetPoint["y"].(int64)) / 256.0
+
+		targetPoint["x"] = targetPointX
+		targetPoint["y"] = targetPointY
+
+		// return distance == null ? null : distance / 256.0f;
+		distance := targetPoint["distance"]
+		if distance != nil {
+			distance := float64(targetPoint["distance"].(int64)) / 256.0
+			targetPoint["distance"] = distance
+		}
+	}
+
+	gameEventData["target"] = targetPoint
+
+	return gameEventData
 }
