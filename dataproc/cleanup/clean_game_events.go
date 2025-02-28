@@ -136,7 +136,7 @@ func cleanCmdEvent(
 	}
 
 	// Getting command flags:
-	gameEventJSONMap = getCmdFlags(gameEvent, gameEventJSONMap)
+	getCmdFlags(gameEvent, gameEventJSONMap)
 
 	log.Debug("Finished cleanCmdEvent()")
 }
@@ -228,7 +228,7 @@ func recalculateCmdSnapshotPoint(
 func getCmdFlags(
 	gameEvent s2prot.Event,
 	gameEventJSONMap map[string]interface{},
-) s2prot.Struct {
+) {
 
 	log.Debug("Entered getCmdFlags()")
 
@@ -241,7 +241,6 @@ func getCmdFlags(
 	gameEventJSONMap["cmdFlags"] = commandFlags
 
 	log.Debug("Finished getCmdFlags()")
-	return gameEventJSONMap
 }
 
 func getCommandType(cmdFlags int64) []string {
