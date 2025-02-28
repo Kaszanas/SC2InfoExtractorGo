@@ -28,12 +28,6 @@ func extractReplayData(
 		return false, replay_data.CleanedReplay{}
 	}
 
-	// Converting coordinates to fit the original map x, y ranges:
-	if !convertCoordinates(&structuredReplayData) {
-		log.Error("Error when converting coordinates.")
-		return false, replay_data.CleanedReplay{}
-	}
-
 	// Cleaning unused message and game events
 	if performCleanupBool {
 		if !cleanUnusedMessageEvents(&structuredReplayData) {
@@ -74,11 +68,22 @@ func cleanUnusedMessageEvents(replayData *replay_data.CleanedReplay) bool {
 func cleanUnusedGameEvents(replayData *replay_data.CleanedReplay) bool {
 	log.Debug("Entered cleanUnusedGameEvents()")
 
-	var cleanedGameEvents []s2prot.Struct
+	var cleanedGameEvents []map[string]interface{}
 	for _, event := range replayData.GameEvents {
-		if !contains(settings.UnusedGameEvents, event["evtTypeName"].(string)) {
-			cleanedGameEvents = append(cleanedGameEvents, event)
+
+		if eventType, ok := event["evtTypeName"]; ok {
+			if eventType == nil {
+				log.Error("Failed to get evtTypeName from GameEvents, cannot check for unused events.")
+				continue
+			}
+
+			castedEventType := eventType.(string)
+
+			if !contains(settings.UnusedGameEvents, castedEventType) {
+				cleanedGameEvents = append(cleanedGameEvents, event)
+			}
 		}
+
 	}
 
 	replayData.GameEvents = cleanedGameEvents

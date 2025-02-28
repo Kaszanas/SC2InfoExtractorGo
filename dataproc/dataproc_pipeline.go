@@ -150,7 +150,7 @@ func MultiprocessingChunkPipeline(
 		packageSummary = persistent_data.NewPackageSummary()
 	}
 
-	// Processing file:
+	// Processing files:
 	for _, replayFile := range listOfFiles {
 		func() {
 			// Defer the progress bar increment:
@@ -174,10 +174,18 @@ func MultiprocessingChunkPipeline(
 			)
 
 			// Create final replay string:
+			// REVIEW: Something is wrong here, marshalling to JSON fails from the cleanReplayStructure:
 			stringifyOk, replayString := stringifyReplay(&cleanReplayStructure)
 			if !stringifyOk {
-				log.WithField("file", replayFile).
-					Error("Failed to stringify the replay.")
+				pipelineErrorCounter++
+				log.WithFields(log.Fields{
+					"pipelineErrorCounter": pipelineErrorCounter,
+					"replayFile":           replayFile,
+				}).Error("Failed to stringify the replay.")
+				processingInfoStruct.AddToFailed(
+					replayFile,
+					"Failed to stringify the replay.",
+				)
 				return
 			}
 
@@ -373,7 +381,8 @@ func FileProcessingPipeline(
 	// Create replay summary:
 	summarizeOk, summarizedReplay := summarizeReplay(&cleanReplayStructure)
 	if !summarizeOk {
-		log.WithField("file", replayFile).Error("Failed to create replay summary.")
+		log.WithField("file", replayFile).
+			Error("Failed to create replay summary.")
 		return false,
 			replay_data.CleanedReplay{},
 			persistent_data.ReplaySummary{},

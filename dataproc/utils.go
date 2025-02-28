@@ -14,6 +14,6 @@ func contains(s []string, str string) bool {
 			return true
 		}
 	}
-	log.Info("Slice does not contain supplied string, returning false")
+	log.Debug("Slice does not contain supplied string, returning false")
 	return false
 }

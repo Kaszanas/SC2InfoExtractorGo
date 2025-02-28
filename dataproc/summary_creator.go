@@ -182,10 +182,10 @@ func incrementIfKeyExists(key string, mapToCheck map[string]int64) {
 
 	if val, ok := mapToCheck[key]; ok {
 		mapToCheck[key] = val + 1
-		log.Info("Finished keyExistsIncrementValue(), value incremented")
+		log.Debug("Finished keyExistsIncrementValue(), value incremented")
 	} else {
 		mapToCheck[key] = 1
-		log.Info("Finished keyExistsIncrementValue(), new value added")
+		log.Debug("Finished keyExistsIncrementValue(), new value added")
 	}
 
 	log.Debug("Finished keyExistsIncrementValue()")
@@ -200,13 +200,12 @@ func incrementNestedGameTimeIfKeyExists(
 	log.Debug("Entered incrementNestedGameTimeIfKeyExists()")
 
 	if keyDateMap, ok := mapToCheck[key]; ok {
-		log.Info("Entered incrementNestedGameTimeIfKeyExists()")
 		if val, ok := keyDateMap[gameTime]; ok {
 			keyDateMap[key] = val + 1
-			log.Info("Finished incrementNestedGameTimeIfKeyExists(), value incremented")
+			log.Debug("Finished incrementNestedGameTimeIfKeyExists(), value incremented")
 		} else {
 			keyDateMap[key] = 1
-			log.Info("Finished incrementNestedGameTimeIfKeyExists(), new value added")
+			log.Debug("Finished incrementNestedGameTimeIfKeyExists(), new value added")
 		}
 	} else {
 		mapToCheck[key] = map[string]int64{gameTime: 1}
