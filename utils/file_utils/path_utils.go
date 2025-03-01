@@ -16,8 +16,8 @@ func ListFiles(
 
 	log.WithFields(log.Fields{
 		"inputPath":           inputPath,
-		"filterFileExtension": filterFileExtension}).
-		Info("Entered ListFiles()")
+		"filterFileExtension": filterFileExtension},
+	).Debug("Entered ListFiles()")
 
 	var listOfFiles []string
 	if filterFileExtension == "" {
@@ -35,7 +35,9 @@ func ListFiles(
 		return nil, err
 	}
 
-	log.WithField("n_files", len(listOfFiles)).Info("Finished ListFiles()")
+	log.WithField(
+		"n_files", len(listOfFiles),
+	).Debug("Finished ListFiles()")
 	return listOfFiles, nil
 }
 
@@ -47,8 +49,8 @@ func ExistingFilesSet(
 
 	log.WithFields(log.Fields{
 		"inputPath":           inputPath,
-		"filterFileExtension": fiterFileExtension}).
-		Info("Entered ExistingFilesSet()")
+		"filterFileExtension": fiterFileExtension},
+	).Debug("Entered ExistingFilesSet()")
 
 	// List the files in the selected directory:
 	listOfFiles, err := ListFiles(inputPath, fiterFileExtension)

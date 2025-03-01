@@ -19,7 +19,7 @@ func TestGetChunksOfFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test Failed! Couldn't get the list of files.")
 	}
-	sliceOfChunks, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 1)
+	sliceOfChunks, getOk := chunk_utils.GetChunks(sliceOfFiles, 1)
 	if !getOk {
 		t.Fatalf("Test Failed! getChunksOfFiles() returned getOk = false.")
 	}

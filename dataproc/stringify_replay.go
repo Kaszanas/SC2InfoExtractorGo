@@ -10,7 +10,7 @@ import (
 // stringifyReplay performs marshaling of all of CleanedReplay information into a string.
 func stringifyReplay(replayData *replay_data.CleanedReplay) (bool, string) {
 
-	log.Info("Entered stringifyReplay()")
+	log.Debug("Entered stringifyReplay()")
 
 	replayDataString, marshalErr := json.MarshalIndent(replayData, "", "  ")
 	if marshalErr != nil {
@@ -18,6 +18,6 @@ func stringifyReplay(replayData *replay_data.CleanedReplay) (bool, string) {
 		return false, ""
 	}
 
-	log.Info("Finished stringifyReplay()")
+	log.Debug("Finished stringifyReplay()")
 	return true, string(replayDataString)
 }

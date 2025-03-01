@@ -106,8 +106,9 @@ func NewGameTimes() GameTimes {
 func CreatePackageSummaryFile(
 	absolutePathOutputDirectory string,
 	packageSummaryStruct PackageSummary,
-	fileNumber int) error {
-	log.Info("Entered CreatePackageSummaryFile()")
+	fileNumber int,
+) error {
+	log.Debug("Entered CreatePackageSummaryFile()")
 
 	packageSummaryFilename := fmt.Sprintf("package_summary_%v.json", fileNumber)
 	packageAbsolutePath := filepath.Join(absolutePathOutputDirectory, packageSummaryFilename)
@@ -137,16 +138,17 @@ func CreatePackageSummaryFile(
 		return fmt.Errorf("Failed to close the packageSummaryFile: %v", err)
 	}
 
-	log.Info("Finished CreatePackageSummaryFile()")
+	log.Debug("Finished CreatePackageSummaryFile()")
 	return nil
 }
 
 // AddReplaySummToPackageSumm adds the replay summary to the package summary.
 func AddReplaySummToPackageSumm(
 	replaySummary *ReplaySummary,
-	packageSummary *PackageSummary) {
+	packageSummary *PackageSummary,
+) {
 
-	log.Info("Entered AddReplaySummToPackageSumm()")
+	log.Debug("Entered AddReplaySummToPackageSumm()")
 
 	// Adding GameVersion information to PackageSummary:
 	collapseMapToMap(
@@ -240,15 +242,16 @@ func AddReplaySummToPackageSumm(
 		&packageSummary.Summary.MatchupGameTimes.ZvZMatchup)
 
 	log.Info("Finished collapsing matchup information")
-	log.Info("Finished AddReplaySummToPackageSumm()")
+	log.Debug("Finished AddReplaySummToPackageSumm()")
 }
 
 // collapseMapToMap adds the keys and values of one map to another.
 func collapseMapToMap(
 	mapToCollapse *map[string]int64,
-	collapseInto *map[string]int64) {
+	collapseInto *map[string]int64,
+) {
 
-	log.Info("Entered collapseMapToMap()")
+	log.Debug("Entered collapseMapToMap()")
 
 	for key, value := range *mapToCollapse {
 		collapseValue, ok := (*collapseInto)[key]
@@ -259,5 +262,5 @@ func collapseMapToMap(
 		}
 	}
 
-	log.Info("Finished collapseMapToMap()")
+	log.Debug("Finished collapseMapToMap()")
 }

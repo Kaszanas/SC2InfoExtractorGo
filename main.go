@@ -5,6 +5,8 @@ import (
 	"runtime/pprof"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
+
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/chunk_utils"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils/file_utils"
@@ -37,13 +39,13 @@ func mainReturnWithCode() int {
 	}
 
 	// Auxiliary files will be placed in the same directory as the log file:
-	downloadedMapsForReplaysFilepath := CLIflags.LogFlags.LogPath + "downloaded_maps_for_replays.json"
 	foreignToEnglishMappingFilepath := CLIflags.LogFlags.LogPath + "map_foreign_to_english_mapping.json"
 
 	log.WithFields(log.Fields{
 		"CLIflags.InputDirectory":             CLIflags.InputDirectory,
 		"CLIflags.OutputDirectory":            CLIflags.OutputDirectory,
 		"CLIflags.OnlyMapsDownload":           CLIflags.OnlyMapsDownload,
+		"CLIflags.SkipMapsDownload":           CLIflags.SkipMapsDownload,
 		"CLIflags.MapsDirectory":              CLIflags.MapsDirectory,
 		"CLIflags.NumberOfPackages":           CLIflags.NumberOfPackages,
 		"CLIflags.PerformIntegrityCheck":      CLIflags.PerformIntegrityCheck,
@@ -89,6 +91,17 @@ func mainReturnWithCode() int {
 		return 1
 	}
 
+	// Downloading the maps for the files:
+	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
+		listOfInputFiles,
+		foreignToEnglishMappingFilepath,
+		CLIflags,
+	)
+	if CLIflags.OnlyMapsDownload {
+		log.Info("Only maps download was chosen. Exiting.")
+		return 0
+	}
+
 	listOfChunksFiles, packageToZipBool := chunk_utils.GetChunkListAndPackageBool(
 		listOfInputFiles,
 		CLIflags.NumberOfPackages,
@@ -103,8 +116,7 @@ func mainReturnWithCode() int {
 		listOfChunksFiles,
 		packageToZipBool,
 		compressionMethod,
-		downloadedMapsForReplaysFilepath,
-		foreignToEnglishMappingFilepath,
+		foreignToEnglishMapping,
 		CLIflags,
 	)
 

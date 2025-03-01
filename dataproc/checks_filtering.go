@@ -9,7 +9,7 @@ import (
 // filterGameModes performs the check against a binary 0b1111111 getGameModeFlag
 // to verify if the currently processed replay game mode is correct.
 func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
-	log.Info("Entered filterGameModes()")
+	log.Debug("Entered filterGameModes()")
 
 	for _, value := range gameModeList {
 		// If we want to include games with game mode `value`,
@@ -21,7 +21,7 @@ func filterGameModes(replayData *rep.Rep, getGameModeFlag int) bool {
 		}
 	}
 
-	log.Info("Finished filterGameModes()")
+	log.Debug("Finished filterGameModes()")
 
 	// The game did not match any active filters, return false.
 	return false
@@ -34,7 +34,7 @@ func checkGameParameters(
 	replayData *rep.Rep,
 	gameInfoFilter VerifyGameInfo) bool {
 
-	log.Info("Entered checkGameParameters()")
+	log.Debug("Entered checkGameParameters()")
 
 	// Verifying if the number of players matches:
 	if !checkNumberOfPlayers(replayData, gameInfoFilter.maxPlayers) {
@@ -72,7 +72,7 @@ func checkGameParameters(
 		return false
 	}
 
-	log.Info("Finished checkGameParameters()")
+	log.Debug("Finished checkGameParameters()")
 	return true
 
 }
@@ -90,4 +90,13 @@ func checkNumberOfPlayers(replayData *rep.Rep, requiredNumber int) bool {
 
 	return numberOfPlayers == requiredNumber
 
+}
+
+// gameis1v1Ranked checks if the replay is a 1v1 ranked game.
+func gameIs1v1Ranked(replayData *rep.Rep) bool {
+
+	isAmm := replayData.InitData.GameDescription.GameOptions.Amm()
+	isCompetitive := replayData.InitData.GameDescription.GameOptions.CompetitiveOrRanked()
+	isTwoPlayers := len(replayData.Metadata.Players()) == 2
+	return isAmm && isCompetitive && isTwoPlayers
 }

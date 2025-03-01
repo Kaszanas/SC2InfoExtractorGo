@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/downloader"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/persistent_data"
 	settings "github.com/Kaszanas/SC2InfoExtractorGo/settings"
@@ -113,7 +114,7 @@ func testPipelineWrapperWithDir(
 ) (bool, string) {
 
 	log.WithFields(log.Fields{"testOutputDir": thisTestOutputDir}).
-		Info("Entered testPipelineWrapperWithDir()")
+		Debug("Entered testPipelineWrapperWithDir()")
 
 	// TODO: This should be refactored, new hybrid approach should be applied
 	// https://github.com/Kaszanas/SC2InfoExtractorGo/issues/49
@@ -129,7 +130,7 @@ func testPipelineWrapperWithDir(
 		return false, "Could not get the list of files."
 	}
 
-	chunksOfFiles, getOk := chunk_utils.GetChunksOfFiles(sliceOfFiles, 0)
+	chunksOfFiles, getOk := chunk_utils.GetChunks(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
 	}
@@ -163,15 +164,19 @@ func testPipelineWrapperWithDir(
 	compressionMethod := uint16(8)
 
 	// Auxiliary files will be placed in the same directory as the log file:
-	downloadedMapsForReplaysFilepath := logFlags.LogPath + "downloaded_maps_for_replays.json"
 	foreignToEnglishMappingFilepath := logFlags.LogPath + "map_foreign_to_english_mapping.json"
+
+	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
+		sliceOfFiles,
+		foreignToEnglishMappingFilepath,
+		flags,
+	)
 
 	PipelineWrapper(
 		chunksOfFiles,
 		packageToZip,
 		compressionMethod,
-		downloadedMapsForReplaysFilepath,
-		foreignToEnglishMappingFilepath,
+		foreignToEnglishMapping,
 		flags,
 	)
 
@@ -256,7 +261,8 @@ func pipelineTestCleanup(
 	testOutputPath string,
 	logFile *os.File,
 	deleteOutputDir bool,
-	deleteLogsFilepath bool) (string, error) {
+	deleteLogsFilepath bool,
+) (string, error) {
 
 	// err := os.Remove(processedFailedPath)
 	// if err != nil {
@@ -299,7 +305,7 @@ func unmarshalSummaryFile(
 	pathToSummaryFile string,
 	mappingToPopulate *persistent_data.PackageSummary) (string, error) {
 
-	log.Info("Entered unmarshalSummaryFile()")
+	log.Debug("Entered unmarshalSummaryFile()")
 
 	var file, err = os.Open(pathToSummaryFile)
 	if err != nil {
@@ -317,7 +323,6 @@ func unmarshalSummaryFile(
 		return "Could not unmarshal the JSON file.", err
 	}
 
-	log.Info("Finished unmarshalSummaryFile()")
-
+	log.Debug("Finished unmarshalSummaryFile()")
 	return "", nil
 }

@@ -10,12 +10,12 @@ import (
 // and creates histograms, counters etc. in order to visualize the replay contents.
 func summarizeReplay(replayData *replay_data.CleanedReplay) (bool, persistent_data.ReplaySummary) {
 
-	log.Info("Entered summarizeReplay()")
+	log.Debug("Entered summarizeReplay()")
 
 	initSummary := persistent_data.NewReplaySummary()
 
 	generateReplaySummary(replayData, &initSummary)
 
-	log.Info("Finished summarizeReplay()")
+	log.Debug("Finished summarizeReplay()")
 	return true, initSummary
 }

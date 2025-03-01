@@ -9,7 +9,6 @@ process_replays: ## Runs the container to process replays.
 	docker run \
 		-v "${PWD}/replays:/replays" \
 		-v "${PWD}/logs:/logs" \
-		-v "${PWD}/operation_files:/operation_files" \
 		sc2infoextractorgo \
 		-log_level 6
 
@@ -27,7 +26,12 @@ docker_run_dev: ## Runs the interactive shell in the dev container. Runs bash by
 	docker run -it sc2infoextractorgo:dev
 
 docker_go_lint: ## Runs the linter using the golangci-lint container.
-	docker run --rm -v .:/app -w /app golangci/golangci-lint:latest golangci-lint run -v --timeout 5m
+	docker run \
+			--rm \
+			-v .:/app \
+			-w /app \
+			golangci/golangci-lint:latest \
+			golangci-lint run -v --timeout 5m
 
 ###################
 #### TESTING ######
@@ -39,15 +43,24 @@ compose_build_dev:
 	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) build
 
 compose_run_dev_it:
-	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) run -it --rm sc2infoextractorgo-dev
+	docker compose \
+			-p $(PROJECT_NAME) \
+			-f $(TEST_COMPOSE) \
+			run -it --rm sc2infoextractorgo-dev
 
 compose_run_dev: compose_build_dev compose_run_dev_it
 
 action_compose_test: ## Runs the tests in a container.
-	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) run --rm sc2infoextractorgo-test
+	docker compose \
+			-p $(PROJECT_NAME) \
+			-f $(TEST_COMPOSE) \
+			run --rm sc2infoextractorgo-test
 
 compose_remove: ## Stops and removes the testing containers, images, volumes.
-	docker compose -p $(PROJECT_NAME) -f $(TEST_COMPOSE) down --volumes --remove-orphans
+	docker compose \
+			-p $(PROJECT_NAME) \
+			-f $(TEST_COMPOSE) \
+			down --volumes --remove-orphans
 
 compose_test: compose_build_dev action_compose_test compose_remove
 
