@@ -65,7 +65,7 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 					if _, err := os.Stat(thisTestOutputDir); os.IsNotExist(err) {
 						log.WithField("thisTestOutputDir", thisTestOutputDir).
 							Info("Test output dir does not exist, attempting to create.")
-						err = os.Mkdir(thisTestOutputDir, 0755)
+						err = os.MkdirAll(thisTestOutputDir, 0755)
 						if err != nil {
 							t.Fatal("Test Failed! Could not create output directory for test!")
 						}

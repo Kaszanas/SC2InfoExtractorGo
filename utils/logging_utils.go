@@ -19,7 +19,7 @@ func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 		log.WithField("error", err).
 			Warn("Log directory does not exist. Creating it.")
 
-		err := os.Mkdir(logDirectoryString, 0755)
+		err := os.MkdirAll(logDirectoryString, 0755)
 		if err != nil {
 			log.WithField("error", err).Fatal("Cannot create log directory.")
 			return &os.File{}, false

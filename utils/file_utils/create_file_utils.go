@@ -74,7 +74,7 @@ func GetOrCreateDirectory(pathToMapsDirectory string) error {
 	log.Debug("Entered CreateMapsDirectory()")
 
 	// Create the maps directory:
-	err := os.Mkdir(pathToMapsDirectory, 0777)
+	err := os.MkdirAll(pathToMapsDirectory, 0777)
 	if os.IsExist(err) {
 		log.Info("The maps directory already exists!")
 		return nil
