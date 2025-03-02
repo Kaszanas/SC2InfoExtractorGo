@@ -12,6 +12,7 @@ func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 
 	logDirectoryString := logPath
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetReportCaller(true)
 
 	// Check if the directory exists:
 	if _, err := os.Stat(logDirectoryString); os.IsNotExist(err) {
