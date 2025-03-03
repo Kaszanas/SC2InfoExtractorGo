@@ -7,7 +7,7 @@ toolchain go1.23.3
 require (
 	github.com/alitto/pond v1.9.2
 	github.com/icza/mpq v0.0.0-20230330132843-d3cdc0b651b7
-	github.com/icza/s2prot v1.5.2
+	github.com/icza/s2prot v1.5.2-0.20241207072335-d0e305d1c9c8
 	github.com/joho/godotenv v1.5.1
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/sirupsen/logrus v1.9.3
