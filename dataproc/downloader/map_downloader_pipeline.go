@@ -143,9 +143,11 @@ func readMapNamesFromMapFiles(
 				progressBarReadLocalizedData,
 			)
 		if err != nil {
-			log.WithField("error", err).
-				Error("Error reading map name from drive. Map could not be processed")
-			return nil
+			log.WithFields(log.Fields{
+				"error":               err,
+				"existingMapFilepath": existingMapFilepath,
+			}).Error("Error reading map name from drive. Map could not be processed")
+			continue
 		}
 
 		// Fill out the mapping, these maps won't be opened again:

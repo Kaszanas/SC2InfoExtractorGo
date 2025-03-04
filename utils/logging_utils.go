@@ -12,12 +12,16 @@ func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 
 	logDirectoryString := logPath
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetReportCaller(true)
 
 	// Check if the directory exists:
 	if _, err := os.Stat(logDirectoryString); os.IsNotExist(err) {
-		err := os.Mkdir(logDirectoryString, 0755)
+		log.WithField("error", err).
+			Warn("Log directory does not exist. Creating it.")
+
+		err := os.MkdirAll(logDirectoryString, 0755)
 		if err != nil {
-			log.Fatal(err)
+			log.WithField("error", err).Fatal("Cannot create log directory.")
 			return &os.File{}, false
 		}
 	}

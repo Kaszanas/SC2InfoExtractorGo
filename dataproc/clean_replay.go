@@ -14,7 +14,8 @@ import (
 func extractReplayData(
 	replayData *rep.Rep,
 	englishToForeignMapping map[string]string,
-	performCleanupBool bool) (bool, replay_data.CleanedReplay) {
+	performCleanupBool bool,
+) (bool, replay_data.CleanedReplay) {
 
 	log.Debug("Entered cleanReplay()")
 
