@@ -17,7 +17,8 @@ import (
 // checkAnonymizationInitializeGRPC verifies if the anonymization should
 // be performed and returns a pointer to GRPCAnonymizer.
 func checkAnonymizationInitializeGRPC(
-	performAnonymizationBool bool) *GRPCAnonymizer {
+	performAnonymizationBool bool,
+) *GRPCAnonymizer {
 	if !performAnonymizationBool {
 		return nil
 	}
@@ -39,7 +40,9 @@ func checkAnonymizationInitializeGRPC(
 func anonymizeReplay(
 	replayData *replay_data.CleanedReplay,
 	grpcAnonymizer *GRPCAnonymizer,
-	performChatAnonymizationBool bool) bool {
+	performChatAnonymizationBool bool,
+	performPlayerAnonymizationBool bool,
+) bool {
 
 	log.Debug("Entered anonymizeReplay()")
 
@@ -54,9 +57,11 @@ func anonymizeReplay(
 
 	// Anonymizing player information such as toon, nickname,
 	// and clan this is done in order to redact potentially sensitive information:
-	if !anonymizePlayers(replayData, grpcAnonymizer) {
-		log.Error("Failed to anonimize player information.")
-		return false
+	if performPlayerAnonymizationBool {
+		if !anonymizePlayers(replayData, grpcAnonymizer) {
+			log.Error("Failed to anonimize player information.")
+			return false
+		}
 	}
 
 	log.Debug("Finished anonymizeReplay()")
