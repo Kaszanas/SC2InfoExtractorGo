@@ -124,7 +124,7 @@ func MultiprocessingChunkPipeline(
 
 	// Initializing grpc connection if the user chose to perform anonymization.
 	grpcAnonymizer := checkAnonymizationInitializeGRPC(
-		cliFlags.PerformChatAnonymization || cliFlags.PerformPlayerAnonymization,
+		cliFlags.PerformPlayerAnonymization,
 	)
 	// In order to free up resources We are defering the connection closing when
 	// all of the files have been processed:
