@@ -152,6 +152,10 @@ func readMapNamesFromMapFiles(
 
 		// Fill out the mapping, these maps won't be opened again:
 		for foreignName, englishName := range foreignToEnglishMapping {
+			// Skip empty names:
+			if foreignName == "" || englishName == "" {
+				continue
+			}
 			mainForeignToEnglishMapping[foreignName] = englishName
 		}
 	}
