@@ -123,7 +123,9 @@ func MultiprocessingChunkPipeline(
 	defer processingInfoFile.Close()
 
 	// Initializing grpc connection if the user chose to perform anonymization.
-	grpcAnonymizer := checkAnonymizationInitializeGRPC(cliFlags.PerformChatAnonymization)
+	grpcAnonymizer := checkAnonymizationInitializeGRPC(
+		cliFlags.PerformPlayerAnonymization,
+	)
 	// In order to free up resources We are defering the connection closing when
 	// all of the files have been processed:
 	if grpcAnonymizer != nil {
@@ -394,7 +396,9 @@ func FileProcessingPipeline(
 		if !anonymizeReplay(
 			&cleanReplayStructure,
 			grpcAnonymizer,
-			cliFlags.PerformChatAnonymization) {
+			cliFlags.PerformChatAnonymization,
+			cliFlags.PerformPlayerAnonymization,
+		) {
 			log.WithField("file", replayFile).
 				Error("Failed to anonymize replay.")
 			return false,
