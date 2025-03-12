@@ -347,6 +347,14 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 		// https://github.com/Kaszanas/SC2InfoExtractorGo/issues/67
 		// Clean the foreign map name:
 		mapName = cleanMapName(mapName)
+		if mapName == "" || englishMapName == "" {
+			log.WithFields(log.Fields{
+				"mapFilepath":    mapFilepath,
+				"mapName":        mapName,
+				"englishMapName": englishMapName,
+			}).Warn("Empty map name, skipping")
+			continue
+		}
 
 		foreignToEnglishMapName[mapName] = englishMapName
 	}
