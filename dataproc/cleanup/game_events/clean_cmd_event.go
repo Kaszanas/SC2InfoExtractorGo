@@ -28,6 +28,9 @@ const (
 	TargetSelf                         // 0x80000
 )
 
+// CleanCmdEvent cleans the Cmd game event. It acuires the ability data,
+// recalculates the snapshotPoint for a TargetUnit and the TargetPoint.
+// Finally, it acquire the command flags and mutate the gameEventJSONMap.
 func CleanCmdEvent(
 	gameEvent s2prot.Event,
 	gameEventJSONMap map[string]any,
@@ -89,6 +92,8 @@ func getCmdFlags(
 	log.Debug("Finished getCmdFlags()")
 }
 
+// getCommandType translates the integer bitmask to a string array containing the command type.
+// Returns the string array.
 func getCommandType(cmdFlags int64) []string {
 
 	log.Debug("Entered getCommandType()")

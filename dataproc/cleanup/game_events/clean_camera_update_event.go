@@ -2,6 +2,9 @@ package game_events
 
 import log "github.com/sirupsen/logrus"
 
+// CleanCameraUpdateEvent cleans the CameraUpdate game event.
+// This is done by recalculating the pitch and yaw fields and mutating them.
+// Additionally, the camera target point is recalculated and mutated.
 func CleanCameraUpdateEvent(
 	gameEventJSONMap map[string]any,
 ) {
