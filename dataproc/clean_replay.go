@@ -69,7 +69,7 @@ func cleanUnusedMessageEvents(replayData *replay_data.CleanedReplay) bool {
 func cleanUnusedGameEvents(replayData *replay_data.CleanedReplay) bool {
 	log.Debug("Entered cleanUnusedGameEvents()")
 
-	var cleanedGameEvents []map[string]interface{}
+	var cleanedGameEvents []map[string]any
 	for _, event := range replayData.GameEvents {
 
 		if eventType, ok := event["evtTypeName"]; ok {

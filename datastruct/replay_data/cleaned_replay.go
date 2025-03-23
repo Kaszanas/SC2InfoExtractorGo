@@ -11,7 +11,7 @@ type CleanedReplay struct {
 	Details           CleanedDetails                 `json:"details"`
 	Metadata          CleanedMetadata                `json:"metadata"`
 	MessageEvents     []s2prot.Struct                `json:"messageEvents"`
-	GameEvents        []map[string]interface{}       `json:"gameEvents"`
+	GameEvents        []map[string]any               `json:"gameEvents"`
 	TrackerEvents     []s2prot.Struct                `json:"trackerEvents"`
 	ToonPlayerDescMap map[string]EnhancedToonDescMap `json:"ToonPlayerDescMap"` //map[string]*rep.PlayerDesc
 	GameEvtsErr       bool                           `json:"gameEventsErr"`

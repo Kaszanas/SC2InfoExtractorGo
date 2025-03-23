@@ -181,7 +181,7 @@ func testPipelineWrapperWithDir(
 	)
 
 	// Read and verify if the processed_failed information contains the same count of files processed as the output
-	logFileMap := map[string]interface{}(nil)
+	logFileMap := map[string]any(nil)
 	processedFailedPath := thisTestOutputDir + "processed_failed_0.log"
 	err = file_utils.UnmarshalJsonFile(processedFailedPath, &logFileMap)
 	if err != nil {
