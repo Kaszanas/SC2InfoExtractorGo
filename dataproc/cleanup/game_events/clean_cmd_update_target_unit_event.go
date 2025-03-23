@@ -2,10 +2,13 @@ package game_events
 
 import log "github.com/sirupsen/logrus"
 
-func CleanCmdUpdateTargetUnitEvent(gameEvent map[string]any) {
+// CleanCmdUpdateTargetUnitEvent cleans the CmdUpdateTargetUnit event.
+// It recalculates the target field containing the snapshotPoint coordinates.
+// The recalculated coordinates mutate the gameEventJSONMap map.
+func CleanCmdUpdateTargetUnitEvent(gameEventJSONMap map[string]any) {
 	// REVIEW: This event is not cleaned, should it be cleaned?
 
-	if target, ok := gameEvent["target"]; ok {
+	if target, ok := gameEventJSONMap["target"]; ok {
 		if target == nil {
 			log.Debug("Detected nil game event target")
 		} else {

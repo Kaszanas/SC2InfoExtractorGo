@@ -3,7 +3,7 @@ package game_events
 import log "github.com/sirupsen/logrus"
 
 // recalculateCmdTargetUnitSnapshotPoint recalculates the snapshotPoint coordinates
-// for the targetUnit and returns the mutated gameEventData.
+// for the targetUnit and mutates gameEventJSONMap.
 func recalculateCmdTargetUnitSnapshotPoint(
 	gameEventJSONMap map[string]any,
 ) {
@@ -51,7 +51,7 @@ func recalculateCmdTargetUnitSnapshotPoint(
 }
 
 // recalculateCmdTargetPoint recalculates the targetPoint
-// coordinates and returns the mutated gameEventData.
+// coordinates and mutates gameEventJSONMap.
 func recalculateCmdTargetPoint(
 	gameEventJSONMap map[string]any,
 ) {
@@ -100,28 +100,8 @@ func recalculateCmdTargetPoint(
 
 }
 
-// func recalculateGameEventTarget(gameEventJSONMap map[string]any) {
-// 	log.Debug("Entered recalculateGameEventTargetPoint()")
-
-// 	// REVIEW: Values seem to be extremely small after recalculation:
-// 	if target, ok := gameEventJSONMap["target"]; ok && target != nil {
-
-// 		castedTarget := target.(map[string]any)
-
-// 		if val, ok := castedTarget["x"]; ok {
-// 			castedTarget["x"] = val.(float64) / 8192.
-// 		}
-// 		if val, ok := castedTarget["y"]; ok {
-// 			castedTarget["y"] = val.(float64) / 8192.
-// 		}
-// 		if val, ok := castedTarget["z"]; ok {
-// 			castedTarget["z"] = val.(float64) / 8192.
-// 		}
-// 		gameEventJSONMap["target"] = castedTarget
-// 	}
-// 	log.Debug("Finished recalculateGameEventTargetPoint()")
-// }
-
+// recalculateCameraTargetPoint recalculates the target coordinates for the camera target.
+// Mutates the gameEventJSONMap.
 func recalculateCameraTargetPoint(
 	gameEventJSONMap map[string]any,
 ) {
@@ -164,6 +144,8 @@ func recalculateCameraTargetPoint(
 	log.Debug("Finished recalculateCameraTargetPoint()")
 }
 
+// recalculatePitchYaw recalculates the pitch and yaw values to degrees from their
+// original integer values and mutates the gameEventJSONMap.
 func recalculatePitchYaw(
 	gameEventJSONMap map[string]any,
 ) {

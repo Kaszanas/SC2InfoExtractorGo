@@ -6,9 +6,9 @@ import log "github.com/sirupsen/logrus"
 // This includes the recalculation of the target point coordinates.
 // Reference: https://github.com/icza/scelight/blob/master/src-app/hu/scelight/sc2/rep/model/gameevents/cmd/TargetPoint.java#L29
 // Command TargetPoints seem to have to be recalculated by dividing the x, y, z coordinates by 8192.
-func CleanCmdUpdateTargetPointEvent(gameEvent map[string]any) {
+func CleanCmdUpdateTargetPointEvent(gameEventJSONMap map[string]any) {
 
-	if target, ok := gameEvent["target"]; ok {
+	if target, ok := gameEventJSONMap["target"]; ok {
 		if target == nil {
 			log.Debug("Detected nil game event target")
 		} else {
@@ -24,7 +24,7 @@ func CleanCmdUpdateTargetPointEvent(gameEvent map[string]any) {
 				castedTarget["z"] = z.(float64) / 8192.
 			}
 
-			gameEvent["target"] = castedTarget
+			gameEventJSONMap["target"] = castedTarget
 
 		}
 

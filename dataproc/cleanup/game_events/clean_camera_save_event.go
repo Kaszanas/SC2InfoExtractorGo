@@ -2,6 +2,8 @@ package game_events
 
 import log "github.com/sirupsen/logrus"
 
+// CleanCameraSaveEvent cleans the CameraSave game event.
+// This is done by recalculating the camera target point and mutating it.
 func CleanCameraSaveEvent(
 	gameEventJSONMap map[string]any,
 ) {
