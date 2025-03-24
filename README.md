@@ -96,7 +96,7 @@ The following flags are available:
   -number_of_packages int
         Provide a number of zip packages to be created and compressed
         into a zip archive. Please remember that this number needs to be lower
-        than the number of processed files. If set to 0, will ommit the
+        than the number of processed files. If set to 0, will omit the
         zip packaging and output .json directly to drive. (default 1)
   -only_map_download
         Flag specifying if the tool is supposed to only download
@@ -107,7 +107,7 @@ The following flags are available:
         Flag, specifying if the chat anonymization should be performed.
   -perform_cleanup
         Flag specifying if the tool is supposed to perform the cleaning
-                        functions within the processing pipeline.
+        functions within the processing pipeline.
   -perform_filtering
         Flag, specifying if the pipeline ought to verify different hard coded game modes.
         If set to false completely bypasses the filtering.

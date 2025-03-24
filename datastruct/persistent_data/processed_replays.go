@@ -16,7 +16,7 @@ import (
 // This is used in a pre-processing step,
 // before the final processing of the replays and data extraction is performed.
 type DownloadedMapsReplaysToFileInfo struct {
-	DownloadedMapsForFiles map[string]interface{} `json:"downloadedMapsForFiles"`
+	DownloadedMapsForFiles map[string]any `json:"downloadedMapsForFiles"`
 }
 
 type FileInformationToCheck struct {
@@ -34,7 +34,7 @@ func OpenOrCreateDownloadedMapsForReplaysToFileInfo(
 
 	replaysToProcess := []string{}
 	// check if the file exists:
-	mapToPopulateFromPersistentJSON := make(map[string]interface{})
+	mapToPopulateFromPersistentJSON := make(map[string]any)
 	_, _, err := file_utils.ReadOrCreateFile(filepath)
 	if err != nil {
 		log.WithField("error", err).
@@ -93,7 +93,7 @@ func CheckFileInfoEq(
 func (prtm *DownloadedMapsReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
 	syncMap := &sync.Map{}
 	for key, value := range prtm.DownloadedMapsForFiles {
-		valueMap := value.(map[string]interface{})
+		valueMap := value.(map[string]any)
 		// JSON is unmarshaled to float64 so we need to cast it to int64:
 		infoToCheck := FileInformationToCheck{
 			LastModified: int64(valueMap["lastModified"].(float64)),
@@ -109,7 +109,7 @@ func (prtm *DownloadedMapsReplaysToFileInfo) ConvertToSyncMap() *sync.Map {
 func FromSyncMapToDownloadedMapsForReplaysToFileInfo(
 	syncMap *sync.Map,
 ) DownloadedMapsReplaysToFileInfo {
-	downloadedMapsForReplays := make(map[string]interface{})
+	downloadedMapsForReplays := make(map[string]any)
 	syncMap.Range(func(key, value interface{}) bool {
 
 		keyStr := key.(string)

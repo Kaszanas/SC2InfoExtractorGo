@@ -90,13 +90,13 @@ func GetOrCreateDirectory(pathToMapsDirectory string) error {
 }
 
 // UnmarshalJSONMapping wraps around unmarshalLocaleFile and returns
-// an empty map[string]interface{} if it fails to unmarshal the original locale mapping file.
+// an empty map[string]any if it fails to unmarshal the original locale mapping file.
 func UnmarshalJSONMapping(
 	pathToMappingFile string,
-) (map[string]interface{}, error) {
+) (map[string]any, error) {
 	log.Debug("Entered unmarshalLocaleMapping()")
 
-	unmarshalledMap := make(map[string]interface{})
+	unmarshalledMap := make(map[string]any)
 	err := UnmarshalJsonFile(pathToMappingFile, &unmarshalledMap)
 	if err != nil {
 		log.WithField("pathToMappingFile", pathToMappingFile).
@@ -113,7 +113,7 @@ func UnmarshalJSONMapping(
 // supplied by: https://github.com/Kaszanas/SC2MapLocaleExtractor
 func UnmarshalJsonFile(
 	filepath string,
-	mapToPopulate *map[string]interface{},
+	mapToPopulate *map[string]any,
 ) error {
 	log.Debug("Entered unmarshalJsonFile()")
 
