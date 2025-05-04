@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"net/url"
+	"path/filepath"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
@@ -9,24 +10,46 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func MapDownloaderPipeline(
+func DependencyDownloaderPipeline(
 	files []string,
 	foreignToEnglishMappingFilepath string,
 	cliFlags utils.CLIFlags,
 ) map[string]string {
 
-	if !cliFlags.SkipMapsDownload {
-		// Create maps directory if it doesn't exist:
-		err := file_utils.GetOrCreateDirectory(cliFlags.MapsDirectory)
+	if !cliFlags.SkipDependencyDownload {
+		// Create dependency directory if it doesn't exist:
+		err := file_utils.GetOrCreateDirectory(cliFlags.DependencyDirectory)
 		if err != nil {
-			log.WithField("error", err).Error("Failed to create maps directory.")
+			log.WithField("error", err).Error("Failed to create dependencies directory.")
+			return nil
+		}
+
+		// create the directory for map downloads if it doesn't exist:
+		mapsDirectory := filepath.Join(
+			cliFlags.DependencyDirectory,
+			"maps",
+		)
+		err = file_utils.GetOrCreateDirectory(mapsDirectory)
+		if err != nil {
+			log.WithField("error", err).Error("Failed to create other maps directory.")
+			return nil
+		}
+
+		// Create directory for other dependency downloads if it doesn't exist:
+		otherDependenciesDirectory := filepath.Join(
+			cliFlags.DependencyDirectory,
+			"other_dependencies",
+		)
+		err = file_utils.GetOrCreateDirectory(otherDependenciesDirectory)
+		if err != nil {
+			log.WithField("error", err).Error("Failed to create other dependencies directory.")
 			return nil
 		}
 
 		// REVIEW: Start Review:
 		// STAGE ONE PRE-PROCESS:
 		// Get all map URLs into a set:
-		URLsToDownload, err := getURLsForMissingMaps(
+		URLsToDownload, err := getURLsForMissingDependencies(
 			files,
 			cliFlags,
 		)
@@ -41,7 +64,7 @@ func MapDownloaderPipeline(
 
 		// STAGE-TWO PRE-PROCESS: Attempt downloading all SC2 maps from the read replays.
 		// Download all SC2 maps from the replays if they were not processed before:
-		downloadMissingMaps(URLsToDownload, cliFlags)
+		downloadMissingDependencies(URLsToDownload, cliFlags)
 	}
 
 	// STAGE-Three PRE-PROCESS:
@@ -56,13 +79,13 @@ func MapDownloaderPipeline(
 	return mainForeignToEnglishMapping
 }
 
-func getURLsForMissingMaps(
+func getURLsForMissingDependencies(
 	files []string,
 	cliFlags utils.CLIFlags,
-) (map[url.URL]string, error) {
+) (map[url.URL]sc2_map_processing.ReplayFilenameIsMap, error) {
 
 	existingMapFilesSet, err := file_utils.ExistingFilesSet(
-		cliFlags.MapsDirectory, ".s2ma",
+		cliFlags.DependencyDirectory, ".s2ma",
 	)
 	if err != nil {
 		log.WithField("error", err).
@@ -71,7 +94,7 @@ func getURLsForMissingMaps(
 	}
 
 	URLsToDownload, err := sc2_map_processing.
-		GetAllReplaysMapURLs(
+		GetAllReplaysDependencyURLs(
 			files,
 			existingMapFilesSet,
 			cliFlags,
@@ -90,8 +113,8 @@ type URLToFileTuple struct {
 	Filename string
 }
 
-func downloadMissingMaps(
-	URLsToDownload map[url.URL]string,
+func downloadMissingDependencies(
+	URLsToDownload map[url.URL]sc2_map_processing.ReplayFilenameIsMap,
 	cliFlags utils.CLIFlags,
 ) {
 
@@ -105,7 +128,7 @@ func downloadMissingMaps(
 		return
 	}
 
-	err = DownloadAllSC2Maps(
+	err = DownloadAllSC2Dependencies(
 		&downloaderSharedState,
 		URLsToDownload,
 		cliFlags,
@@ -122,7 +145,7 @@ func readMapNamesFromMapFiles(
 ) map[string]string {
 
 	existingMapFilesSet, err := file_utils.ExistingFilesSet(
-		cliFlags.MapsDirectory, ".s2ma",
+		cliFlags.DependencyDirectory, ".s2ma",
 	)
 	if err != nil {
 		log.WithField("error", err).

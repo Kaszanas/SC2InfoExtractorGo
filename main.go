@@ -44,9 +44,9 @@ func mainReturnWithCode() int {
 	log.WithFields(log.Fields{
 		"CLIflags.InputDirectory":             CLIflags.InputDirectory,
 		"CLIflags.OutputDirectory":            CLIflags.OutputDirectory,
-		"CLIflags.OnlyMapsDownload":           CLIflags.OnlyMapsDownload,
-		"CLIflags.SkipMapsDownload":           CLIflags.SkipMapsDownload,
-		"CLIflags.MapsDirectory":              CLIflags.MapsDirectory,
+		"CLIflags.OnlyDependencyDownload":     CLIflags.OnlyDependencyDownload,
+		"CLIflags.SkipDependencyDownload":     CLIflags.SkipDependencyDownload,
+		"CLIflags.DependencyDirectory":        CLIflags.DependencyDirectory,
 		"CLIflags.NumberOfPackages":           CLIflags.NumberOfPackages,
 		"CLIflags.PerformIntegrityCheck":      CLIflags.PerformIntegrityCheck,
 		"CLIflags.PerformValidityCheck":       CLIflags.PerformValidityCheck,
@@ -91,14 +91,14 @@ func mainReturnWithCode() int {
 		return 1
 	}
 
-	// Downloading the maps for the files:
-	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
+	// Downloading the dependencies for the files:
+	foreignToEnglishMapping := downloader.DependencyDownloaderPipeline(
 		listOfInputFiles,
 		foreignToEnglishMappingFilepath,
 		CLIflags,
 	)
-	if CLIflags.OnlyMapsDownload {
-		log.Info("Only maps download was chosen. Exiting.")
+	if CLIflags.OnlyDependencyDownload {
+		log.Info("Only dependency download was chosen. Exiting.")
 		return 0
 	}
 
