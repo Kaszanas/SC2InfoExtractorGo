@@ -211,8 +211,8 @@ func dispatchMapDownloadTask(
 	// Check if the english map name was already read from the drive, return if present:
 	_, ok := (*downloaderSharedState.DownloadedDependenciesSet)[maybeDependencyFilepath]
 	if ok {
-		log.WithField("mapHashAndExtension", filenameAndIsMap.DependencyFilename).
-			Info("Map name was already processed in mapHashAndExtensionToName, returning.")
+		log.WithField("DependencyFilename", filenameAndIsMap.DependencyFilename).
+			Info("Dependency name was already processed in DownloadedDependenciesSet, returning.")
 		return nil
 	}
 

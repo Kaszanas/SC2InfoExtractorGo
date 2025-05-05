@@ -120,20 +120,20 @@ func GetAllReplaysDependencyURLs(
 
 			replayProcessingDependencyInfo := output.mapOfURLs[replayDependencyURL]
 
-			replayHashExtension := replayProcessingDependencyInfo.DependencyHashAndExtension
+			dependencyHashExtension := replayProcessingDependencyInfo.DependencyHashAndExtension
 
 			// The map will have to be downloaded only if it is not already existing
 			// on the disk:
-			_, ok := dependenciesOnDriveSet[replayHashExtension]
+			_, ok := dependenciesOnDriveSet[dependencyHashExtension]
 			if ok {
 				// the map is already downloaded, skip it:
-				log.WithField("map", replayHashExtension).
-					Debug("Map is already downloaded, continuing.")
+				log.WithField("dependency", dependencyHashExtension).
+					Debug("Dependency is already downloaded, continuing.")
 				continue
 			}
 
 			toDownloadDependencyToFileMap[replayDependencyURL] = ReplayFilenameIsMap{
-				DependencyFilename: replayHashExtension,
+				DependencyFilename: dependencyHashExtension,
 				IsMap:              replayProcessingDependencyInfo.IsMap,
 			}
 		}
