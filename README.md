@@ -10,7 +10,7 @@ A tool meant to allow for quick data extraction from StarCraft 2 replay files ".
 > This steps assumes that you have Docker installed on your machine and working.
 > Additionally, you will either need to pull the docker image from DockerHub or build it locally as described in [Build Docker Images](CONTRIBUTING.md#build-docker-images).
 
-The easiest way to run this tool is to use the provided Docker image release. Please note that the `maps` directory can be mounted to see what map files are downloaded, and what map files were pre-seeded with the Docker Image. Other command line options are described in [CLI Options](#cli-options).
+The easiest way to run this tool is to use the provided Docker image release. Please note that the `dependencies` directory can be mounted to see what dependency files are downloaded, and what dependency files were pre-seeded with the Docker Image. Other command line options are described in [CLI Options](#cli-options).
 
 Commands below showcases the exampe usage of the tool.
 **Steps:**
@@ -33,14 +33,14 @@ docker pull kaszanas/sc2infoextractorgo:latest
     -v </path/to/your/replays>:/app/replays/input \
     -v </path/to/your/output>:/app/replays/output \
     -v </path/to/your/logs>:/app/logs \
-    -v </path/to/your/maps>:/app/maps \
+    -v </path/to/your/dependencies>:/app/dependencies \
     sc2infoextractorgo:latest -help
     ```
 4. When you execute the processing command, please note that you need to pass the appropriate paths to the tool that are withing the container. The default paths are:
     - Input directory: `/app/replays/input`
     - Output directory: `/app/replays/output`
     - Logs directory: `/app/logs`
-    - Maps directory: `/app/maps`
+    - Dependency directory: `/app/dependencies`
     - Additionally the tool outputs some auxiliary files that can be used for debugging purposes. These are created in the main directory of the container `/app/`.
 
 
@@ -74,11 +74,12 @@ SC2InfoExtractorGo.exe -help
 The following flags are available:
 
 ```
+  -dependency_directory string
+        Directory where the replay dependencies will be downloaded as a result of the replay processing. (default "./dependencies/")                                                    
+  -game_mode_filter int
+        Specifies which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111 (default 0b11111111) (default 255)
   -help
         Show command usage
-  -game_mode_filter int
-        Specifies which game mode should be included from the processed files
-        in a format of a binary flag: AllGameModes: 0b11111111 (default 0b11111111) (default 255)
   -input string
         Input directory where .SC2Replay files are held. (default "./replays/input")
   -log_dir string
@@ -89,18 +90,16 @@ The following flags are available:
         Error - 3, Warn - 4,
         Info - 5, Debug - 6,
         Trace - 7 (default 4)
-  -maps_directory string
-        Directory where the maps will be downloaded as a result of the replay processing. (default "./maps/")
   -max_procs int
         Specifies the number of logic cores of a processor that will be used for processing (default runtime.NumCPU()). (default 24)
   -number_of_packages int
         Provide a number of zip packages to be created and compressed
         into a zip archive. Please remember that this number needs to be lower
-        than the number of processed files. If set to 0, will omit the
+        than the number of processed files. If set to 0, will ommit the
         zip packaging and output .json directly to drive. (default 1)
-  -only_map_download
+  -only_dependency_download
         Flag specifying if the tool is supposed to only download
-        the maps and not process the replays.
+        the replay dependencies and not process the replays.
   -output string
         Output directory where compressed zip packages will be saved. (default "./replays/output")
   -perform_chat_anonymization
@@ -122,8 +121,8 @@ The following flags are available:
   -perform_validity_checks
         Flag, specifying if the tool is supposed to use hardcoded validity checks
         and verify if the replay file variables are within 'common sense' ranges.
-  -skip_map_download
-        Flag specifying if the tool is supposed to skip the map download
+  -skip_dependency_download
+        Flag specifying if the tool is supposed to skip the dependency download.
   -with_cpu_profiler string
         Set path to the file where pprof cpu profiler will save its information.
         If this is empty no profiling is performed.
@@ -142,7 +141,7 @@ This is required because of the multiprocessing nature of our code that needs to
 
 ### Map Translation Support
 
-Existing implementation downloads the maps from the Blizzard servers. This is to normalize the map names to English language. When there is no internet connection available, our tool should fallback to reading the map names from the files placed in the ```./maps``` directory.
+Existing implementation downloads the maps from the Blizzard servers. This is to normalize the map names to English language. When there is no internet connection available, our tool should fallback to reading the map names from the files placed in the ```./dependencies``` directory.
 
 ### Filtering Capabilities
 
@@ -170,12 +169,12 @@ This repository is licensed under GNU GPL v3 license. If You would like to acqui
   author    = {Białecki, Andrzej and
                Białecki, Piotr and
                Krupiński, Leszek},
-  title     = {{Kaszanas/SC2InfoExtractorGo: 1.2.0 
+  title     = {{Kaszanas/SC2InfoExtractorGo: 2.1.3 
                SC2InfoExtractorGo Release}},
   month     = {jun},
   year      = {2022},
   publisher = {Zenodo},
-  version   = {1.2.0},
+  version   = {2.1.3},
   doi       = {10.5281/zenodo.5296788},
   url       = {https://doi.org/10.5281/zenodo.5296788}
 }

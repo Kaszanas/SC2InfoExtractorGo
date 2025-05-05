@@ -20,27 +20,33 @@ import (
 
 // ReplayProcessingChannelContents is a struct that is used to pass data
 // between the orchestrator and the workers in the pipeline.
-type ReplayMapExtractProcessingChannel struct {
+type ReplayDependencyExtractProcessingChannel struct {
 	Index        int
 	ChunkOfFiles []string
 }
 
-type ReplayProcessingMapInfo struct {
-	ReplayFilename      string
-	MapHashAndExtension string
+type ReplayProcessingDependencyInfo struct {
+	ReplayFilename             string
+	DependencyHashAndExtension string
+	IsMap                      bool
+}
+
+type ReplayFilenameIsMap struct {
+	DependencyFilename string
+	IsMap              bool
 }
 
 type ExtractMapChannelContents struct {
-	mapOfURLs map[url.URL]ReplayProcessingMapInfo
+	mapOfURLs map[url.URL]ReplayProcessingDependencyInfo
 }
 
-// GetAllReplaysMapURLs retrieves the map URLs from the replay files.
-func GetAllReplaysMapURLs(
+// GetAllReplaysDependencyURLs retrieves the map URLs from the replay files.
+func GetAllReplaysDependencyURLs(
 	files []string,
-	mapsOnDriveSet map[string]struct{},
+	dependenciesOnDriveSet map[string]struct{},
 	cliFlags utils.CLIFlags,
 ) (
-	map[url.URL]string,
+	map[url.URL]ReplayFilenameIsMap,
 	error,
 ) {
 
@@ -56,11 +62,11 @@ func GetAllReplaysMapURLs(
 	// If it is specified by the user to perform the processing without
 	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
 	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
-	inputChannel := make(chan ReplayMapExtractProcessingChannel, cliFlags.NumberOfThreads+1)
+	inputChannel := make(chan ReplayDependencyExtractProcessingChannel, cliFlags.NumberOfThreads+1)
 	outputChannel := make(chan ExtractMapChannelContents, cliFlags.NumberOfThreads+1)
 
 	// Creating chunks of files for data parallel multiprocessing:
-	downloadMapsChunks, _ := chunk_utils.GetChunkListAndPackageBool(
+	downloadDependenciesChunks, _ := chunk_utils.GetChunkListAndPackageBool(
 		files,
 		0,
 		cliFlags.NumberOfThreads,
@@ -73,7 +79,7 @@ func GetAllReplaysMapURLs(
 	wg.Add(cliFlags.NumberOfThreads)
 
 	// Spin up workers waiting for chunks to process:
-	for i := 0; i < cliFlags.NumberOfThreads; i++ {
+	for range cliFlags.NumberOfThreads {
 		go createMapExtractingGoroutines(
 			inputChannel,
 			outputChannel,
@@ -88,8 +94,8 @@ func GetAllReplaysMapURLs(
 	// the information about which maps should be downloaded will be put into a single
 	// map which will handle the duplicates:
 	// Passing the chunks to input channel before the workers start processing:
-	for index, chunk := range downloadMapsChunks {
-		inputChannel <- ReplayMapExtractProcessingChannel{
+	for index, chunk := range downloadDependenciesChunks {
+		inputChannel <- ReplayDependencyExtractProcessingChannel{
 			Index:        index,
 			ChunkOfFiles: chunk,
 		}
@@ -107,37 +113,43 @@ func GetAllReplaysMapURLs(
 
 	// Consume the output from the workers. This is needed to get rid of the
 	// duplicate map URLs, multiple replays can have the same map:
-	toDownloadURLToFileMap := make(map[url.URL]string)
+	toDownloadDependencyToFileMap := make(map[url.URL]ReplayFilenameIsMap)
 	for output := range outputChannel {
-		for url := range output.mapOfURLs {
 
-			replayHashExtension := output.mapOfURLs[url].MapHashAndExtension
+		for replayDependencyURL := range output.mapOfURLs {
+
+			replayProcessingDependencyInfo := output.mapOfURLs[replayDependencyURL]
+
+			dependencyHashExtension := replayProcessingDependencyInfo.DependencyHashAndExtension
 
 			// The map will have to be downloaded only if it is not already existing
 			// on the disk:
-			_, ok := mapsOnDriveSet[replayHashExtension]
+			_, ok := dependenciesOnDriveSet[dependencyHashExtension]
 			if ok {
 				// the map is already downloaded, skip it:
-				log.WithField("map", replayHashExtension).
-					Debug("Map is already downloaded, continuing.")
+				log.WithField("dependency", dependencyHashExtension).
+					Debug("Dependency is already downloaded, continuing.")
 				continue
 			}
 
-			toDownloadURLToFileMap[url] = replayHashExtension
+			toDownloadDependencyToFileMap[replayDependencyURL] = ReplayFilenameIsMap{
+				DependencyFilename: dependencyHashExtension,
+				IsMap:              replayProcessingDependencyInfo.IsMap,
+			}
 		}
 	}
 
-	log.WithField("nMapsToDownload", len(toDownloadURLToFileMap)).
+	log.WithField("nMapsToDownload", len(toDownloadDependencyToFileMap)).
 		Debug("Finished GetAllReplaysMapURLs()")
 
 	// Return all of the URLs
-	return toDownloadURLToFileMap, nil
+	return toDownloadDependencyToFileMap, nil
 }
 
 // createMapExtractingGoroutines creates the goroutines that process the replay files
 // and extract the map URLs.
 func createMapExtractingGoroutines(
-	inputChannel chan ReplayMapExtractProcessingChannel,
+	inputChannel chan ReplayDependencyExtractProcessingChannel,
 	outputChannel chan ExtractMapChannelContents,
 	progressBar *progressbar.ProgressBar,
 	wg *sync.WaitGroup,
@@ -151,7 +163,7 @@ func createMapExtractingGoroutines(
 			return
 		}
 		// Process the chunk of files and add the URLs to the map
-		mapOfURLs := make(map[url.URL]ReplayProcessingMapInfo)
+		mapOfURLs := make(map[url.URL]ReplayProcessingDependencyInfo)
 		for _, replayFullFilepath := range channelContents.ChunkOfFiles {
 			// Filling out the map of urls that will be returned through the output channel
 			// the caller will handle the consumption of the output channel and
@@ -181,7 +193,7 @@ func createMapExtractingGoroutines(
 func processFileExtractMapURL(
 	progressBar *progressbar.ProgressBar,
 	replayFullFilepath string,
-	urls map[url.URL]ReplayProcessingMapInfo,
+	urls map[url.URL]ReplayProcessingDependencyInfo,
 ) bool {
 
 	// Lambda to process the replay file to have
@@ -196,7 +208,7 @@ func processFileExtractMapURL(
 	}()
 	replayFilename := filepath.Base(replayFullFilepath)
 
-	mapURL, mapHashAndExtension, err := getURL(replayFullFilepath)
+	dependencyURLs, err := getURL(replayFullFilepath)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error":      err,
@@ -205,42 +217,52 @@ func processFileExtractMapURL(
 		return false
 	}
 
-	// Store the map URL and hash:
-	urls[mapURL] = ReplayProcessingMapInfo{
-		ReplayFilename:      replayFilename,
-		MapHashAndExtension: mapHashAndExtension,
+	// Store the dependency URLs, hash and information if the dependency is a map:
+	for _, dependencyInfo := range dependencyURLs {
+		urls[*dependencyInfo.URL] = ReplayProcessingDependencyInfo{
+			ReplayFilename:             replayFilename,
+			DependencyHashAndExtension: dependencyInfo.HashAndExtensionMerged,
+			IsMap:                      dependencyInfo.IsMap,
+		}
 	}
 
 	return true
 }
 
 // getURL retrieves the map URL from the replay file.
-func getURL(replayFullFilepath string) (url.URL, string, error) {
+func getURL(replayFullFilepath string) ([]SC2DependencyInformation, error) {
 	// Assume getURLsFromReplay is a function that
 	// returns a slice of URLs from a replay file
 	replayData, err := rep.NewFromFile(replayFullFilepath)
 	if err != nil {
 		log.WithFields(log.Fields{"file": replayFullFilepath, "error": err}).
 			Error("Failed to read replay file to retrieve map data")
-		return url.URL{}, "", err
+		return []SC2DependencyInformation{}, err
 	}
 
-	mapURL, mapHashAndExtension, mapRetrieved :=
-		GetMapURLAndHashFromReplayData(replayData)
+	dependencyURLs, mapRetrieved :=
+		GetDependencyURLsAndHashFromReplayData(replayData)
 	if !mapRetrieved {
 		log.WithField("file", replayFullFilepath).
 			Warning("Failed to get map URL and hash from replay data")
-		return url.URL{}, "", fmt.Errorf("failed to get map URL and hash from replay data")
+		return []SC2DependencyInformation{}, fmt.Errorf("failed to get map URL and hash from replay data")
 	}
 
-	return mapURL, mapHashAndExtension, nil
+	return dependencyURLs, nil
 }
 
-// GetMapURLAndHashFromReplayData extracts the map URL,
+type SC2DependencyInformation struct {
+	URL                    *url.URL
+	URLString              string
+	HashAndExtensionMerged string
+	IsMap                  bool
+}
+
+// GetDependencyURLsAndHashFromReplayData extracts the map URL,
 // hash, and file extension from the replay data.
-func GetMapURLAndHashFromReplayData(
+func GetDependencyURLsAndHashFromReplayData(
 	replayData *rep.Rep,
-) (url.URL, string, bool) {
+) ([]SC2DependencyInformation, bool) {
 	log.Debug("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
 
@@ -255,7 +277,7 @@ func GetMapURLAndHashFromReplayData(
 				Warning(
 					"Detected unsupported region! Won't download the map! Replay may fail further processing!",
 				)
-			return url.URL{}, "", false
+			return []SC2DependencyInformation{}, false
 		}
 	}
 
@@ -268,14 +290,32 @@ func GetMapURLAndHashFromReplayData(
 
 	depotURL := region.DepotURL
 
-	hashAndExtensionMerged := fmt.Sprintf(
-		"%s.%s",
-		mapCacheHandle.Digest,
-		mapCacheHandle.Type,
-	)
-	mapURL := depotURL.JoinPath(hashAndExtensionMerged)
+	dependencyURLs := []SC2DependencyInformation{}
+
+	for index, dependency := range cacheHandles {
+		hashAndExtensionMerged := fmt.Sprintf(
+			"%s.%s",
+			dependency.Digest,
+			dependency.Type,
+		)
+		dependencyURL := depotURL.JoinPath(hashAndExtensionMerged)
+
+		isMap := false
+		if index == len(cacheHandles)-1 {
+			isMap = true
+		}
+
+		urlStringTuple := SC2DependencyInformation{
+			URL:                    dependencyURL,
+			URLString:              dependencyURL.String(),
+			HashAndExtensionMerged: hashAndExtensionMerged,
+			IsMap:                  isMap,
+		}
+		dependencyURLs = append(dependencyURLs, urlStringTuple)
+	}
+
 	log.Debug("Finished getMapURLAndHashFromReplayData()")
-	return *mapURL, hashAndExtensionMerged, true
+	return dependencyURLs, true
 }
 
 // ReadLocalizedDataFromMapGetForeignToEnglishMapping opens the map file (MPQ),

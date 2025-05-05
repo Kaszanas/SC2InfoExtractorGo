@@ -20,9 +20,9 @@ type LogFlags struct {
 type CLIFlags struct {
 	InputDirectory             string
 	OutputDirectory            string
-	OnlyMapsDownload           bool
-	SkipMapsDownload           bool
-	MapsDirectory              string
+	OnlyDependencyDownload     bool
+	SkipDependencyDownload     bool
+	DependencyDirectory        string
 	NumberOfThreads            int
 	NumberOfPackages           int
 	PerformIntegrityCheck      bool
@@ -50,22 +50,22 @@ func ParseFlags() (CLIFlags, bool) {
 		"Output directory where compressed zip packages will be saved.",
 	)
 
-	onlyMapDownload := flag.Bool(
-		"only_map_download",
+	onlyDependencyDownload := flag.Bool(
+		"only_dependency_download",
 		false,
 		`Flag specifying if the tool is supposed to only download
-		the maps and not process the replays.`,
+		the replay dependencies and not process the replays.`,
 	)
-	skipMapDownload := flag.Bool(
-		"skip_map_download",
+	skipDependencyDownload := flag.Bool(
+		"skip_dependency_download",
 		false,
-		`Flag specifying if the tool is supposed to skip the map download`,
+		`Flag specifying if the tool is supposed to skip the dependency download.`,
 	)
 
-	mapsDirectory := flag.String(
-		"maps_directory",
-		"./maps/",
-		"Directory where the maps will be downloaded as a result of the replay processing.",
+	dependencyDirectory := flag.String(
+		"dependency_directory",
+		"./dependencies/",
+		"Directory where the replay dependencies will be downloaded as a result of the replay processing.",
 	)
 
 	numberOfPackagesFlag := flag.Int(
@@ -178,10 +178,10 @@ func ParseFlags() (CLIFlags, bool) {
 		return CLIFlags{}, false
 	}
 
-	absolutePathMapsDirectory, err := filepath.Abs(*mapsDirectory)
+	absolutePathDependencyDirectory, err := filepath.Abs(*dependencyDirectory)
 	if err != nil {
-		log.WithField("mapsDirectory", *mapsDirectory).
-			Error("Failed to get the absolute path to the maps directory!")
+		log.WithField("dependencyDirectory", *dependencyDirectory).
+			Error("Failed to get the absolute path to the dependency directory!")
 		return CLIFlags{}, false
 	}
 
@@ -193,9 +193,9 @@ func ParseFlags() (CLIFlags, bool) {
 	flags := CLIFlags{
 		InputDirectory:             absoluteInputDirectory,
 		OutputDirectory:            absolutePathOutputDirectory,
-		OnlyMapsDownload:           *onlyMapDownload,
-		SkipMapsDownload:           *skipMapDownload,
-		MapsDirectory:              absolutePathMapsDirectory,
+		OnlyDependencyDownload:     *onlyDependencyDownload,
+		SkipDependencyDownload:     *skipDependencyDownload,
+		DependencyDirectory:        absolutePathDependencyDirectory,
 		NumberOfPackages:           *numberOfPackagesFlag,
 		PerformIntegrityCheck:      *performIntegrityCheckFlag,
 		PerformValidityCheck:       *performValidityCheckFlag,

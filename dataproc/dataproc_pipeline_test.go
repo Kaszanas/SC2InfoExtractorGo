@@ -145,8 +145,8 @@ func testPipelineWrapperWithDir(
 	flags := utils.CLIFlags{
 		InputDirectory:             replayInputPath,
 		OutputDirectory:            thisTestOutputDir,
-		OnlyMapsDownload:           false,
-		MapsDirectory:              "../maps/",
+		OnlyDependencyDownload:     false,
+		DependencyDirectory:        "../dependencies/",
 		NumberOfThreads:            1,
 		NumberOfPackages:           1,
 		PerformIntegrityCheck:      true,
@@ -166,7 +166,7 @@ func testPipelineWrapperWithDir(
 	// Auxiliary files will be placed in the same directory as the log file:
 	foreignToEnglishMappingFilepath := logFlags.LogPath + "map_foreign_to_english_mapping.json"
 
-	foreignToEnglishMapping := downloader.MapDownloaderPipeline(
+	foreignToEnglishMapping := downloader.DependencyDownloaderPipeline(
 		sliceOfFiles,
 		foreignToEnglishMappingFilepath,
 		flags,
