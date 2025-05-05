@@ -169,12 +169,12 @@ This repository is licensed under GNU GPL v3 license. If You would like to acqui
   author    = {Białecki, Andrzej and
                Białecki, Piotr and
                Krupiński, Leszek},
-  title     = {{Kaszanas/SC2InfoExtractorGo: 1.2.0 
+  title     = {{Kaszanas/SC2InfoExtractorGo: 2.1.3 
                SC2InfoExtractorGo Release}},
   month     = {jun},
   year      = {2022},
   publisher = {Zenodo},
-  version   = {1.2.0},
+  version   = {2.1.3},
   doi       = {10.5281/zenodo.5296788},
   url       = {https://doi.org/10.5281/zenodo.5296788}
 }
