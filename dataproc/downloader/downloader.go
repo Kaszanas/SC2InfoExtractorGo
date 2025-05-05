@@ -279,7 +279,7 @@ func downloadSingleDependency(taskState DownloadTaskState) {
 	if err != nil {
 		sendDownloadTaskReturnInfoToChannels(
 			&taskState,
-			fmt.Errorf("error downloading in http.Get map: %v", err),
+			fmt.Errorf("error downloading in http.Get dependency: %v", err),
 		)
 		return
 	}
