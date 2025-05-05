@@ -224,12 +224,12 @@ func dispatchMapDownloadTask(
 	if ok {
 		// If it is downloading then add the channel to the list of channels waiting for result
 		// Map is being downloaded, add it to the list of currently downloading maps:
-		log.WithField("mapHashAndExtension", filenameAndIsMap).
+		log.WithField("DependencyFilename", filenameAndIsMap.DependencyFilename).
 			Info("Dependency is being downloaded, adding channel to receive the result.")
 		(*downloaderSharedState.CurrentlyDownloading)[filenameAndIsMap.DependencyFilename] =
 			append(listOfChannels, downloadTaskInfoChannel)
 	} else {
-		log.WithField("mapHashAndExtension", filenameAndIsMap).
+		log.WithField("DependencyFilename", filenameAndIsMap.DependencyFilename).
 			Info("Dependency is not being downloaded, adding to download queue.")
 
 		taskState := DownloadTaskState{
@@ -268,7 +268,7 @@ func dispatchMapDownloadTask(
 // downloadSingleDependency handles downloading a single map based on an URL passed through
 // the task state.
 func downloadSingleDependency(taskState DownloadTaskState) {
-	log.Debug("Entered downloadSingleMap()")
+	log.Debug("Entered downloadSingleDependency()")
 
 	outputFilepath := filepath.Join(
 		taskState.dependencyDownloadDirectory,
