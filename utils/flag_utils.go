@@ -25,6 +25,7 @@ type CLIFlags struct {
 	DependencyDirectory        string
 	NumberOfThreads            int
 	NumberOfPackages           int
+	SingleJsonOutput           bool
 	PerformIntegrityCheck      bool
 	PerformValidityCheck       bool
 	PerformCleanup             bool
@@ -75,6 +76,14 @@ func ParseFlags() (CLIFlags, bool) {
 		into a zip archive. Please remember that this number needs to be lower
 		than the number of processed files. If set to 0, will ommit the
 		zip packaging and output .json directly to drive.`,
+	)
+
+	singleJsonOutput := flag.Bool(
+		"single_json_output",
+		false,
+		`Flag specifying if the output should be a single JSON file instead of multiple zip packages.
+		If set to true, the output will be a single JSON file containing an array of all processed replays.
+		In such case the "number_of_packages" flag will be ignored and all processed replays will be saved in a single JSON file.`,
 	)
 
 	// Boolean Flags:
@@ -138,12 +147,12 @@ func ParseFlags() (CLIFlags, bool) {
 	// Misc flags:
 	logLevelFlag := flag.Int(
 		"log_level",
-		4,
-		`Specifies a log level from 1-7:
-		Panic - 1, Fatal - 2,
-		Error - 3, Warn - 4,
-		Info - 5, Debug - 6,
-		Trace - 7`,
+		3,
+		`Specifies a log level from 0-6:
+		Panic - 0, Fatal - 1,
+		Error - 2, Warn - 3,
+		Info - 4, Debug - 5,
+		Trace - 6`,
 	)
 	logDirectoryFlag := flag.String(
 		"log_dir",
@@ -197,6 +206,7 @@ func ParseFlags() (CLIFlags, bool) {
 		SkipDependencyDownload:     *skipDependencyDownload,
 		DependencyDirectory:        absolutePathDependencyDirectory,
 		NumberOfPackages:           *numberOfPackagesFlag,
+		SingleJsonOutput:           *singleJsonOutput,
 		PerformIntegrityCheck:      *performIntegrityCheckFlag,
 		PerformValidityCheck:       *performValidityCheckFlag,
 		PerformCleanup:             *performCleanupFlag,

@@ -1,6 +1,7 @@
 package dataproc
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
@@ -12,12 +13,22 @@ func stringifyReplay(replayData *replay_data.CleanedReplay) (bool, string) {
 
 	log.Debug("Entered stringifyReplay()")
 
-	replayDataString, marshalErr := json.MarshalIndent(replayData, "", "  ")
+
+	replayDataStringBytes, marshalErr := json.Marshal(replayData)
 	if marshalErr != nil {
 		log.Error("Error while marshaling the string representation of cleanReplayData.")
 		return false, ""
 	}
 
+	compactedOutput := new(bytes.Buffer)
+	compactErr := json.Compact(compactedOutput, replayDataStringBytes)
+	if compactErr != nil {
+		log.Error("Error while compacting the string representation of cleanReplayData.")
+		return false, ""
+	}
+
+	compactedString := compactedOutput.String()
+
 	log.Debug("Finished stringifyReplay()")
-	return true, string(replayDataString)
+	return true, compactedString
 }

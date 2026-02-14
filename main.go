@@ -48,6 +48,7 @@ func mainReturnWithCode() int {
 		"CLIflags.SkipDependencyDownload":     CLIflags.SkipDependencyDownload,
 		"CLIflags.DependencyDirectory":        CLIflags.DependencyDirectory,
 		"CLIflags.NumberOfPackages":           CLIflags.NumberOfPackages,
+		"CLIflags.SingleJsonOutput":           CLIflags.SingleJsonOutput,
 		"CLIflags.PerformIntegrityCheck":      CLIflags.PerformIntegrityCheck,
 		"CLIflags.PerformValidityCheck":       CLIflags.PerformValidityCheck,
 		"CLIflags.PerformCleanup":             CLIflags.PerformCleanup,
