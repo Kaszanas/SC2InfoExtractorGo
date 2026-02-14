@@ -26,6 +26,37 @@ type ReplayProcessingChannelContents struct {
 	ChunkOfFiles []string
 }
 
+
+// writeResultsToSingleJSON handles stream writing to a single file
+func writeResultsToSingleJSON(outputDir string, input <-chan string) {
+    outputPath := filepath.Join(outputDir, "all_replays.json")
+    f, err := os.Create(outputPath)
+    if err != nil {
+        log.Error("Failed to create output JSON file:", err)
+        // Drain channel to prevent blocking workers if file fails
+        for range input {}
+        return
+    }
+    defer f.Close()
+
+    // Start the JSON array
+    f.WriteString("[\n")
+    
+    first := true
+    for jsonString := range input {
+        if !first {
+            f.WriteString(",\n")
+        }
+        f.WriteString(jsonString)
+        first = false
+    }
+
+    // End the JSON array
+    f.WriteString("\n]")
+    log.Info("Successfully wrote combined JSON to ", outputPath)
+}
+
+
 // PipelineWrapper is an orchestrator that distributes work
 // among available workers (threads)
 func PipelineWrapper(
@@ -51,6 +82,21 @@ func PipelineWrapper(
 	)
 	defer progressBar.Close()
 
+
+	// 1. Create the results channel
+	singleJsonResultChan := make(chan string, cliFlags.NumberOfThreads*4)
+
+	// 2. Start the single writer goroutine
+	var writerWg sync.WaitGroup
+	// Creating a single writer gorouting that will create a single JSON file
+	// with all of the replays as a JSON array.
+	writerWg.Add(1)
+	go func() {
+		defer writerWg.Done()
+		writeResultsToSingleJSON(cliFlags.OutputDirectory, singleJsonResultChan)
+	}()
+
+
 	// If it is specified by the user to perform the processing without
 	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
 	runtime.GOMAXPROCS(cliFlags.NumberOfThreads)
@@ -59,13 +105,14 @@ func PipelineWrapper(
 	// Adding a task for each of the supplied chunks to speed up the processing:
 	wg.Add(cliFlags.NumberOfThreads)
 
+
 	// Spin up workers waiting for chunks to process:
 	for i := 0; i < cliFlags.NumberOfThreads; i++ {
 		go func() {
+			defer wg.Done()
 			for {
 				channelContents, ok := <-channel
 				if !ok {
-					wg.Done()
 					return
 				}
 				MultiprocessingChunkPipeline(
@@ -76,6 +123,7 @@ func PipelineWrapper(
 					foreignToEnglishMapping,
 					progressBar,
 					cliFlags,
+					singleJsonResultChan,
 				)
 			}
 		}()
@@ -91,6 +139,8 @@ func PipelineWrapper(
 
 	close(channel)
 	wg.Wait()
+	close(singleJsonResultChan)
+	writerWg.Wait()
 	progressBar.Close()
 
 	log.Debug("Finished PipelineWrapper()")
@@ -107,6 +157,7 @@ func MultiprocessingChunkPipeline(
 	englishToForeignMapping map[string]string,
 	progressBar *progressbar.ProgressBar,
 	cliFlags utils.CLIFlags,
+	singleJsonResultChan chan<- string,
 ) {
 
 	// Letting the orchestrator know that this processing task was finished:
@@ -204,8 +255,17 @@ func MultiprocessingChunkPipeline(
 				return
 			}
 
+			if cliFlags.SingleJsonOutput {
+				singleJsonResultChan <- replayString
+				processedCounter++
+				processingInfoStruct.AddToProcessed(replayFile)
+				log.Info("Sent file to writer for single JSON output.")
+				return
+			}
+
+
 			// Saving output to zip archive:
-			if packageToZipBool {
+			if packageToZipBool{
 				// Append it to a list and when a package is created create a package summary and clear the list for next iterations
 				persistent_data.AddReplaySummToPackageSumm(
 					&replaySummary,
@@ -217,7 +277,8 @@ func MultiprocessingChunkPipeline(
 					replayString,
 					replayFile,
 					compressionMethod,
-					writer)
+					writer,
+				)
 				if !savedSuccess {
 					compressionErrorCounter++
 					log.WithFields(log.Fields{
@@ -233,6 +294,7 @@ func MultiprocessingChunkPipeline(
 				return
 			}
 
+			
 			okSaveToDrive := file_utils.SaveReplayJSONFileToDrive(
 				replayString,
 				replayFile,
