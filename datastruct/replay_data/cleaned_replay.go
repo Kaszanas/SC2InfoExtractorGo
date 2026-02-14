@@ -6,17 +6,25 @@ import (
 
 // CleanedReplay is a structure holding cleaned data derived from s2prot.Rep
 type CleanedReplay struct {
-	Header            CleanedHeader                  `json:"header"`
-	InitData          CleanedInitData                `json:"initData"`
-	Details           CleanedDetails                 `json:"details"`
-	Metadata          CleanedMetadata                `json:"metadata"`
-	MessageEvents     []s2prot.Struct                `json:"messageEvents"`
-	GameEvents        []map[string]any               `json:"gameEvents"`
-	TrackerEvents     []s2prot.Struct                `json:"trackerEvents"`
-	ToonPlayerDescMap map[string]EnhancedToonDescMap `json:"ToonPlayerDescMap"` //map[string]*rep.PlayerDesc
-	GameEvtsErr       bool                           `json:"gameEventsErr"`
-	MessageEvtsErr    bool                           `json:"messageEventsErr"`
-	TrackerEvtsErr    bool                           `json:"trackerEvtsErr"`
+	AdditionalInformation AdditionalInformation          `json:"additionalInformation"`
+	Header                CleanedHeader                  `json:"header"`
+	InitData              CleanedInitData                `json:"initData"`
+	Details               CleanedDetails                 `json:"details"`
+	Metadata              CleanedMetadata                `json:"metadata"`
+	MessageEvents         []s2prot.Struct                `json:"messageEvents"`
+	GameEvents            []map[string]any               `json:"gameEvents"`
+	TrackerEvents         []s2prot.Struct                `json:"trackerEvents"`
+	ToonPlayerDescMap     map[string]EnhancedToonDescMap `json:"ToonPlayerDescMap"` //map[string]*rep.PlayerDesc
+	GameEvtsErr           bool                           `json:"gameEventsErr"`
+	MessageEvtsErr        bool                           `json:"messageEventsErr"`
+	TrackerEvtsErr        bool                           `json:"trackerEvtsErr"`
+}
+
+type AdditionalInformation struct {
+	ReplaypackName   string `json:"replaypack_name"`
+	ReplaypackUrl    string `json:"replaypack_url"`
+	Filename         string `json:"filename"`
+	OriginalFilepath string `json:"original_filepath"`
 }
 
 // EnhancedToonDescMap is a structure that provides

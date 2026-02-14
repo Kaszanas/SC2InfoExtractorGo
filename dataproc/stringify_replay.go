@@ -13,7 +13,6 @@ func stringifyReplay(replayData *replay_data.CleanedReplay) (bool, string) {
 
 	log.Debug("Entered stringifyReplay()")
 
-
 	replayDataStringBytes, marshalErr := json.Marshal(replayData)
 	if marshalErr != nil {
 		log.Error("Error while marshaling the string representation of cleanReplayData.")
