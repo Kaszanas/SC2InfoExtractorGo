@@ -37,6 +37,10 @@ func SetLogging(logPath string, logLevel int) (*os.File, bool) {
 	log.SetOutput(logFile)
 	log.Info("Set logging format, defined log file.")
 
+	logLevelString := log.Level(logLevel).String()
+	log.Info("Log level set to: " + logLevelString)
+
+
 	log.SetLevel(log.Level(logLevel))
 	log.Info("Set logging level.")
 
