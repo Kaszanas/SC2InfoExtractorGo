@@ -29,31 +29,49 @@ type ReplayProcessingChannelContents struct {
 
 // writeResultsToSingleJSON handles stream writing to a single file
 func writeResultsToSingleJSON(outputDir string, input <-chan string) {
-    outputPath := filepath.Join(outputDir, "all_replays.json")
-    f, err := os.Create(outputPath)
-    if err != nil {
-        log.Error("Failed to create output JSON file:", err)
-        // Drain channel to prevent blocking workers if file fails
-        for range input {}
-        return
-    }
-    defer f.Close()
+	outputPath := filepath.Join(outputDir, "all_replays.json")
+	f, err := os.Create(outputPath)
+	if err != nil {
+		log.Error("Failed to create output JSON file:", err)
+		// Drain channel to prevent blocking workers if file fails
+		for range input {}
+		return
+	}
+	defer f.Close()
 
-    // Start the JSON array
-    f.WriteString("[\n")
-    
-    first := true
-    for jsonString := range input {
-        if !first {
-            f.WriteString(",\n")
-        }
-        f.WriteString(jsonString)
-        first = false
-    }
+	// Start the JSON array
+	_, writeErr := f.WriteString("[\n")
+	if writeErr != nil {
+		log.Fatal("Failed to write to output JSON file:", writeErr)
+		// Drain channel to prevent blocking workers if file fails
+		for range input {}
+		return
+	}
+	
+	first := true
+	for jsonString := range input {
+		if !first {
+			_, writeErr := f.WriteString(",\n")
+			if writeErr != nil {
+				log.Fatal("Failed to write to output JSON file:", writeErr)
+				return
+			}
+		}
+		_, writeErr = f.WriteString(jsonString)
+		if writeErr != nil {
+			log.Fatal("Failed to write to output JSON file:", writeErr)
+			return
+		}
+		first = false
+	}
 
-    // End the JSON array
-    f.WriteString("\n]")
-    log.Info("Successfully wrote combined JSON to ", outputPath)
+	// End the JSON array
+	_, writeErr = f.WriteString("\n]")
+	if writeErr != nil {
+		log.Fatal("Failed to write to output JSON file:", writeErr)
+		return
+	}
+	log.Info("Successfully wrote combined JSON to ", outputPath)
 }
 
 
