@@ -27,7 +27,11 @@ func DownloadAllSC2Dependencies(
 		len(URLsToDownload),
 		"[2/4] Downloading dependencies: ",
 	)
-	defer progressBarDownloadDependencies.Close()
+	defer func() {
+		if err := progressBarDownloadDependencies.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close progress bar.")
+		}
+	}()
 	for url, filenameAndIsMap := range URLsToDownload {
 
 		// If the replay was not processed previosly,
@@ -49,7 +53,6 @@ func DownloadAllSC2Dependencies(
 	// Wait Stop and wait without defer,
 	// all of the dependencies need to finish downloading before the processing starts:
 	downloaderSharedState.WorkerPool.StopAndWait()
-	progressBarDownloadDependencies.Close()
 
 	log.Debug("Finished DownloadAllSC2Dependencies()")
 	return nil

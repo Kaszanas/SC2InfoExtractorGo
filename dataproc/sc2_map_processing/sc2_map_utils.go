@@ -57,7 +57,11 @@ func GetAllReplaysDependencyURLs(
 		progressBarLen,
 		"[1/4] Retrieving all map URLs: ",
 	)
-	defer progressBar.Close()
+	defer func() {
+		if err := progressBar.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close progress bar.")
+		}
+	}()
 
 	// If it is specified by the user to perform the processing without
 	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
@@ -341,7 +345,11 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 			Error("Finished readLocalizedDataFromMap(), Error reading map file with MPQ: ")
 		return nil, err
 	}
-	defer mpqArchive.Close()
+	defer func() {
+		if err := mpqArchive.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close MPQ archive.")
+		}
+	}()
 
 	data, err := mpqArchive.FileByName("(listfile)")
 	if err != nil {
@@ -398,7 +406,6 @@ func ReadLocalizedDataFromMapGetForeignToEnglishMapping(
 
 		foreignToEnglishMapName[mapName] = englishMapName
 	}
-	mpqArchive.Close()
 
 	log.Debug("Finished readLocalizedDataFromMap()")
 	return foreignToEnglishMapName, nil

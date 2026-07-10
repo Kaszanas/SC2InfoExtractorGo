@@ -123,7 +123,11 @@ func UnmarshalJsonFile(
 			Info("Failed to open the JSON file.")
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close JSON file.")
+		}
+	}()
 
 	jsonBytes, err := io.ReadAll(file)
 	if err != nil {

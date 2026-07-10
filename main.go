@@ -122,7 +122,9 @@ func mainReturnWithCode() int {
 	)
 
 	// Closing the log file manually:
-	logFile.Close()
+	if err := logFile.Close(); err != nil {
+		log.WithField("error", err).Error("Failed to close log file.")
+	}
 
 	return 0
 }

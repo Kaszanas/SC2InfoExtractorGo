@@ -283,7 +283,11 @@ func downloadSingleDependency(taskState DownloadTaskState) {
 		)
 		return
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close response body.")
+		}
+	}()
 
 	if response.StatusCode != 200 {
 		sendDownloadTaskReturnInfoToChannels(
@@ -302,7 +306,11 @@ func downloadSingleDependency(taskState DownloadTaskState) {
 		)
 		return
 	}
-	defer outFile.Close()
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close output file.")
+		}
+	}()
 
 	// Copy contents of response to the file:
 	_, err = io.Copy(outFile, response.Body)

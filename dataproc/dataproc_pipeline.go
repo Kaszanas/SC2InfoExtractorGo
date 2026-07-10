@@ -37,7 +37,11 @@ func writeResultsToSingleJSON(outputDir string, input <-chan string) {
 		}
 		return
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close output JSON file.")
+		}
+	}()
 
 	// Start the JSON array
 	_, writeErr := f.WriteString("[\n")
@@ -98,7 +102,11 @@ func PipelineWrapper(
 		progressBarLen,
 		"[4/4] Processing replays to JSON: ",
 	)
-	defer progressBar.Close()
+	defer func() {
+		if err := progressBar.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close progress bar.")
+		}
+	}()
 
 	// 1. Create the results channel
 	singleJsonResultChan := make(chan string, cliFlags.NumberOfThreads*4)
@@ -156,7 +164,10 @@ func PipelineWrapper(
 	wg.Wait()
 	close(singleJsonResultChan)
 	writerWg.Wait()
-	progressBar.Close()
+	err := progressBar.Close()
+	if err != nil {
+		log.WithField("error", err).Error("Failed to close progress bar.")
+	}
 
 	log.Debug("Finished PipelineWrapper()")
 }
@@ -186,7 +197,11 @@ func MultiprocessingChunkPipeline(
 		log.WithField("error", err).Error("Failed to create processingInfoFile.")
 		return
 	}
-	defer processingInfoFile.Close()
+	defer func() {
+		if err := processingInfoFile.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close processing info file.")
+		}
+	}()
 
 	// Initializing grpc connection if the user chose to perform anonymization.
 	grpcAnonymizer := checkAnonymizationInitializeGRPC(
@@ -195,7 +210,11 @@ func MultiprocessingChunkPipeline(
 	// In order to free up resources We are defering the connection closing when
 	// all of the files have been processed:
 	if grpcAnonymizer != nil {
-		defer grpcAnonymizer.Connection.Close()
+		defer func() {
+			if err := grpcAnonymizer.Connection.Close(); err != nil {
+				log.WithField("error", err).Error("Failed to close gRPC connection.")
+			}
+		}()
 	}
 
 	// TODO: These could be a separate data structure:
@@ -339,14 +358,17 @@ func MultiprocessingChunkPipeline(
 	if packageToZipBool {
 
 		// Writing the zip archive to drive:
-		writer.Close()
+		err := writer.Close()
+		if err != nil {
+			log.WithField("error", err).Error("Failed to close zip writer.")
+		}
 		packagePath := filepath.Join(
 			cliFlags.OutputDirectory,
 			"package_"+strconv.Itoa(chunkIndex)+".zip",
 		)
 
 		// Writing PackageSummaryFile to drive:
-		err := persistent_data.CreatePackageSummaryFile(
+		err = persistent_data.CreatePackageSummaryFile(
 			cliFlags.OutputDirectory,
 			packageSummary,
 			chunkIndex)
@@ -402,7 +424,11 @@ func FileProcessingPipeline(
 			"rep.NewFromFile() failed"
 	}
 	log.WithField("file", replayFile).Info("Read data from a replay.")
-	defer replayData.Close()
+	defer func() {
+		if err := replayData.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close replay file.")
+		}
+	}()
 
 	// Performing integrity checks:
 	if cliFlags.PerformIntegrityCheck {
