@@ -80,7 +80,11 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 						thisTestOutputDir,
 						int(logFlags.LogLevelValue),
 					)
-					defer logFile.Close()
+					defer func() {
+						if err := logFile.Close(); err != nil {
+							t.Fatal("Test Failed! Could not close log file.")
+						}
+					}()
 					if !logOk {
 						t.Fatal("Test Failed! Could not perform SetLogging.")
 					}
@@ -311,7 +315,11 @@ func unmarshalSummaryFile(
 	if err != nil {
 		return "Failed to open the JSON file.", err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.WithField("error", err).Error("Failed to close JSON file.")
+		}
+	}()
 
 	jsonBytes, err := io.ReadAll(file)
 	if err != nil {

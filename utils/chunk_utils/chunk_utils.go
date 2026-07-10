@@ -46,10 +46,7 @@ func GetChunkListAndPackageBool[T any](
 
 	log.Debug("Entered getChunkListAndPackageBool()")
 
-	packageToZipBool := true
-	if numberOfPackages == 0 {
-		packageToZipBool = false
-	}
+	packageToZipBool := numberOfPackages != 0
 
 	var numberOfFilesInPackage int
 	if packageToZipBool {

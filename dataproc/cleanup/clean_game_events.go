@@ -39,7 +39,7 @@ func CleanGameEvents(replayData *rep.Rep) []map[string]any {
 func cleanGameEvent(gameEvent s2prot.Event) (map[string]any, error) {
 	log.Debug("Entered cleanGameEvent()")
 
-	gameEventBytes := gameEvent.Struct.String()
+	gameEventBytes := gameEvent.String()
 	var gameEventJSONMap map[string]any
 	err := json.Unmarshal([]byte(gameEventBytes), &gameEventJSONMap)
 	if err != nil {
