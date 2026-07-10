@@ -442,10 +442,22 @@ func FileProcessingPipeline(
 
 	// REVIEW: Start Review, New implementation of map translation below:
 	// Clean replay structure:
+
+	// Get the filename:
+	filename := filepath.Base(replayFile)
+	// Get the replaypack (parent directory of the replay file):
+	replaypackName := filepath.Base(filepath.Dir(replayFile))
+
+	additionalInformation := replay_data.AdditionalInformation{
+		ReplaypackName: replaypackName,
+		Filename:       filename,
+	}
+
 	cleanOk, cleanReplayStructure := extractReplayData(
 		replayData,
 		englishToForeignMapping,
-		cliFlags.PerformCleanup)
+		cliFlags.PerformCleanup,
+	)
 	if !cleanOk {
 		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
 		return false,
@@ -453,6 +465,8 @@ func FileProcessingPipeline(
 			persistent_data.ReplaySummary{},
 			"cleanReplay() failed"
 	}
+	cleanReplayStructure.AdditionalInformation = additionalInformation
+
 	// REVIEW: Finish Review
 
 	// Create replay summary:

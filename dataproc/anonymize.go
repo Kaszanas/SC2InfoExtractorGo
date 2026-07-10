@@ -90,7 +90,8 @@ func (anonymizer *GRPCAnonymizer) grpcDialConnect() bool {
 	log.Debug("Entered GRPCAnonymizer.grpcDialConnect()")
 
 	// Set up a connection to the server:
-	conn, err := grpc.NewClient(settings.GrpcServerAddress,
+	conn, err := grpc.NewClient(
+		settings.GrpcServerAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -188,7 +189,7 @@ func anonymizePlayers(
 			return false
 		}
 		anonymizedPlayerDesc := playerDesc
-		anonymizedPlayerDesc.Name = "redacted"
+		anonymizedPlayerDesc.Name = anonymizedID
 		anonymizedPlayerDesc.ClanTag = "redacted"
 
 		newToonDescMap[anonymizedID] = anonymizedPlayerDesc
