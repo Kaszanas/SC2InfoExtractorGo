@@ -164,7 +164,31 @@ This repository is licensed under GNU GPL v3 license. If You would like to acqui
 
 ## Cite Us!
 
+### Article
+
+```bibtex
+@article{Bialecki2026,
+  title     = {SC2Tools: StarCraft II Toolset and Dataset API},
+  author    = {Białecki, Andrzej
+               and Białecki, Piotr
+               and Sowiński, Piotr
+               and Budziak, Mateusz
+               and Gajewski, Jan},
+  doi       = {10.21105/joss.08889},
+  url       = {https://doi.org/10.21105/joss.08889},
+  year      = {2026},
+  publisher = {The Open Journal},
+  volume    = {11},
+  number    = {118},
+  pages     = {8889},
+  journal   = {Journal of Open Source Software}
+}
 ```
+
+
+### Software
+
+```bibtex
 @software{BialeckiExtractor2021,
   author    = {Białecki, Andrzej and
                Białecki, Piotr and
