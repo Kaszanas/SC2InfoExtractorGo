@@ -1,7 +1,7 @@
 # All of the maps and mods downloaded when processing SC2ReSet replays:
 FROM kaszanas/sc2reset_maps_mods:latest AS sc2reset_maps_mods
 
-FROM golang:1.24.2-alpine AS build_sc2_info_extractor
+FROM golang:1.26.5-alpine AS build_sc2_info_extractor
 
 WORKDIR /app
 
