@@ -6,7 +6,8 @@ import (
 
 // CleanedReplay is a structure holding cleaned data derived from s2prot.Rep
 type CleanedReplay struct {
-	AdditionalInformation AdditionalInformation          `json:"additionalInformation"`
+	// Holds additional information used specifically for SC2_Datasets: https://github.com/Kaszanas/SC2_Datasets
+	AdditionalInformation AdditionalInformation          `json:"additional_information"`
 	Header                CleanedHeader                  `json:"header"`
 	InitData              CleanedInitData                `json:"initData"`
 	Details               CleanedDetails                 `json:"details"`
