@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: If you use this software, please cite both the article from preferred-citation and the software itself.
+authors:
+  - family-names: Białecki
+    given-names: Andrzej
+  - family-names: Białecki
+    given-names: Piotr
+  - family-names: Sowiński
+    given-names: Piotr
+  - family-names: Budziak
+    given-names: Mateusz
+  - family-names: Gajewski
+    given-names: Jan
+title: "SC2Tools: StarCraft II Toolset and Dataset API"
+version: 1.0.0
+url: https://doi.org/10.21105/joss.08889
+doi: 10.21105/joss.08889
+date-released: "2021"
+preferred-citation:
+  authors:
+    - family-names: Białecki
+      given-names: Andrzej
+    - family-names: Białecki
+      given-names: Piotr
+    - family-names: Sowiński
+      given-names: Piotr
+    - family-names: Budziak
+      given-names: Mateusz
+    - family-names: Gajewski
+      given-names: Jan
+  title: "SC2Tools: StarCraft II Toolset and Dataset API"
+  doi: 10.21105/joss.08889
+  url: https://doi.org/10.21105/joss.08889
+  type: article-journal
+  pages: "8889"
+  year: "2026"
+  conference: {}
+  publisher:
+    name: The Open Journal
