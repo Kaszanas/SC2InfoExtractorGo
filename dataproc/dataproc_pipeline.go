@@ -479,17 +479,18 @@ func FileProcessingPipeline(
 		Filename:       filename,
 	}
 
-	cleanOk, cleanReplayStructure := extractReplayData(
+	cleanOk, cleanReplayStructure, cleanReason := extractReplayData(
 		replayData,
 		englishToForeignMapping,
 		cliFlags.PerformCleanup,
 	)
 	if !cleanOk {
-		log.WithField("file", replayFile).Error("Failed to perform cleaning.")
+		log.WithFields(log.Fields{"file": replayFile, "reason": cleanReason}).
+			Error("Failed to perform cleaning.")
 		return false,
 			replay_data.CleanedReplay{},
 			persistent_data.ReplaySummary{},
-			"cleanReplay() failed"
+			fmt.Sprintf("cleanReplay() failed: %s", cleanReason)
 	}
 	cleanReplayStructure.AdditionalInformation = additionalInformation
 
