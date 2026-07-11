@@ -15,34 +15,34 @@ func extractReplayData(
 	replayData *rep.Rep,
 	englishToForeignMapping map[string]string,
 	performCleanupBool bool,
-) (bool, replay_data.CleanedReplay) {
+) (bool, replay_data.CleanedReplay, string) {
 
 	log.Debug("Entered cleanReplay()")
 
 	// Restructure replay:
-	structuredReplayData, redefOk := redifineReplayStructure(
+	structuredReplayData, redefOk, redefReason := redifineReplayStructure(
 		replayData,
 		englishToForeignMapping,
 	)
 	if !redefOk {
-		log.Error("Error in redefining replay structure.")
-		return false, replay_data.CleanedReplay{}
+		log.WithField("reason", redefReason).Error("Error in redefining replay structure.")
+		return false, replay_data.CleanedReplay{}, redefReason
 	}
 
 	// Cleaning unused message and game events
 	if performCleanupBool {
 		if !cleanUnusedMessageEvents(&structuredReplayData) {
 			log.Error("Error in cleaning the message events.")
-			return false, replay_data.CleanedReplay{}
+			return false, replay_data.CleanedReplay{}, "Error in cleaning the message events."
 		}
 		if !cleanUnusedGameEvents(&structuredReplayData) {
 			log.Error("Error in cleaning the game events.")
-			return false, replay_data.CleanedReplay{}
+			return false, replay_data.CleanedReplay{}, "Error in cleaning the game events."
 		}
 	}
 
 	log.Debug("Finished cleanReplay()")
-	return true, structuredReplayData
+	return true, structuredReplayData, ""
 }
 
 // cleanUnusedMessageEvents iterates over the message events and creates
