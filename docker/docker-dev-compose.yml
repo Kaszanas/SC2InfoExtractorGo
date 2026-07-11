@@ -8,7 +8,7 @@ services:
     command:
       [
         "-c",
-        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/; exec /bin/bash",
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/; rsync -a --remove-source-files /dependencies_seed/* ./dependencies/; exec /bin/bash",
       ]
 
   sc2infoextractorgo-test:
@@ -20,5 +20,5 @@ services:
     command:
       [
         "-c",
-        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/ && go test ./... -v -race",
+        "rsync -a --remove-source-files /test_files/test_replays/* ./test_files/test_replays/ && rsync -a --remove-source-files /dependencies_seed/* ./dependencies/ && go test ./... -v -race",
       ]

@@ -29,11 +29,13 @@ type ReplayProcessingDependencyInfo struct {
 	ReplayFilename             string
 	DependencyHashAndExtension string
 	IsMap                      bool
+	Availability               DependencyAvailability
 }
 
 type ReplayFilenameIsMap struct {
 	DependencyFilename string
 	IsMap              bool
+	Availability       DependencyAvailability
 }
 
 type ExtractMapChannelContents struct {
@@ -139,6 +141,7 @@ func GetAllReplaysDependencyURLs(
 			toDownloadDependencyToFileMap[replayDependencyURL] = ReplayFilenameIsMap{
 				DependencyFilename: dependencyHashExtension,
 				IsMap:              replayProcessingDependencyInfo.IsMap,
+				Availability:       replayProcessingDependencyInfo.Availability,
 			}
 		}
 	}
@@ -227,6 +230,7 @@ func processFileExtractMapURL(
 			ReplayFilename:             replayFilename,
 			DependencyHashAndExtension: dependencyInfo.HashAndExtensionMerged,
 			IsMap:                      dependencyInfo.IsMap,
+			Availability:               dependencyInfo.Availability,
 		}
 	}
 
@@ -255,11 +259,52 @@ func getURL(replayFullFilepath string) ([]SC2DependencyInformation, error) {
 	return dependencyURLs, nil
 }
 
+// DependencyAvailability describes whether a dependency can be fetched from its
+// game-client depot, or can only be satisfied from an already-cached local copy.
+type DependencyAvailability int
+
+const (
+	// Downloadable means a valid depot URL exists for this dependency.
+	Downloadable DependencyAvailability = iota
+	// UnsupportedRegion means the replay's region has no valid depot URL
+	// (e.g. "Unknown"/"Public Test"); the dependency can only be used if it is
+	// already cached locally under the same content hash, since map files are
+	// identified by hash, independent of region.
+	UnsupportedRegion
+)
+
+// UnsupportedRegions lists SC2 regions for which the game client's depot does
+// not provide a usable map/dependency download URL.
+var UnsupportedRegions = []string{"Unknown", "Public Test"}
+
+// IsUnsupportedRegion reports whether regionName is known to be unsupported
+// for dependency downloads.
+func IsUnsupportedRegion(regionName string) bool {
+	for _, badRegion := range UnsupportedRegions {
+		if regionName == badRegion {
+			return true
+		}
+	}
+	return false
+}
+
+// GetReplayRegionName returns the name of the region associated with the
+// replay's map cache handle, or "" if the replay has no cache handles.
+func GetReplayRegionName(replayData *rep.Rep) string {
+	cacheHandles := replayData.Details.CacheHandles()
+	if len(cacheHandles) == 0 {
+		return ""
+	}
+	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
+	return mapCacheHandle.Region.Name
+}
+
 type SC2DependencyInformation struct {
 	URL                    *url.URL
 	URLString              string
 	HashAndExtensionMerged string
 	IsMap                  bool
+	Availability           DependencyAvailability
 }
 
 // GetDependencyURLsAndHashFromReplayData extracts the map URL,
@@ -269,21 +314,14 @@ func GetDependencyURLsAndHashFromReplayData(
 ) ([]SC2DependencyInformation, bool) {
 	log.Debug("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
+	if len(cacheHandles) == 0 {
+		log.Error("Replay has no cache handles, cannot determine dependencies.")
+		return []SC2DependencyInformation{}, false
+	}
 
 	// Get the cacheHandle for the map, I am not sure whi is it the last CacheHandle:
 	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
 	region := mapCacheHandle.Region
-
-	unsupportedRegions := []string{"Unknown", "Public Test"}
-	for _, badRegion := range unsupportedRegions {
-		if region.Name == badRegion {
-			log.WithField("region", region.Name).
-				Warning(
-					"Detected unsupported region! Won't download the map! Replay may fail further processing!",
-				)
-			return []SC2DependencyInformation{}, false
-		}
-	}
 
 	// SEA Region was removed, so its depot url won't work, replacing with US:
 	if region.Name == "SEA" {
@@ -292,7 +330,16 @@ func GetDependencyURLsAndHashFromReplayData(
 		region = rep.RegionUS
 	}
 
-	depotURL := region.DepotURL
+	regionSupported := !IsUnsupportedRegion(region.Name)
+	var depotURL *url.URL
+	if regionSupported {
+		depotURL = region.DepotURL
+	} else {
+		log.WithField("region", region.Name).
+			Warning(
+				"Detected unsupported region! Can only use this dependency if it is already cached locally.",
+			)
+	}
 
 	dependencyURLs := []SC2DependencyInformation{}
 
@@ -302,7 +349,19 @@ func GetDependencyURLsAndHashFromReplayData(
 			dependency.Digest,
 			dependency.Type,
 		)
-		dependencyURL := depotURL.JoinPath(hashAndExtensionMerged)
+
+		availability := Downloadable
+		var dependencyURL *url.URL
+		if regionSupported {
+			dependencyURL = depotURL.JoinPath(hashAndExtensionMerged)
+		} else {
+			availability = UnsupportedRegion
+			// No valid depot URL for this region. This placeholder exists only so
+			// downstream map[url.URL]... plumbing has a safe, non-nil, non-colliding
+			// key to dereference — it is never used for any download/availability
+			// decision; that decision is made purely via Availability.
+			dependencyURL = &url.URL{Scheme: "sc2-unsupported-region", Opaque: hashAndExtensionMerged}
+		}
 
 		isMap := false
 		if index == len(cacheHandles)-1 {
@@ -314,6 +373,7 @@ func GetDependencyURLsAndHashFromReplayData(
 			URLString:              dependencyURL.String(),
 			HashAndExtensionMerged: hashAndExtensionMerged,
 			IsMap:                  isMap,
+			Availability:           availability,
 		}
 		dependencyURLs = append(dependencyURLs, urlStringTuple)
 	}

@@ -40,3 +40,5 @@ map_foreign_to_english_mapping.json
 
 replays/input/*.SC2Replay
 replays/output/*.json
+
+e2e-test-output/

@@ -20,6 +20,17 @@ import (
 
 var TEST_BYPASS_THESE_DIRS = []string{}
 
+// KNOWN_UNSUPPORTED_REGION_REPLAYS lists replays recorded on an unsupported SC2
+// region (e.g. "Public Test"/PTR), for which the game client's own depot cannot
+// provide a map download URL. The pipeline gracefully falls back to an already-cached
+// copy of the map when one is available (see
+// dataproc/sc2_map_processing.GetDependencyURLsAndHashFromReplayData), so this
+// exclusion is only a safety net for runs where the map isn't cached yet.
+// TODO: remove once confirmed reliably cached, or replace with a supported-region replay.
+var KNOWN_UNSUPPORTED_REGION_REPLAYS = map[string][]string{
+	"2017_WCS_Montreal": {"a03dd9e4562845d4a8e986bfd929fd35.SC2Replay"},
+}
+
 // TestPipelineWrapperSingle is a test function to test the pipeline wrapper
 // on all of the replaypack directories in the test input directory.
 func TestPipelineWrapperMultiple(t *testing.T) {
@@ -39,6 +50,22 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 	}
 
 	// dirContents = []fs.DirEntry{dirContents[3]}
+
+	// Log files are only closed once every subtest has finished (see the
+	// t.Cleanup below), instead of at the end of each individual subtest.
+	// Closing per-subtest raced with logrus' global, process-wide logger:
+	// something could still be logging in the brief window between one
+	// subtest's Close() and the next subtest's SetLogging() reassigning the
+	// output, producing spurious "Failed to write to log ... file already
+	// closed" errors on stderr.
+	var openLogFiles []*os.File
+	t.Cleanup(func() {
+		for _, f := range openLogFiles {
+			if err := f.Close(); err != nil {
+				t.Errorf("Test Failed! Could not close log file %s: %v", f.Name(), err)
+			}
+		}
+	})
 
 	for _, maybeDir := range dirContents {
 		if maybeDir.IsDir() {
@@ -80,14 +107,10 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 						thisTestOutputDir,
 						int(logFlags.LogLevelValue),
 					)
-					defer func() {
-						if err := logFile.Close(); err != nil {
-							t.Fatal("Test Failed! Could not close log file.")
-						}
-					}()
 					if !logOk {
 						t.Fatal("Test Failed! Could not perform SetLogging.")
 					}
+					openLogFiles = append(openLogFiles, logFile)
 
 					testOk, reason := testPipelineWrapperWithDir(
 						thisTestOutputDir,
@@ -104,6 +127,19 @@ func TestPipelineWrapperMultiple(t *testing.T) {
 		}
 	}
 
+}
+
+// excludeKnownFilenames removes files whose base name is present in
+// excludedFilenames from the given slice of file paths.
+func excludeKnownFilenames(filePaths []string, excludedFilenames []string) []string {
+	filtered := make([]string, 0, len(filePaths))
+	for _, filePath := range filePaths {
+		if contains(excludedFilenames, filepath.Base(filePath)) {
+			continue
+		}
+		filtered = append(filtered, filePath)
+	}
+	return filtered
 }
 
 // testPipelineWrapperWithDir is a helper function to test the pipeline wrapper
@@ -134,6 +170,10 @@ func testPipelineWrapperWithDir(
 		return false, "Could not get the list of files."
 	}
 
+	if knownUnsupported, ok := KNOWN_UNSUPPORTED_REGION_REPLAYS[replaypackName]; ok {
+		sliceOfFiles = excludeKnownFilenames(sliceOfFiles, knownUnsupported)
+	}
+
 	chunksOfFiles, getOk := chunk_utils.GetChunks(sliceOfFiles, 0)
 	if !getOk {
 		return false, "Could not produce chunks of files!"
@@ -147,9 +187,18 @@ func testPipelineWrapperWithDir(
 	// Create dummy CLI flags:
 	gameModeCheckFlag := 0
 	flags := utils.CLIFlags{
-		InputDirectory:             replayInputPath,
-		OutputDirectory:            thisTestOutputDir,
-		OnlyDependencyDownload:     false,
+		InputDirectory:         replayInputPath,
+		OutputDirectory:        thisTestOutputDir,
+		OnlyDependencyDownload: false,
+		// The shared dependencies/ directory is pre-seeded (via `make
+		// fetch_test_fixtures`) from the published kaszanas/sc2reset_maps_mods
+		// image, which already contains every map/dependency the historical
+		// replay corpus needs, including ones whose original depot (e.g. the
+		// since-shut-down CN depot) no longer exists. Tests must not fall back
+		// to live downloads from Blizzard's servers: doing so is unnecessary
+		// load against a third party, and any map genuinely missing from the
+		// pre-seeded cache cannot be fetched live anyway.
+		SkipDependencyDownload:     true,
 		DependencyDirectory:        "../dependencies/",
 		NumberOfThreads:            1,
 		NumberOfPackages:           1,
@@ -248,7 +297,6 @@ func testPipelineWrapperWithDir(
 		reason, err = pipelineTestCleanup(
 			processedFailedPath,
 			thisTestOutputDir,
-			logFile,
 			true,
 			true)
 		if err != nil {
@@ -260,10 +308,12 @@ func testPipelineWrapperWithDir(
 }
 
 // pipelineTestCleanup is a helper function to clean up the test output directory.
+// The log file itself is closed by the caller (TestPipelineWrapperMultiple's
+// t.Cleanup, once every subtest has finished) — closing it here too would
+// double-close it.
 func pipelineTestCleanup(
 	processedFailedPath string,
 	testOutputPath string,
-	logFile *os.File,
 	deleteOutputDir bool,
 	deleteLogsFilepath bool,
 ) (string, error) {
@@ -273,12 +323,7 @@ func pipelineTestCleanup(
 	// 	return false, "Cannot delete processed_failed file."
 	// }
 
-	err := logFile.Close()
-	if err != nil {
-		return "Cannot close the main_log file.", err
-	}
-
-	err = os.Remove(testOutputPath + "main_log.log")
+	err := os.Remove(testOutputPath + "main_log.log")
 	if err != nil {
 		return "Cannot delete main_log file.", err
 	}

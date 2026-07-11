@@ -1,0 +1,22 @@
+name: Docker Release
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  release:
+    types: [published]
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  e2e-tests:
+    uses: ./.github/workflows/e2e_tests.yml
+    secrets: inherit
+
+  publish-docker-image:
+    needs: [lint, e2e-tests]
+    uses: ./.github/workflows/docker_publish.yml
+    secrets: inherit

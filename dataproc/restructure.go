@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/cleanup"
+	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc/sc2_map_processing"
 	"github.com/Kaszanas/SC2InfoExtractorGo/datastruct/replay_data"
 	"github.com/icza/s2prot/rep"
 	log "github.com/sirupsen/logrus"
@@ -14,20 +15,20 @@ import (
 func redifineReplayStructure(
 	replayData *rep.Rep,
 	englishToForeignMapping map[string]string,
-) (replay_data.CleanedReplay, bool) {
+) (replay_data.CleanedReplay, bool, string) {
 
 	log.Debug("Entered redefineReplayStructure()")
 
 	cleanHeader := cleanup.CleanHeader(replayData)
 	cleanGameDescription, ok := cleanup.CleanGameDescription(replayData)
 	if !ok {
-		return replay_data.CleanedReplay{}, false
+		return replay_data.CleanedReplay{}, false, "Failed to clean game description."
 	}
 	cleanInitData, cleanedUserInitDataList, ok := cleanup.CleanInitData(
 		replayData,
 		cleanGameDescription)
 	if !ok {
-		return replay_data.CleanedReplay{}, false
+		return replay_data.CleanedReplay{}, false, "Failed to clean init data."
 	}
 	cleanDetails, detailsReplayMapField := cleanup.CleanDetails(replayData)
 	cleanMetadata, metadataReplayMapField := cleanup.CleanMetadata(replayData)
@@ -36,23 +37,24 @@ func redifineReplayStructure(
 		detailsReplayMapField,
 		metadataReplayMapField,
 	}
-	ok = adjustMapName(mapFields, englishToForeignMapping, &cleanMetadata)
+	regionName := sc2_map_processing.GetReplayRegionName(replayData)
+	ok, reason := adjustMapName(mapFields, englishToForeignMapping, regionName, &cleanMetadata)
 	if !ok {
-		log.Error("Failed to adjust map name!")
-		return replay_data.CleanedReplay{}, false
+		log.WithField("reason", reason).Error("Failed to adjust map name!")
+		return replay_data.CleanedReplay{}, false, reason
 	}
 
 	// This is used for older replay versions where some fields are missing:
 	ok = adjustGameVersion(&cleanHeader, &cleanMetadata)
 	if !ok {
 		log.Error("Failed to adjust game version!")
-		return replay_data.CleanedReplay{}, false
+		return replay_data.CleanedReplay{}, false, "Failed to adjust game version."
 	}
 
 	enhancedToonDescMap, ok := cleanup.CleanToonDescMap(replayData, cleanedUserInitDataList)
 	if !ok {
 		log.Error("Failed to clean toon desc map!")
-		return replay_data.CleanedReplay{}, false
+		return replay_data.CleanedReplay{}, false, "Failed to clean toon desc map."
 	}
 
 	messageEventsStructs := cleanup.CleanMessageEvents(replayData)
@@ -78,7 +80,7 @@ func redifineReplayStructure(
 	log.Info("Defined cleanedReplay struct")
 
 	log.Debug("Finished cleanReplayStructure()")
-	return cleanedReplay, true
+	return cleanedReplay, true, ""
 }
 
 // getVersionElements splits the version string into its elements,
@@ -154,29 +156,39 @@ func adjustGameVersion(
 
 // adjustMapName takes multiple map fields, finds the first non-empty one
 // and adjusts the map name in CleanedMetadata with the version available
-// in englishToForeignMapping.
+// in englishToForeignMapping. regionName is used only to produce a more
+// specific failure reason when the map name cannot be found.
 func adjustMapName(
 	mapFields []replay_data.ReplayMapField,
 	englishToForeignMapping map[string]string,
+	regionName string,
 	cleanMetadata *replay_data.CleanedMetadata,
-) bool {
+) (bool, string) {
 
 	// Got map name from metadata and details, searching for the first non-empty one:
 	foreignMapName := replay_data.CombineReplayMapFields(mapFields)
 	if foreignMapName == "" {
 		log.Error("Failed to combine map name!")
-		return false
+		return false, "Failed to combine map name."
 	}
 	// Attempting to acquire the english map name:
 	englishMapName, ok := englishToForeignMapping[foreignMapName]
 	if !ok {
-		log.WithField("foreignMapName", foreignMapName).
-			Error("Map name not found in englishToForeignMapping!")
-		return false
+		if sc2_map_processing.IsUnsupportedRegion(regionName) {
+			reason := fmt.Sprintf("unsupported region: %s", regionName)
+			log.WithFields(log.Fields{
+				"foreignMapName": foreignMapName,
+				"region":         regionName,
+			}).Error(reason)
+			return false, reason
+		}
+		reason := fmt.Sprintf("map name not found in mapping: %s", foreignMapName)
+		log.WithField("foreignMapName", foreignMapName).Error(reason)
+		return false, reason
 	}
 
 	// Adjusting the map name in CleanedMetadata:
 	cleanMetadata.MapName = englishMapName
 
-	return true
+	return true, ""
 }
