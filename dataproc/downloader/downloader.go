@@ -270,6 +270,17 @@ func dispatchMapDownloadTask(
 func downloadSingleDependency(taskState DownloadTaskState) {
 	log.Debug("Entered downloadSingleDependency()")
 
+	if taskState.dependencyFilenameIsMap.Availability == sc2_map_processing.UnsupportedRegion {
+		sendDownloadTaskReturnInfoToChannels(
+			&taskState,
+			fmt.Errorf(
+				"cannot download dependency: replay region does not support map downloads and this dependency is not already cached (hash: %s)",
+				taskState.dependencyFilenameIsMap.DependencyFilename,
+			),
+		)
+		return
+	}
+
 	outputFilepath := filepath.Join(
 		taskState.dependencyDownloadDirectory,
 		taskState.dependencyFilenameIsMap.DependencyFilename,
