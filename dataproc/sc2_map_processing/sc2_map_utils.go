@@ -269,6 +269,10 @@ func GetDependencyURLsAndHashFromReplayData(
 ) ([]SC2DependencyInformation, bool) {
 	log.Debug("Entered getMapURLAndHashFromReplayData()")
 	cacheHandles := replayData.Details.CacheHandles()
+	if len(cacheHandles) == 0 {
+		log.Error("Replay has no cache handles, cannot determine dependencies.")
+		return []SC2DependencyInformation{}, false
+	}
 
 	// Get the cacheHandle for the map, I am not sure whi is it the last CacheHandle:
 	mapCacheHandle := cacheHandles[len(cacheHandles)-1]
