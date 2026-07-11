@@ -36,6 +36,20 @@ docker_go_lint: ## Runs the linter using the golangci-lint container.
 ###################
 #### TESTING ######
 ###################
+FIXTURE_REPLAYS_IMAGE = kaszanas/sc2replaytestdata:latest
+FIXTURE_MAPS_IMAGE = kaszanas/sc2reset_maps_mods:latest
+
+fetch_test_fixtures: ## Populates test_files/test_replays/ and dependencies/ from published fixture images.
+	mkdir -p test_files/test_replays dependencies/maps dependencies/other_dependencies
+	docker create --name sc2_fixture_replays $(FIXTURE_REPLAYS_IMAGE)
+	docker cp sc2_fixture_replays:/sc2replaytestdata/. test_files/test_replays/
+	docker rm sc2_fixture_replays
+	docker create --name sc2_fixture_maps $(FIXTURE_MAPS_IMAGE)
+	docker cp sc2_fixture_maps:/sc2reset_maps_mods/maps/cn_maps/. dependencies/maps/
+	docker cp sc2_fixture_maps:/sc2reset_maps_mods/maps/sc2reset_maps/. dependencies/maps/
+	docker cp sc2_fixture_maps:/sc2reset_maps_mods/other_dependencies/. dependencies/other_dependencies/
+	docker rm sc2_fixture_maps
+
 test_locally:
 	go test ./... -v -race
 

@@ -14,10 +14,14 @@ COPY --from=sc2replaytestdata /sc2replaytestdata /test_files/test_replays/
 
 WORKDIR /app
 
-# Copying all maps from from SC2ReSet to the maps directory for processing:
-COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/cn_maps /app/dependencies/maps/
-COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/sc2reset_maps /app/dependencies/maps/
-COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/other_dependencies /app/dependencies/other_dependencies/
+# Copying all maps from SC2ReSet to a staging directory outside of /app.
+# This cannot be copied directly to /app/dependencies because the
+# docker-dev-compose.yml bind-mounts the repository over /app at runtime,
+# which would silently shadow it (same reason sc2replaytestdata is staged
+# outside of /app above). docker-dev-compose.yml rsyncs it into place.
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/cn_maps /dependencies_seed/maps/
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/maps/sc2reset_maps /dependencies_seed/maps/
+COPY --from=sc2reset_maps_mods /sc2reset_maps_mods/other_dependencies /dependencies_seed/other_dependencies/
 
 # Copy Golang dependency definitions:
 COPY go.mod go.sum /app/
