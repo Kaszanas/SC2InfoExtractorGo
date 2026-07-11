@@ -19,7 +19,7 @@ Commands below showcases the exampe usage of the tool.
 docker pull kaszanas/sc2infoextractorgo:latest
 ```
 2. Place your ```.SC2Replay``` files in the directory which you want to mount as the input directory. The default directory for replays within the container is `/app/replays/input`.
-3. Pick one of the following commands. 
+3. Pick one of the following commands.
     - Run the docker container and mount the entire directory:
     ```sh
     docker run -it --rm \
@@ -75,7 +75,7 @@ The following flags are available:
 
 ```
   -dependency_directory string
-        Directory where the replay dependencies will be downloaded as a result of the replay processing. (default "./dependencies/")                                                    
+        Directory where the replay dependencies will be downloaded as a result of the replay processing. (default "./dependencies/")
   -game_mode_filter int
         Specifies which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111 (default 0b11111111) (default 255)
   -help
@@ -193,7 +193,7 @@ This repository is licensed under GNU GPL v3 license. If You would like to acqui
   author    = {Białecki, Andrzej and
                Białecki, Piotr and
                Krupiński, Leszek},
-  title     = {{Kaszanas/SC2InfoExtractorGo: 2.1.3 
+  title     = {{Kaszanas/SC2InfoExtractorGo: 2.1.3
                SC2InfoExtractorGo Release}},
   month     = {jun},
   year      = {2022},
