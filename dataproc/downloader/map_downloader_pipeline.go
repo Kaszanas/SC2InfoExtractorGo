@@ -169,7 +169,7 @@ func readMapNamesFromMapFiles(
 			log.WithFields(log.Fields{
 				"error":               err,
 				"existingMapFilepath": existingMapFilepath,
-			}).Error("Error reading map name from drive. Map could not be processed")
+			}).Warn("Dependency has no readable map name (not a primary map, or not a map at all); skipping.")
 			continue
 		}
 
