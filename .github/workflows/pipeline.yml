@@ -1,0 +1,30 @@
+name: Pipeline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  e2e-tests:
+    uses: ./.github/workflows/e2e_tests.yml
+    secrets: inherit
+
+  verify-docker-build:
+    if: github.event_name == 'pull_request'
+    needs: [lint, e2e-tests]
+    uses: ./.github/workflows/docker_build_verify.yml
+
+  publish-docker-image:
+    if: github.event_name == 'push' || github.event_name == 'release'
+    needs: [lint, e2e-tests]
+    uses: ./.github/workflows/docker_publish.yml
+    secrets: inherit
