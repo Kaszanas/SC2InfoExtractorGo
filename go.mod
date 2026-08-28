@@ -8,7 +8,7 @@ require (
 	github.com/icza/s2prot v1.5.2-0.20260205210405-d1a9821a734c
 	github.com/joho/godotenv v1.5.1
 	github.com/schollz/progressbar/v3 v3.19.1
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.2
 	google.golang.org/grpc v1.82.0
 	google.golang.org/protobuf v1.36.11
 )
