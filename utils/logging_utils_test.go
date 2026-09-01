@@ -46,7 +46,11 @@ func TestSetLogging_NoAbsoluteBuildPathLeaksIntoLogFile(t *testing.T) {
 	if !ok {
 		t.Fatal("SetLogging() returned ok = false")
 	}
-	defer logFile.Close()
+	defer func() {
+		if err := logFile.Close(); err != nil {
+			t.Errorf("failed to close log file: %v", err)
+		}
+	}()
 
 	contents, err := os.ReadFile(logFile.Name())
 	if err != nil {
