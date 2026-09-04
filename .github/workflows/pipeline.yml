@@ -16,6 +16,9 @@ jobs:
     uses: ./.github/workflows/e2e_tests.yml
     secrets: inherit
 
+  nix-build:
+    uses: ./.github/workflows/nix_build.yml
+
   verify-docker-build:
     if: github.event_name == 'pull_request'
     needs: [lint, e2e-tests]
