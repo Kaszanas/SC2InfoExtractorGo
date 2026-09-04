@@ -42,3 +42,7 @@ replays/input/*.SC2Replay
 replays/output/*.json
 
 e2e-test-output/
+
+# Nix build output symlink:
+result
+result-*

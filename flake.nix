@@ -18,9 +18,12 @@
 
           src = ./.;
 
-          # Run `nix build` once and replace this with the hash Nix reports
-          # on mismatch.
-          vendorHash = pkgs.lib.fakeHash;
+          vendorHash = "sha256-AHgAIq6/wERy0zq634AorOkQQIoZgOVsRXrMIzZXzK8=";
+
+          # The E2E test suite needs fixture data (`make fetch_test_fixtures`)
+          # and network access, neither available in the sandboxed build.
+          # It's already exercised separately in CI (e2e_tests.yml).
+          doCheck = false;
 
           meta = {
             description = "Extracts data from StarCraft II .SC2Replay files into JSON";
