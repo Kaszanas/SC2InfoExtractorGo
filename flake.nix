@@ -14,7 +14,11 @@
       {
         packages.default = pkgs.buildGoModule {
           pname = "SC2InfoExtractorGo";
-          version = "0.1.0";
+          # Keep in sync with the latest GitHub release tag
+          # (https://github.com/Kaszanas/SC2InfoExtractorGo/releases) —
+          # there's no VERSION file or git-derivable source of truth to pull
+          # this from automatically.
+          version = "2.1.3";
 
           src = ./.;
 
