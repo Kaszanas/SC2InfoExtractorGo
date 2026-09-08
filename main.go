@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"runtime/pprof"
 
@@ -20,6 +21,12 @@ func main() {
 }
 
 func mainReturnWithCode() int {
+
+	fmt.Println("SC2InfoExtractorGo started.")
+
+	// Basic stdout logger active while flags are still being parsed, so
+	// failures here are visible even before file-based logging can be set up:
+	utils.SetDefaultLogging()
 
 	// Getting the information from user to start the processing:
 	CLIflags, okFlags := utils.ParseFlags()
