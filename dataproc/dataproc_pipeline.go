@@ -28,6 +28,8 @@ type ReplayProcessingChannelContents struct {
 
 // writeResultsToSingleJSON handles stream writing to a single file
 func writeResultsToSingleJSON(outputDir string, input <-chan string) {
+
+	// Create the output file:
 	outputPath := filepath.Join(outputDir, "all_replays.json")
 	f, err := os.Create(outputPath)
 	if err != nil {
@@ -53,6 +55,9 @@ func writeResultsToSingleJSON(outputDir string, input <-chan string) {
 		return
 	}
 
+	// Go over the input channel and write each JSON string to the file,
+	// The opening bracket is already written,
+	// so we need to add comas between the JSON objects.
 	first := true
 	for jsonString := range input {
 		if !first {
@@ -111,15 +116,17 @@ func PipelineWrapper(
 	// 1. Create the results channel
 	singleJsonResultChan := make(chan string, cliFlags.NumberOfThreads*4)
 
-	// 2. Start the single writer goroutine
+	// 2. Start the single writer goroutine only if needed:
 	var writerWg sync.WaitGroup
-	// Creating a single writer gorouting that will create a single JSON file
+	// Creating a single writer goroutine that will create a single JSON file
 	// with all of the replays as a JSON array.
-	writerWg.Add(1)
-	go func() {
-		defer writerWg.Done()
-		writeResultsToSingleJSON(cliFlags.OutputDirectory, singleJsonResultChan)
-	}()
+	if cliFlags.SingleJsonOutput {
+		writerWg.Add(1)
+		go func() {
+			defer writerWg.Done()
+			writeResultsToSingleJSON(cliFlags.OutputDirectory, singleJsonResultChan)
+		}()
+	}
 
 	// If it is specified by the user to perform the processing without
 	// multiprocessing GOMAXPROCS needs to be set to 1 in order to allow 1 thread:
@@ -224,12 +231,19 @@ func MultiprocessingChunkPipeline(
 	processedCounter := 0
 	saveErrorCounter := 0
 
+	// Single JSON output bypasses zip packaging entirely (see
+	// PipelineWrapper/writeResultsToSingleJSON), so skip creating a zip
+	// writer and package summary when it's enabled - otherwise an empty
+	// package_N.zip and package_summary_N.json get left behind alongside
+	// the real all_replays.json output.
+	writeZipPackage := packageToZipBool && !cliFlags.SingleJsonOutput
+
 	// Helper method returning bytes buffer and zip writer which will be
 	// used to save the processing results into:
 	var buffer *bytes.Buffer
 	var writer *zip.Writer
 	var packageSummary persistent_data.PackageSummary
-	if packageToZipBool {
+	if writeZipPackage {
 		buffer, writer = utils.InitBufferWriter()
 		log.Info("Initialized buffer and writer.")
 
@@ -298,7 +312,7 @@ func MultiprocessingChunkPipeline(
 			}
 
 			// Saving output to zip archive:
-			if packageToZipBool {
+			if writeZipPackage {
 				// Append it to a list and when a package is created create a package summary and clear the list for next iterations
 				persistent_data.AddReplaySummToPackageSumm(
 					&replaySummary,
@@ -355,7 +369,7 @@ func MultiprocessingChunkPipeline(
 	)
 	log.Info("Saved processing.log")
 
-	if packageToZipBool {
+	if writeZipPackage {
 
 		// Writing the zip archive to drive:
 		err := writer.Close()

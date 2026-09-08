@@ -40,6 +40,25 @@ func callerPrettyfier(f *runtime.Frame) (function string, file string) {
 	return f.Function, fmt.Sprintf("%s:%d", filePath, f.Line)
 }
 
+// SetDefaultLogging configures a basic stdout logger for use before
+// SetLogging can run, i.e. while CLI flags are still being parsed. Without
+// this, failures during flag parsing rely on logrus's zero-value default
+// (stderr, uninitialized formatter), which is easy to lose - e.g. a
+// double-clicked Windows .exe whose console window closes the instant the
+// process exits, before anyone can read it.
+func SetDefaultLogging() {
+	log.SetOutput(os.Stdout)
+	log.SetFormatter(&log.TextFormatter{})
+
+	traceLevel := log.Level(6)
+
+	logLevelString := log.Level(traceLevel).String()
+	log.Info("Log level set to: " + logLevelString)
+
+	log.SetLevel(log.Level(traceLevel))
+	log.Info("Set logging level.")
+}
+
 // setLogging contains logic that is used to initialize
 // logging to a specified file with a specified level.
 func SetLogging(logPath string, logLevel int) (*os.File, bool) {
