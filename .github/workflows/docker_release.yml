@@ -18,7 +18,6 @@ jobs:
 
   e2e-tests:
     uses: ./.github/workflows/e2e_tests.yml
-    secrets: inherit
 
   publish-docker-image:
     needs: [lint, e2e-tests]

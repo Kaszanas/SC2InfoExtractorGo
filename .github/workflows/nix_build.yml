@@ -6,15 +6,46 @@ on:
 jobs:
   nix-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      # Same-repo PRs can have a stale vendorHash fixed and pushed back to them;
+      # fork PRs and Dependabot runs only get a read-only token.
+      CAN_PUSH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
     steps:
       - name: Check-out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          # Check out the PR branch itself (not the merge commit) so a fix can be pushed to it.
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || '' }}
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
-      - name: Check flake
-        run: nix flake check
+      - name: Build flake (fixing a stale vendorHash)
+        id: nix
+        run: bash .github/scripts/update_nix_vendor_hash.sh .
 
-      - name: Build package
-        run: nix build .#default
+      - name: Push updated vendorHash
+        id: push
+        if: steps.nix.outputs.changed == 'true' && env.CAN_PUSH == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.nix
+          git commit -m "fix(nix): update vendorHash"
+          git push origin "HEAD:${HEAD_REF}"
+          # Pushes made with GITHUB_TOKEN don't trigger workflows, but
+          # workflow_dispatch does, so the new commit still gets checks.
+          gh workflow run pipeline.yml --ref "${HEAD_REF}"
+
+      - name: Report stale vendorHash
+        if: steps.nix.outputs.changed == 'true' && steps.push.outcome != 'success'
+        run: |
+          echo "::warning file=flake.nix::vendorHash is stale and was not pushed automatically. Set it to ${{ steps.nix.outputs.hash }}"
