@@ -3,12 +3,13 @@ package file_utils
 import (
 	"io/fs"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // ListFiles creates a slice of filepaths from a give input directory
-// based filtering supplied fileExtension
+// based filtering supplied fileExtension (matched case-insensitively)
 func ListFiles(
 	inputPath string,
 	filterFileExtension string,
@@ -70,7 +71,8 @@ func ExistingFilesSet(
 }
 
 // getFilesByExtension returns a slice of filepaths filtering them by the supplied
-// file extension.
+// file extension. The extension is matched case-insensitively,
+// so ".SC2Replay" also matches ".sc2replay", ".SC2REPLAY" etc.
 func getFilesByExtension(
 	inputPath string,
 	filterFileExtension string,
@@ -84,7 +86,7 @@ func getFilesByExtension(
 				return err
 			}
 			if !dirEntry.IsDir() &&
-				filepath.Ext(dirEntry.Name()) == filterFileExtension {
+				strings.EqualFold(filepath.Ext(dirEntry.Name()), filterFileExtension) {
 				listOfFiles = append(listOfFiles, path)
 			}
 			return nil
