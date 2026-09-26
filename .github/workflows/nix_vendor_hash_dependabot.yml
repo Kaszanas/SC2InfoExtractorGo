@@ -1,0 +1,62 @@
+name: Nix vendorHash (Dependabot)
+
+# Dependabot's own pull_request runs only get a read-only token, so they can't
+# push a fixed vendorHash. pull_request_target runs in the context of the base
+# branch with a writable token.
+on:
+  pull_request_target:
+    paths:
+      - go.mod
+      - go.sum
+
+permissions: {}
+
+jobs:
+  update-vendor-hash:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      # Trusted copy of the script from the base branch; nothing from the PR tree is executed.
+      - name: Check-out base branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: base
+          persist-credentials: false
+
+      - name: Check-out PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pr
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Build flake (fixing a stale vendorHash)
+        id: nix
+        run: bash base/.github/scripts/update_nix_vendor_hash.sh pr
+
+      - name: Push updated vendorHash
+        if: steps.nix.outputs.changed == 'true'
+        working-directory: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.nix
+          git commit -m "fix(nix): update vendorHash"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "HEAD:${HEAD_REF}"
+          # Pushes made with GITHUB_TOKEN don't trigger workflows, but
+          # workflow_dispatch does, so the new commit still gets checks.
+          gh workflow run pipeline.yml --repo "${REPO}" --ref "${HEAD_REF}"
