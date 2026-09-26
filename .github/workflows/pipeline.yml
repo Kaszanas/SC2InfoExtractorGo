@@ -16,6 +16,10 @@ jobs:
     uses: ./.github/workflows/e2e_tests.yml
 
   nix-build:
+    # Write access lets the job push a fixed vendorHash to same-repo PR branches.
+    permissions:
+      contents: write
+      actions: write
     uses: ./.github/workflows/nix_build.yml
 
   verify-docker-build:
