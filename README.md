@@ -24,7 +24,7 @@ docker pull kaszanas/sc2infoextractorgo:latest
     ```sh
     docker run -it --rm \
     -v </path/to/your/directory>:/app \
-    sc2infoextractorgo:latest -help
+    sc2infoextractorgo:latest --help
     ```
     - Run the Docker container and mount specific paths.
     Replace the `<path>` with the appropriate paths on your system:
@@ -34,7 +34,7 @@ docker pull kaszanas/sc2infoextractorgo:latest
     -v </path/to/your/output>:/app/replays/output \
     -v </path/to/your/logs>:/app/logs \
     -v </path/to/your/dependencies>:/app/dependencies \
-    sc2infoextractorgo:latest -help
+    sc2infoextractorgo:latest process json_zip
     ```
 4. When you execute the processing command, please note that you need to pass the appropriate paths to the tool that are withing the container. The default paths are:
     - Input directory: `/app/replays/input`
@@ -55,7 +55,7 @@ docker pull kaszanas/sc2infoextractorgo:latest
 
 - **Try it / one-off run:**
   ```sh
-  nix run github:Kaszanas/SC2InfoExtractorGo -- -input ./replays/input -output ./replays/output
+  nix run github:Kaszanas/SC2InfoExtractorGo -- process json_zip --input ./replays/input --output ./replays/output
   ```
 - **Imperative install (single user):**
   ```sh
@@ -90,75 +90,78 @@ docker pull kaszanas/sc2infoextractorgo:latest
 2. Run ```SC2InfoExtractorGo.exe``` as follows:
 
 ```bash
-SC2InfoExtractorGo.exe -input ./replays/input -output ./replays/output
+SC2InfoExtractorGo.exe process json_zip --input ./replays/input --output ./replays/output
 ```
 
 3. Verify the output in ```./replays/output```
 4. If The output packages do not contain any processed replays, proceed to verify ```./logs/```.
 
-## CLI Options
+## CLI Commands
 
-To see the full list of available options, run the tool with the `-help` flag:
+The tool is organised into commands. Every command has its own help:
 ```bash
-SC2InfoExtractorGo.exe -help
+SC2InfoExtractorGo.exe --help
+SC2InfoExtractorGo.exe process --help
+SC2InfoExtractorGo.exe process json_zip --help
 ```
 
-The following flags are available:
+```
+SC2InfoExtractorGo
+├── download_deps        Download the dependencies (maps) of the input replays without processing them.
+├── process              Process replays into one of the output formats:
+│   ├── json             one .json file per replay
+│   ├── json_zip         .json files inside zip packages, with a summary per package
+│   └── single_json      all replays in a single all_replays.json array
+└── completion           Generate a shell autocompletion script.
+```
 
-```
-  -dependency_directory string
-        Directory where the replay dependencies will be downloaded as a result of the replay processing. (default "./dependencies/")
-  -game_mode_filter int
-        Specifies which game mode should be included from the processed files in a format of a binary flag: AllGameModes: 0b11111111 (default 0b11111111) (default 255)
-  -help
-        Show command usage
-  -input string
-        Input directory where .SC2Replay files are held. (default "./replays/input")
-  -log_dir string
-        Specifies directory which will hold the logging information. (default "./logs/")
-  -log_level int
-        Specifies a log level from 1-7:
-        Panic - 1, Fatal - 2,
-        Error - 3, Warn - 4,
-        Info - 5, Debug - 6,
-        Trace - 7 (default 4)
-  -max_procs int
-        Specifies the number of logic cores of a processor that will be used for processing (default runtime.NumCPU()). (default 24)
-  -number_of_packages int
-        Provide a number of zip packages to be created and compressed
-        into a zip archive. Please remember that this number needs to be lower
-        than the number of processed files. If set to 0, will ommit the
-        zip packaging and output .json directly to drive. (default 1)
-  -only_dependency_download
-        Flag specifying if the tool is supposed to only download
-        the replay dependencies and not process the replays.
-  -output string
-        Output directory where compressed zip packages will be saved. (default "./replays/output")
-  -perform_chat_anonymization
-        Flag, specifying if the chat anonymization should be performed.
-  -perform_cleanup
-        Flag specifying if the tool is supposed to perform the cleaning
-        functions within the processing pipeline.
-  -perform_filtering
-        Flag, specifying if the pipeline ought to verify different hard coded game modes.
-        If set to false completely bypasses the filtering.
-  -perform_integrity_checks
-        Flag specifying if the software is supposed to check the hardcoded
-        integrity checks for the provided replays
-  -perform_player_anonymization
-        Flag specifying if the tool is supposed to perform player anonymization
-        functions within the processing pipeline.
-        If set to true please remember to download and run
-        an anonymization server: https://doi.org/10.5281/zenodo.5138313
-  -perform_validity_checks
-        Flag, specifying if the tool is supposed to use hardcoded validity checks
-        and verify if the replay file variables are within 'common sense' ranges.
-  -skip_dependency_download
-        Flag specifying if the tool is supposed to skip the dependency download.
-  -with_cpu_profiler string
-        Set path to the file where pprof cpu profiler will save its information.
-        If this is empty no profiling is performed.
-```
+Flags go after the command. They use two dashes and snake_case (`--log_level`); the kebab-case spelling (`--log-level`) is accepted too.
+
+**Available to every command:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--input` | `./replays/input` | Input directory where .SC2Replay files are held. |
+| `--dependency_directory` | `./dependencies/` | Directory where the replay dependencies are downloaded to and read from. |
+| `--max_procs` | number of CPU cores | Number of logical processor cores used for processing. |
+| `--log_dir` | `./logs/` | Directory which will hold the logging information. |
+| `--log_level` | `3` | Log level from 0-6: Panic - 0, Fatal - 1, Error - 2, Warn - 3, Info - 4, Debug - 5, Trace - 6. |
+| `--with_cpu_profiler` | | Path to the file where the pprof CPU profile will be saved. If empty, no profiling is performed. |
+
+**Available to every `process` format:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--output` | `./replays/output` | Output directory for the processed replays. |
+| `--skip_dependency_download` | `false` | Skip downloading the replay dependencies, use only what is already in `--dependency_directory`. |
+| `--perform_integrity_checks` | `false` | Run the hardcoded integrity checks on the replays. |
+| `--perform_validity_checks` | `false` | Check that replay values are within 'common sense' ranges. |
+| `--perform_cleanup` | `false` | Run the cleaning functions of the processing pipeline. |
+| `--perform_player_anonymization` | `false` | Anonymize players. Requires a running anonymization server: https://doi.org/10.5281/zenodo.5138313 |
+| `--perform_chat_anonymization` | `false` | Anonymize chat messages. |
+| `--perform_filtering` | `false` | Filter replays by game mode (see `--game_mode_filter`). If not set, no filtering is performed. |
+| `--game_mode_filter` | `0b11111111` | Game modes to include, as a binary flag. All game modes: `0b11111111`. |
+
+**Only for `process json_zip`:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--number_of_packages` | `1` | Number of zip packages to create. Must not exceed the number of input files. |
+
+### Migrating from 2.x
+
+Version 3 replaced the single flag-driven command with the commands above:
+
+| 2.x | 3.x |
+|---|---|
+| `-input ./in -output ./out` | `process json_zip --input ./in --output ./out` |
+| `-number_of_packages 4` | `process json_zip --number_of_packages 4` |
+| `-number_of_packages 0` | `process json` |
+| `-single_json_output` | `process single_json` |
+| `-only_dependency_download` | `download_deps` |
+| `-help` | `--help` (on any command) |
+
+All other flags keep their names but take two dashes, e.g. `-log_level 4` becomes `--log_level 4`.
 
 
 ## Dataset Preparation
