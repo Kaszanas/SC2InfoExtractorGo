@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -12,8 +14,12 @@ import (
 
 // fakeRunner records which runner method was called and with what configuration.
 type fakeRunner struct {
-	called string
-	flags  utils.CLIFlags
+	called     string
+	flags      utils.CLIFlags
+	replayFile string
+	// replayJSON and replayErr are returned by ProcessReplay.
+	replayJSON string
+	replayErr  error
 }
 
 func (f *fakeRunner) Process(flags utils.CLIFlags) error {
@@ -24,6 +30,11 @@ func (f *fakeRunner) Process(flags utils.CLIFlags) error {
 func (f *fakeRunner) DownloadDeps(flags utils.CLIFlags) error {
 	f.called, f.flags = "download_deps", flags
 	return nil
+}
+
+func (f *fakeRunner) ProcessReplay(flags utils.CLIFlags, replayFile string) (string, error) {
+	f.called, f.flags, f.replayFile = "process_replay", flags, replayFile
+	return f.replayJSON, f.replayErr
 }
 
 func execute(t *testing.T, args ...string) (*fakeRunner, error) {
@@ -201,6 +212,134 @@ func TestCommandsRejectInvalidInvocations(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			runner, err := execute(t, testCase.args...)
+			if err == nil {
+				t.Fatalf("Execute(%v) succeeded, want an error", testCase.args)
+			}
+			if runner.called != "" {
+				t.Fatalf("runner %q was called for an invalid invocation", runner.called)
+			}
+		})
+	}
+}
+
+const testReplayJSON = `{"replay":"data"}`
+
+// executeProcessReplay runs process_replay against a fake runner returning
+// testReplayJSON (or runnerErr) and captures the command's stdout.
+func executeProcessReplay(t *testing.T, runnerErr error, args ...string) (*fakeRunner, string, error) {
+	t.Helper()
+	runner := &fakeRunner{replayJSON: testReplayJSON, replayErr: runnerErr}
+	rootCmd := NewRootCmd(runner)
+	stdout := &bytes.Buffer{}
+	rootCmd.SetArgs(append([]string{"process_replay"}, args...))
+	rootCmd.SetOut(stdout)
+	rootCmd.SetErr(&bytes.Buffer{})
+	err := rootCmd.Execute()
+	return runner, stdout.String(), err
+}
+
+// createReplayFile creates an empty replay file in a temporary directory.
+func createReplayFile(t *testing.T) string {
+	t.Helper()
+	replayFile := filepath.Join(t.TempDir(), "game.SC2Replay")
+	if err := os.WriteFile(replayFile, nil, 0644); err != nil {
+		t.Fatalf("creating %s: %v", replayFile, err)
+	}
+	return replayFile
+}
+
+func TestProcessReplayToStdout(t *testing.T) {
+	replayFile := createReplayFile(t)
+
+	runner, stdout, err := executeProcessReplay(t, nil,
+		replayFile, "--perform_cleanup", "--perform-integrity-checks")
+	if err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if runner.called != "process_replay" || runner.replayFile != replayFile {
+		t.Fatalf("runner called %q with %q, want process_replay with %q",
+			runner.called, runner.replayFile, replayFile)
+	}
+	if !runner.flags.PerformCleanup || !runner.flags.PerformIntegrityCheck {
+		t.Fatalf("processing flags not applied: %+v", runner.flags)
+	}
+	if runner.flags.InputDirectory != filepath.Dir(replayFile) {
+		t.Fatalf("InputDirectory = %q, want %q", runner.flags.InputDirectory, filepath.Dir(replayFile))
+	}
+	if stdout != testReplayJSON+"\n" {
+		t.Fatalf("stdout = %q, want %q", stdout, testReplayJSON+"\n")
+	}
+}
+
+func TestProcessReplayToFile(t *testing.T) {
+	replayFile := createReplayFile(t)
+	outputDirectory := t.TempDir()
+
+	testCases := []struct {
+		name     string
+		output   string
+		wantFile string
+	}{
+		{"file path", filepath.Join(outputDirectory, "nested", "out.json"),
+			filepath.Join(outputDirectory, "nested", "out.json")},
+		{"existing directory", outputDirectory, filepath.Join(outputDirectory, "game.json")},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, stdout, err := executeProcessReplay(t, nil, replayFile, "--output", testCase.output)
+			if err != nil {
+				t.Fatalf("Execute returned error: %v", err)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want nothing when writing to a file", stdout)
+			}
+			content, err := os.ReadFile(testCase.wantFile)
+			if err != nil {
+				t.Fatalf("reading output: %v", err)
+			}
+			if string(content) != testReplayJSON {
+				t.Fatalf("output file = %q, want %q", content, testReplayJSON)
+			}
+		})
+	}
+}
+
+func TestProcessReplayFailureWritesNothing(t *testing.T) {
+	replayFile := createReplayFile(t)
+	outputFile := filepath.Join(t.TempDir(), "out.json")
+
+	for _, args := range [][]string{{replayFile}, {replayFile, "--output", outputFile}} {
+		_, stdout, err := executeProcessReplay(t, errors.New("integrity check failed"), args...)
+		if err == nil {
+			t.Fatalf("Execute(%v) succeeded, want the runner error", args)
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want nothing on failure", stdout)
+		}
+		if _, err := os.Stat(outputFile); !os.IsNotExist(err) {
+			t.Fatalf("output file exists after a failure (stat error: %v)", err)
+		}
+	}
+}
+
+func TestProcessReplayRejectsInvalidInvocations(t *testing.T) {
+	replayFile := createReplayFile(t)
+
+	testCases := []struct {
+		name string
+		args []string
+	}{
+		{"no replay", nil},
+		{"two replays", []string{replayFile, replayFile}},
+		{"missing file", []string{filepath.Join(t.TempDir(), "missing.SC2Replay")}},
+		{"directory", []string{t.TempDir()}},
+		{"--input set", []string{replayFile, "--input", "in"}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			runner, _, err := executeProcessReplay(t, nil, testCase.args...)
 			if err == nil {
 				t.Fatalf("Execute(%v) succeeded, want an error", testCase.args)
 			}
