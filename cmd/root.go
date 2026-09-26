@@ -55,6 +55,7 @@ func NewRootCmd(runner Runner) *cobra.Command {
 	rootCmd.AddCommand(
 		newDownloadDepsCmd(opts, runner),
 		newProcessCmd(opts, runner),
+		newProcessReplayCmd(opts, runner),
 	)
 	return rootCmd
 }

@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
+	"os"
 	"runtime/pprof"
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/dataproc"
@@ -23,6 +24,8 @@ type Runner interface {
 	Process(flags utils.CLIFlags) error
 	// DownloadDeps only downloads the replay dependencies.
 	DownloadDeps(flags utils.CLIFlags) error
+	// ProcessReplay processes a single replay file and returns its JSON.
+	ProcessReplay(flags utils.CLIFlags, replayFile string) (string, error)
 }
 
 type defaultRunner struct{}
@@ -87,10 +90,32 @@ func (defaultRunner) Process(flags utils.CLIFlags) error {
 	})
 }
 
+func (defaultRunner) ProcessReplay(flags utils.CLIFlags, replayFile string) (string, error) {
+	var replayJSON string
+	err := withRuntimeSetup(flags, func() error {
+		foreignToEnglishMapping := downloader.DependencyDownloaderPipeline(
+			[]string{replayFile},
+			foreignToEnglishMappingPath(flags),
+			flags,
+		)
+
+		var err error
+		replayJSON, err = dataproc.ProcessReplayToJSON(
+			replayFile,
+			foreignToEnglishMapping,
+			flags,
+		)
+		return err
+	})
+	return replayJSON, err
+}
+
 // withRuntimeSetup sets up file logging and optional CPU profiling around run,
 // and tears both down afterwards.
 func withRuntimeSetup(flags utils.CLIFlags, run func() error) error {
-	fmt.Println("SC2InfoExtractorGo started.")
+	// Status goes to stderr so stdout carries only command output
+	// (process_replay prints the replay JSON there):
+	fmt.Fprintln(os.Stderr, "SC2InfoExtractorGo started.")
 
 	logFile, okLogging := utils.SetLogging(
 		flags.LogFlags.LogPath,

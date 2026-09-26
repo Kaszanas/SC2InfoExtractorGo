@@ -6,12 +6,12 @@ import (
 
 	"github.com/Kaszanas/SC2InfoExtractorGo/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
-// processOptions holds the flags shared by every output format of `process`.
-type processOptions struct {
-	root                       *rootOptions
-	outputDirectory            string
+// processingOptions holds the flags that control how replays are processed,
+// shared by `process` and `process_replay`.
+type processingOptions struct {
 	skipDependencyDownload     bool
 	performIntegrityCheck      bool
 	performValidityCheck       bool
@@ -22,20 +22,8 @@ type processOptions struct {
 	gameModeFilter             int
 }
 
-func newProcessCmd(rootOpts *rootOptions, runner Runner) *cobra.Command {
-	opts := &processOptions{root: rootOpts}
-
-	processCmd := &cobra.Command{
-		Use:   "process",
-		Short: "Process replays into one of the output formats.",
-		Long: "Process replays into one of the output formats. " +
-			"Each output format is its own subcommand.",
-		RunE: requireSubcommand,
-	}
-
-	flags := processCmd.PersistentFlags()
-	flags.StringVar(&opts.outputDirectory, "output", "./replays/output",
-		"Output directory for the processed replays.")
+// addProcessingFlags registers the processing flags on the given flag set.
+func addProcessingFlags(flags *pflag.FlagSet, opts *processingOptions) {
 	flags.BoolVar(&opts.skipDependencyDownload, "skip_dependency_download", false,
 		"Skip downloading the replay dependencies, use only what is already in --dependency_directory.")
 	flags.BoolVar(&opts.performIntegrityCheck, "perform_integrity_checks", false,
@@ -52,6 +40,42 @@ func newProcessCmd(rootOpts *rootOptions, runner Runner) *cobra.Command {
 		"Filter replays by game mode (see --game_mode_filter). If not set, no filtering is performed.")
 	flags.IntVar(&opts.gameModeFilter, "game_mode_filter", 0b11111111,
 		"Game modes to include, as a binary flag. All game modes: 0b11111111.")
+}
+
+// apply copies the processing options into the pipeline configuration.
+func (o *processingOptions) apply(flags *utils.CLIFlags) {
+	flags.SkipDependencyDownload = o.skipDependencyDownload
+	flags.PerformIntegrityCheck = o.performIntegrityCheck
+	flags.PerformValidityCheck = o.performValidityCheck
+	flags.PerformCleanup = o.performCleanup
+	flags.PerformPlayerAnonymization = o.performPlayerAnonymization
+	flags.PerformChatAnonymization = o.performChatAnonymization
+	flags.PerformFiltering = o.performFiltering
+	flags.FilterGameMode = o.gameModeFilter
+}
+
+// processOptions holds the flags shared by every output format of `process`.
+type processOptions struct {
+	root            *rootOptions
+	outputDirectory string
+	processing      processingOptions
+}
+
+func newProcessCmd(rootOpts *rootOptions, runner Runner) *cobra.Command {
+	opts := &processOptions{root: rootOpts}
+
+	processCmd := &cobra.Command{
+		Use:   "process",
+		Short: "Process replays into one of the output formats.",
+		Long: "Process replays into one of the output formats. " +
+			"Each output format is its own subcommand.",
+		RunE: requireSubcommand,
+	}
+
+	flags := processCmd.PersistentFlags()
+	flags.StringVar(&opts.outputDirectory, "output", "./replays/output",
+		"Output directory for the processed replays.")
+	addProcessingFlags(flags, &opts.processing)
 
 	processCmd.AddCommand(
 		newProcessJSONCmd(opts, runner),
@@ -74,13 +98,6 @@ func (o *processOptions) flags() (utils.CLIFlags, error) {
 	}
 
 	flags.OutputDirectory = outputDirectory
-	flags.SkipDependencyDownload = o.skipDependencyDownload
-	flags.PerformIntegrityCheck = o.performIntegrityCheck
-	flags.PerformValidityCheck = o.performValidityCheck
-	flags.PerformCleanup = o.performCleanup
-	flags.PerformPlayerAnonymization = o.performPlayerAnonymization
-	flags.PerformChatAnonymization = o.performChatAnonymization
-	flags.PerformFiltering = o.performFiltering
-	flags.FilterGameMode = o.gameModeFilter
+	o.processing.apply(&flags)
 	return flags, nil
 }
