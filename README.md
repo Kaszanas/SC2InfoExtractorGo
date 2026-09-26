@@ -112,6 +112,7 @@ SC2InfoExtractorGo
 │   ├── json             one .json file per replay
 │   ├── json_zip         .json files inside zip packages, with a summary per package
 │   └── single_json      all replays in a single all_replays.json array
+├── process_replay       Process a single replay into JSON, printed to stdout or written to --output.
 └── completion           Generate a shell autocompletion script.
 ```
 
@@ -147,6 +148,25 @@ Flags go after the command. They use two dashes and snake_case (`--log_level`); 
 | Flag | Default | Description |
 |---|---|---|
 | `--number_of_packages` | `1` | Number of zip packages to create. Must not exceed the number of input files. |
+
+### Processing a single replay
+
+`process_replay` processes one replay file into one JSON document, for applications that read the output directly.
+By default the JSON is printed to stdout, so it can be piped; progress and status messages go to stderr and the log file.
+
+```bash
+SC2InfoExtractorGo.exe process_replay ./replays/input/game.SC2Replay > game.json
+SC2InfoExtractorGo.exe process_replay ./replays/input/game.SC2Replay --output ./replays/output/game.json
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `<file.SC2Replay>` (argument) | | The replay to process. |
+| `--output` | `-` (stdout) | A file path, an existing directory (writes `<dir>/<replay name>.json`), or `-` for stdout. |
+
+It accepts the same processing flags as `process` (`--skip_dependency_download`, `--perform_*`, `--game_mode_filter`) and
+the flags available to every command, except `--input`. If the replay can't be processed, the command exits with a
+non-zero code, prints the reason on stderr, and writes no output.
 
 ### Migrating from 2.x
 
