@@ -10,7 +10,7 @@ process_replays: ## Runs the container to process replays.
 		-v "${PWD}/replays:/replays" \
 		-v "${PWD}/logs:/logs" \
 		sc2infoextractorgo \
-		-log_level 6
+		process json_zip --log_level 6
 
 
 ###################
