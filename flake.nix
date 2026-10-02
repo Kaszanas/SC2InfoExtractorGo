@@ -22,7 +22,7 @@
 
           src = ./.;
 
-          vendorHash = "sha256-OtIdUBwcdD5eeu67z0WiXKE7PNWF0kwyDoolK+mOmm4=";
+          vendorHash = "sha256-H8s/NoPZ5A94L/8nRBhEkoLX1P/aiuVcMHNmBGZ1MXQ=";
 
           # The E2E test suite needs fixture data (`make fetch_test_fixtures`)
           # and network access, neither available in the sandboxed build.
