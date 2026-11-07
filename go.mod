@@ -10,7 +10,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.19.1
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.0.10
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 )
